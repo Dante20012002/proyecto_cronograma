@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'preact/hooks';
 import type { Event } from '../stores/schedule';
-import { scheduleRows } from '../stores/schedule';
+import { draftScheduleRows } from '../stores/schedule';
 
 interface EventEditorProps {
   event: Event;
@@ -32,7 +32,7 @@ export default function EventEditor({ event, rowId, day, isOpen, onClose }: Even
   }, [isOpen, event]);
 
   const handleSave = () => {
-    const currentRows = scheduleRows.get();
+    const currentRows = draftScheduleRows.get();
     const newRows = currentRows.map(row => {
       if (row.id === rowId && row.events[day]) {
         const eventIndex = row.events[day].findIndex(e => e.id === event.id);
@@ -61,7 +61,7 @@ export default function EventEditor({ event, rowId, day, isOpen, onClose }: Even
       return row;
     });
 
-    scheduleRows.set(newRows);
+    draftScheduleRows.set(newRows);
     onClose();
   };
 
