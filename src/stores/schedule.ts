@@ -1,4 +1,13 @@
 import { atom } from 'nanostores';
+import { 
+  initializeDataIfNeeded, 
+  saveDraftData, 
+  publishData, 
+  subscribeToDraftData, 
+  subscribeToPublishedData,
+  getDraftData,
+  getPublishedData
+} from '../lib/firestore';
 
 // --- INTERFACES ---
 export interface Event {
@@ -73,46 +82,124 @@ const initialGlobalConfig: GlobalConfig = {
   }
 };
 
-// --- FUNCIONES DE PERSISTENCIA ---
-function loadFromStorage<T>(key: string, defaultValue: T): T {
-  if (typeof window === 'undefined') return defaultValue;
-  
+// --- ESTADO (DRAFT & PUBLISHED) ---
+export const draftInstructors = atom<Instructor[]>(initialInstructors);
+export const draftScheduleRows = atom<ScheduleRow[]>(initialScheduleRows);
+export const draftGlobalConfig = atom<GlobalConfig>(initialGlobalConfig);
+
+export const publishedInstructors = atom<Instructor[]>(initialInstructors);
+export const publishedScheduleRows = atom<ScheduleRow[]>(initialScheduleRows);
+export const publishedGlobalConfig = atom<GlobalConfig>(initialGlobalConfig);
+
+export const hasUnpublishedChanges = atom<boolean>(false);
+export const isConnected = atom<boolean>(false);
+
+// --- INICIALIZACIÓN DE FIREBASE ---
+let unsubscribeDraft: (() => void) | null = null;
+let unsubscribePublished: (() => void) | null = null;
+
+export async function initializeFirebase() {
   try {
-    const stored = localStorage.getItem(key);
-    if (stored) {
-      return JSON.parse(stored);
-    }
+    // Inicializar datos si no existen
+    await initializeDataIfNeeded();
+    
+    // Suscribirse a cambios en tiempo real
+    unsubscribeDraft = subscribeToDraftData((data) => {
+      draftInstructors.set(data.instructors);
+      draftScheduleRows.set(data.scheduleRows);
+      draftGlobalConfig.set(data.globalConfig);
+      isConnected.set(true);
+    });
+
+    unsubscribePublished = subscribeToPublishedData((data) => {
+      publishedInstructors.set(data.instructors);
+      publishedScheduleRows.set(data.scheduleRows);
+      publishedGlobalConfig.set(data.globalConfig);
+      isConnected.set(true);
+    });
+
+    console.log('Firebase inicializado correctamente');
   } catch (error) {
-    console.warn(`Error loading from localStorage for key "${key}":`, error);
+    console.error('Error inicializando Firebase:', error);
+    isConnected.set(false);
   }
-  return defaultValue;
 }
 
-function saveToStorage<T>(key: string, data: T): void {
-  if (typeof window === 'undefined') return;
-  
-  try {
-    localStorage.setItem(key, JSON.stringify(data));
-  } catch (error) {
-    console.warn(`Error saving to localStorage for key "${key}":`, error);
+// Función para limpiar suscripciones
+export function cleanupFirebase() {
+  if (unsubscribeDraft) {
+    unsubscribeDraft();
+    unsubscribeDraft = null;
   }
+  if (unsubscribePublished) {
+    unsubscribePublished();
+    unsubscribePublished = null;
+  }
+}
+
+// --- LÓGICA DE PUBLICACIÓN ---
+export async function publishChanges() {
+  try {
+    const currentDraftInstructors = draftInstructors.get();
+    const currentDraftScheduleRows = draftScheduleRows.get();
+    const currentDraftGlobalConfig = draftGlobalConfig.get();
+
+    await publishData({
+      instructors: currentDraftInstructors,
+      scheduleRows: currentDraftScheduleRows,
+      globalConfig: currentDraftGlobalConfig
+    });
+
+    hasUnpublishedChanges.set(false);
+    console.log('Cambios publicados exitosamente!');
+  } catch (error) {
+    console.error('Error publicando cambios:', error);
+    throw error;
+  }
+}
+
+/**
+ * Guarda el estado actual del borrador (draft) en Firebase.
+ * Esto persiste los cambios para el administrador sin publicarlos.
+ */
+export async function saveDraftChanges(): Promise<void> {
+  try {
+    const currentDraftInstructors = draftInstructors.get();
+    const currentDraftScheduleRows = draftScheduleRows.get();
+    const currentDraftGlobalConfig = draftGlobalConfig.get();
+
+    await saveDraftData({
+      instructors: currentDraftInstructors,
+      scheduleRows: currentDraftScheduleRows,
+      globalConfig: currentDraftGlobalConfig
+    });
+
+    markAsDirty(); // Marca que hay cambios listos para ser publicados.
+    console.log('Borrador guardado en Firebase.');
+  } catch (error) {
+    console.error('Error guardando borrador:', error);
+    throw error;
+  }
+}
+
+/**
+ * Limpia todos los eventos del cronograma en el estado de borrador (draft).
+ * Mantiene a los instructores y la configuración global.
+ */
+export function clearAllDraftEvents(): void {
+  const currentRows = draftScheduleRows.get();
+  
+  const newRows = currentRows.map(row => ({
+    ...row,
+    events: {} // Limpia todos los eventos
+  }));
+  
+  draftScheduleRows.set(newRows);
+  console.log('Todas las actividades del borrador han sido eliminadas.');
 }
 
 // Función para limpiar todos los datos guardados
 export function clearAllData(): void {
-  if (typeof window === 'undefined') return;
-  
-  const keys = [
-    'cronograma_draft_instructors',
-    'cronograma_draft_schedule_rows', 
-    'cronograma_draft_global_config',
-    'cronograma_published_instructors',
-    'cronograma_published_schedule_rows',
-    'cronograma_published_global_config'
-  ];
-  
-  keys.forEach(key => localStorage.removeItem(key));
-  
   // Resetear los stores a los valores iniciales
   draftInstructors.set(initialInstructors);
   draftScheduleRows.set(initialScheduleRows);
@@ -123,86 +210,6 @@ export function clearAllData(): void {
   hasUnpublishedChanges.set(false);
   
   console.log('Todos los datos han sido limpiados y reseteados a los valores iniciales');
-}
-
-/**
- * Guarda el estado actual del borrador (draft) en el localStorage.
- * Esto persiste los cambios para el administrador sin publicarlos.
- */
-export function saveDraftChanges(): void {
-  if (typeof window === 'undefined') return;
-
-  const currentDraftInstructors = draftInstructors.get();
-  const currentDraftScheduleRows = draftScheduleRows.get();
-  const currentDraftGlobalConfig = draftGlobalConfig.get();
-
-  saveToStorage('cronograma_draft_instructors', currentDraftInstructors);
-  saveToStorage('cronograma_draft_schedule_rows', currentDraftScheduleRows);
-  saveToStorage('cronograma_draft_global_config', currentDraftGlobalConfig);
-
-  markAsDirty(); // Marca que hay cambios listos para ser publicados.
-  console.log('Borrador guardado en localStorage.');
-}
-
-/**
- * Limpia todos los eventos del cronograma en el estado de borrador (draft).
- * Mantiene a los instructores y la configuración global.
- */
-export function clearAllDraftEvents(): void {
-  if (typeof window === 'undefined') return;
-
-  const currentRows = draftScheduleRows.get();
-  
-  const newRows = currentRows.map(row => ({
-    ...row,
-    events: {} // Limpia todos los eventos
-  }));
-  
-  draftScheduleRows.set(newRows);
-  // Los cambios se deben guardar manualmente ahora
-  // saveToStorage('cronograma_draft_schedule_rows', newRows);
-  // markAsDirty(); 
-  
-  console.log('Todas las actividades del borrador han sido eliminadas.');
-}
-
-// --- ESTADO (DRAFT & PUBLISHED) ---
-// Cargar datos guardados o usar los iniciales
-const savedDraftInstructors = loadFromStorage('cronograma_draft_instructors', initialInstructors);
-const savedDraftScheduleRows = loadFromStorage('cronograma_draft_schedule_rows', initialScheduleRows);
-const savedDraftGlobalConfig = loadFromStorage('cronograma_draft_global_config', initialGlobalConfig);
-
-const savedPublishedInstructors = loadFromStorage('cronograma_published_instructors', initialInstructors);
-const savedPublishedScheduleRows = loadFromStorage('cronograma_published_schedule_rows', initialScheduleRows);
-const savedPublishedGlobalConfig = loadFromStorage('cronograma_published_global_config', initialGlobalConfig);
-
-export const draftInstructors = atom<Instructor[]>(savedDraftInstructors);
-export const draftScheduleRows = atom<ScheduleRow[]>(savedDraftScheduleRows);
-export const draftGlobalConfig = atom<GlobalConfig>(savedDraftGlobalConfig);
-
-export const publishedInstructors = atom<Instructor[]>(savedPublishedInstructors);
-export const publishedScheduleRows = atom<ScheduleRow[]>(savedPublishedScheduleRows);
-export const publishedGlobalConfig = atom<GlobalConfig>(savedPublishedGlobalConfig);
-
-export const hasUnpublishedChanges = atom<boolean>(false);
-
-// --- LÓGICA DE PUBLICACIÓN ---
-export function publishChanges() {
-  const currentDraftInstructors = draftInstructors.get();
-  const currentDraftScheduleRows = draftScheduleRows.get();
-  const currentDraftGlobalConfig = draftGlobalConfig.get();
-
-  publishedInstructors.set(JSON.parse(JSON.stringify(currentDraftInstructors)));
-  publishedScheduleRows.set(JSON.parse(JSON.stringify(currentDraftScheduleRows)));
-  publishedGlobalConfig.set(JSON.parse(JSON.stringify(currentDraftGlobalConfig)));
-  
-  // Guardar en localStorage
-  saveToStorage('cronograma_published_instructors', currentDraftInstructors);
-  saveToStorage('cronograma_published_schedule_rows', currentDraftScheduleRows);
-  saveToStorage('cronograma_published_global_config', currentDraftGlobalConfig);
-  
-  hasUnpublishedChanges.set(false);
-  console.log('Cambios publicados y guardados!');
 }
 
 function markAsDirty() {
@@ -219,8 +226,6 @@ export function updateEvent(rowId: string, day: string, updatedEvent: Event) {
         return row;
     });
     draftScheduleRows.set(newRows);
-    // saveToStorage('cronograma_draft_schedule_rows', newRows);
-    // markAsDirty();
 }
 
 export function moveEvent(eventId: string, fromRowId: string, fromDay: string, toRowId: string, toDay: string) {
@@ -252,8 +257,6 @@ export function moveEvent(eventId: string, fromRowId: string, fromDay: string, t
     });
 
     draftScheduleRows.set(tempRows);
-    // saveToStorage('cronograma_draft_schedule_rows', tempRows);
-    // markAsDirty();
 }
 
 export function copyEvent(eventId: string, fromRowId: string, fromDay: string, toRowId: string, toDay: string) {
@@ -267,96 +270,124 @@ export function copyEvent(eventId: string, fromRowId: string, fromDay: string, t
     
     if (!originalEvent) return;
 
-    const newEvent: Event = { ...originalEvent, id: `evt-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` };
+    const copiedEvent: Event = {
+        ...originalEvent,
+        id: `${originalEvent.id}-copy-${Date.now()}`
+    };
 
     const newRows = currentRows.map(row => {
         if (row.id === toRowId) {
             const newDayEvents = row.events[toDay] ? [...row.events[toDay]] : [];
-            newDayEvents.push(newEvent);
+            newDayEvents.push(copiedEvent);
             return { ...row, events: { ...row.events, [toDay]: newDayEvents }};
         }
         return row;
     });
 
     draftScheduleRows.set(newRows);
-    // saveToStorage('cronograma_draft_schedule_rows', newRows);
-    // markAsDirty();
 }
 
 export function deleteEvent(eventId: string, rowId: string, day: string) {
     const newRows = draftScheduleRows.get().map(row => {
         if (row.id === rowId && row.events[day]) {
-            const updatedDayEvents = row.events[day].filter(e => e.id !== eventId);
-            return { ...row, events: { ...row.events, [day]: updatedDayEvents }};
+            const newDayEvents = row.events[day].filter(e => e.id !== eventId);
+            return { ...row, events: { ...row.events, [day]: newDayEvents } };
         }
         return row;
     });
     draftScheduleRows.set(newRows);
-    // saveToStorage('cronograma_draft_schedule_rows', newRows);
-    // markAsDirty();
 }
 
 export function addEvent(rowId: string, day: string, newEvent: Event) {
     const newRows = draftScheduleRows.get().map(row => {
         if (row.id === rowId) {
-            const currentDayEvents = row.events[day] || [];
-            const updatedDayEvents = [...currentDayEvents, newEvent];
-            return { ...row, events: { ...row.events, [day]: updatedDayEvents }};
+            const newDayEvents = row.events[day] ? [...row.events[day]] : [];
+            newDayEvents.push(newEvent);
+            return { ...row, events: { ...row.events, [day]: newDayEvents } };
         }
         return row;
     });
     draftScheduleRows.set(newRows);
-    // saveToStorage('cronograma_draft_schedule_rows', newRows);
-    // markAsDirty();
 }
 
 export function addInstructor(name: string, city: string, regional: string) {
-    const newInstructor: Instructor = { id: `inst-${Date.now()}`, name: name.toUpperCase(), city, regional };
-    const newInstructors = [...draftInstructors.get(), newInstructor];
-    draftInstructors.set(newInstructors);
-    // saveToStorage('cronograma_draft_instructors', newInstructors);
-
-    const newRow: ScheduleRow = { id: newInstructor.id, instructor: newInstructor.name, city: newInstructor.city, regional: newInstructor.regional, events: {} };
-    const newRows = [...draftScheduleRows.get(), newRow];
-    draftScheduleRows.set(newRows);
-    // saveToStorage('cronograma_draft_schedule_rows', newRows);
-    // markAsDirty();
+    const newInstructor: Instructor = {
+        id: `instructor-${Date.now()}`,
+        name,
+        city,
+        regional
+    };
+    
+    const currentInstructors = draftInstructors.get();
+    draftInstructors.set([...currentInstructors, newInstructor]);
+    
+    // Agregar fila correspondiente al cronograma
+    const newRow: ScheduleRow = {
+        id: newInstructor.id,
+        instructor: name,
+        city,
+        regional,
+        events: {}
+    };
+    
+    const currentRows = draftScheduleRows.get();
+    draftScheduleRows.set([...currentRows, newRow]);
 }
 
 export function updateInstructor(id: string, name: string, city: string, regional: string) {
-    const newInstructors = draftInstructors.get().map(inst => (inst.id === id ? { ...inst, name: name.toUpperCase(), city, regional } : inst));
+    const newInstructors = draftInstructors.get().map(instructor => 
+        instructor.id === id ? { ...instructor, name, city, regional } : instructor
+    );
     draftInstructors.set(newInstructors);
-    // saveToStorage('cronograma_draft_instructors', newInstructors);
-
-    const newRows = draftScheduleRows.get().map(row => (row.id === id ? { ...row, instructor: name.toUpperCase(), city, regional } : row));
+    
+    // Actualizar fila correspondiente en el cronograma
+    const newRows = draftScheduleRows.get().map(row => 
+        row.id === id ? { ...row, instructor: name, city, regional } : row
+    );
     draftScheduleRows.set(newRows);
-    // saveToStorage('cronograma_draft_schedule_rows', newRows);
-    // markAsDirty();
 }
 
 export function deleteInstructor(id: string) {
-    const newInstructors = draftInstructors.get().filter(inst => inst.id !== id);
+    const newInstructors = draftInstructors.get().filter(instructor => instructor.id !== id);
     draftInstructors.set(newInstructors);
-    // saveToStorage('cronograma_draft_instructors', newInstructors);
-
+    
+    // Eliminar fila correspondiente del cronograma
     const newRows = draftScheduleRows.get().filter(row => row.id !== id);
     draftScheduleRows.set(newRows);
-    // saveToStorage('cronograma_draft_schedule_rows', newRows);
-    // markAsDirty();
 }
 
 export function updateTitle(newTitle: string) {
-    const newConfig = { ...draftGlobalConfig.get(), title: newTitle };
-    draftGlobalConfig.set(newConfig);
-    // saveToStorage('cronograma_draft_global_config', newConfig);
-    // markAsDirty();
+    const currentConfig = draftGlobalConfig.get();
+    draftGlobalConfig.set({ ...currentConfig, title: newTitle });
 }
 
 export function updateWeek(startDate: string, endDate: string) {
-    const newConfig = { ...draftGlobalConfig.get(), currentWeek: { startDate, endDate } };
-    draftGlobalConfig.set(newConfig);
-    // saveToStorage('cronograma_draft_global_config', newConfig);
-    // markAsDirty();
+    const currentConfig = draftGlobalConfig.get();
+    draftGlobalConfig.set({ 
+        ...currentConfig, 
+        currentWeek: { startDate, endDate } 
+    });
+}
+
+// Función para verificar conflictos de horario
+export function checkTimeConflict(eventId: string, rowId: string, day: string, time: string): { hasConflict: boolean; conflictingEvent?: Event } {
+    if (!time) return { hasConflict: false };
+    
+    const currentRows = draftScheduleRows.get();
+    const targetRow = currentRows.find(row => row.id === rowId);
+    
+    if (!targetRow || !targetRow.events[day]) {
+        return { hasConflict: false };
+    }
+    
+    const conflictingEvent = targetRow.events[day].find(event => 
+        event.id !== eventId && event.time === time
+    );
+    
+    return {
+        hasConflict: !!conflictingEvent,
+        conflictingEvent
+    };
 }
 
 // --- SELECTORES Y UTILIDADES ---
@@ -419,17 +450,4 @@ export const regionalOptions = [
     'OCCIDENTE',
     'SABANA',
     'SUR'
-];
-
-export function checkTimeConflict(eventId: string, rowId: string, day: string, time: string): { hasConflict: boolean; conflictingEvent?: Event } {
-    const row = draftScheduleRows.get().find(r => r.id === rowId);
-    if (!row || !row.events[day] || !time) return { hasConflict: false };
-
-    for (const event of row.events[day]) {
-        if (event.id === eventId) continue;
-        if (event.time === time) {
-            return { hasConflict: true, conflictingEvent: event };
-        }
-    }
-    return { hasConflict: false };
-} 
+]; 

@@ -1,20 +1,35 @@
 import { useEffect, useState } from 'preact/hooks';
+import { useStore } from '@nanostores/preact';
 import ScheduleGrid from './ScheduleGrid.tsx';
 import InstructorManager from './InstructorManager.tsx';
 import GlobalConfig from './GlobalConfig.tsx';
 import AdminToolbar from './AdminToolbar.tsx';
 import UserToolbar from './UserToolbar.tsx';
+import { initializeFirebase, cleanupFirebase, isConnected } from '../stores/schedule';
 
 export default function CronogramaWrapper() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const connected = useStore(isConnected);
 
   useEffect(() => {
     // Leer el parámetro de la URL en el cliente
     const urlParams = new URLSearchParams(window.location.search);
     const adminMode = urlParams.get('mode') === 'admin';
     setIsAdmin(adminMode);
-    setIsLoading(false);
+    
+    // Inicializar Firebase
+    initializeFirebase().then(() => {
+      setIsLoading(false);
+    }).catch((error) => {
+      console.error('Error inicializando Firebase:', error);
+      setIsLoading(false);
+    });
+
+    // Cleanup al desmontar
+    return () => {
+      cleanupFirebase();
+    };
   }, []);
 
   if (isLoading) {
@@ -30,6 +45,14 @@ export default function CronogramaWrapper() {
 
   return (
     <div class="max-w-7xl mx-auto space-y-8">
+      {/* Indicador de estado de conexión */}
+      {!connected && (
+        <div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative" role="alert">
+          <strong class="font-bold">Sin conexión: </strong>
+          <span class="block sm:inline">Los cambios se guardarán localmente hasta que se restablezca la conexión.</span>
+        </div>
+      )}
+      
       {isAdmin ? (
         <>
           <AdminToolbar />

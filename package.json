@@ -15,6 +15,7 @@
     "@nanostores/preact": "^1.0.0",
     "@types/sortablejs": "^1.15.8",
     "astro": "^5.10.0",
+    "firebase": "^11.9.1",
     "html2canvas": "^1.4.1",
     "jspdf": "^3.0.1",
     "nanostores": "^1.0.1",
