@@ -50,36 +50,33 @@ export default function UserToolbar(): JSX.Element {
   };
 
   return (
-    <div class="flex items-center justify-between w-full">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full space-y-2 sm:space-y-0">
       <div>
         <h2 class="text-lg font-bold text-gray-900">{config.title}</h2>
         <p class="text-sm text-gray-600">
           {formatDateDisplay(week.startDate)} - {formatDateDisplay(week.endDate)}
         </p>
       </div>
-      <div class="flex items-center space-x-4">
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
         <div class="flex items-center space-x-2">
           <button
             onClick={() => navigateWeek('prev')}
-            class="flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
+            class="flex-1 sm:flex-none flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
           >
             <span class="mr-1">←</span> Anterior
           </button>
           <button
             onClick={() => navigateWeek('next')}
-            class="flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
+            class="flex-1 sm:flex-none flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
           >
             Siguiente <span class="ml-1">→</span>
           </button>
         </div>
         <button
           onClick={handleDownload}
-          class="flex items-center px-3 py-1.5 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors"
+          class="flex-1 sm:flex-none flex items-center justify-center px-3 py-1.5 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
-          </svg>
-          Descargar
+          <span class="mr-1">↓</span> Descargar
         </button>
       </div>
     </div>

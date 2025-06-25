@@ -76,51 +76,48 @@ export default function AdminToolbar({ onClose }: AdminToolbarProps): JSX.Elemen
   }
 
   return (
-    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-lg shadow-md mb-6">
-      <div class="flex justify-between items-center">
-        <div>
-          <div class="flex items-center gap-2">
-            <h3 class="font-bold">Modo Administrador</h3>
-            <span class="text-sm">({user.value.email})</span>
-            <button
-              onClick={handleLogout}
-              class="text-sm text-red-600 hover:text-red-800"
-            >
-              Cerrar sesión
-            </button>
+    <div class="bg-white rounded-lg shadow-md p-3 sm:p-4">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+          <h2 class="text-lg font-bold text-gray-900">Panel de Administración</h2>
+          <div class="text-sm text-gray-600">
+            {user.value?.email}
           </div>
-          <p class="text-sm">
-            {dirty.value
-              ? 'Tienes cambios guardados sin publicar. Los usuarios no verán tus modificaciones hasta que las publiques.'
-              : 'Realiza cambios y guárdalos. El cronograma público no se actualizará hasta que publiques.'}
-          </p>
         </div>
-        <div class="flex items-center space-x-2">
-          <button
-            onClick={handleClearEvents}
-            class="px-4 py-2 bg-red-600 text-white font-semibold rounded-md hover:bg-red-700 transition-colors"
-            title="Eliminar todas las actividades del borrador actual. Los instructores no se verán afectados."
-          >
-            Limpiar Actividades
-          </button>
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
           <button
             onClick={handleSaveDraft}
-            class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors"
-            title="Guarda todos los cambios actuales en un borrador persistente."
+            disabled={!dirty.value}
+            class={`flex-1 sm:flex-none flex items-center justify-center px-4 py-2 rounded-md transition-colors ${
+              dirty.value
+                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
           >
-            Guardar Borrador
+            Guardar
           </button>
           <button
             onClick={handlePublish}
             disabled={!dirty.value}
-            class={`px-6 py-2 text-white font-semibold rounded-md transition-colors ${
-              !dirty.value
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-green-600 hover:bg-green-700 animate-pulse'
+            class={`flex-1 sm:flex-none flex items-center justify-center px-4 py-2 rounded-md transition-colors ${
+              dirty.value
+                ? 'bg-green-600 text-white hover:bg-green-700'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
-            title={!dirty.value ? 'No hay cambios para publicar' : 'Publicar todos los cambios'}
           >
-            Publicar Cambios
+            Publicar
+          </button>
+          <button
+            onClick={handleClearEvents}
+            class="flex-1 sm:flex-none flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+          >
+            Limpiar
+          </button>
+          <button
+            onClick={handleLogout}
+            class="flex-1 sm:flex-none flex items-center justify-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+          >
+            Cerrar Sesión
           </button>
         </div>
       </div>

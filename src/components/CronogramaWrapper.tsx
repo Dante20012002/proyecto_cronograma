@@ -78,22 +78,22 @@ export default function CronogramaWrapper(): JSX.Element {
   }
 
   return (
-    <div class="min-h-screen bg-gray-100 p-4">
-      <div class="max-w-7xl mx-auto space-y-4">
+    <div class="min-h-screen bg-gray-100 p-2 sm:p-4">
+      <div class="max-w-7xl mx-auto space-y-2 sm:space-y-4">
         {isAdmin.value ? (
           <>
             <AdminToolbar />
-            <div class="bg-white rounded-lg shadow-md p-4">
-              <div class="flex justify-end space-x-2">
+            <div class="bg-white rounded-lg shadow-md p-3 sm:p-4">
+              <div class="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2">
                 <button
                   onClick={() => setShowConfig(!showConfig)}
-                  class="px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors"
+                  class="w-full sm:w-auto px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors"
                 >
                   {showConfig ? 'Ocultar Configuración' : 'Configuración Global'}
                 </button>
                 <button
                   onClick={() => setShowInstructors(!showInstructors)}
-                  class="px-3 py-1.5 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 transition-colors"
+                  class="w-full sm:w-auto px-3 py-1.5 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 transition-colors"
                 >
                   {showInstructors ? 'Ocultar Instructores' : 'Gestionar Instructores'}
                 </button>
@@ -103,12 +103,12 @@ export default function CronogramaWrapper(): JSX.Element {
             </div>
           </>
         ) : (
-          <div class="flex justify-between items-center bg-white rounded-lg shadow-md p-4">
+          <div class="flex flex-col sm:flex-row justify-between items-center bg-white rounded-lg shadow-md p-3 sm:p-4 space-y-2 sm:space-y-0">
             <UserToolbar />
-            <div class="ml-8">
+            <div class="w-full sm:w-auto sm:ml-8 flex justify-center sm:justify-end">
               <button
                 onClick={() => setShowLogin(true)}
-                class="px-3 py-1.5 bg-gray-600 text-white text-sm rounded-md hover:bg-gray-700 transition-colors"
+                class="w-full sm:w-auto px-3 py-1.5 bg-gray-600 text-white text-sm rounded-md hover:bg-gray-700 transition-colors"
               >
                 Acceso Administrador
               </button>

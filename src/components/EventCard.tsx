@@ -186,167 +186,93 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
   }, []);
 
   return (
-    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div class="bg-white text-gray-900 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div class="p-6">
-          <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-semibold text-gray-900">Editar Evento</h3>
-            <button onClick={onClose} class="text-gray-400 hover:text-gray-600 text-xl font-bold">
-              ×
-            </button>
+    <div class={`bg-white rounded-lg shadow-md p-3 sm:p-4 ${hasConflict ? 'border-2 border-red-500' : ''}`}>
+      <div class="space-y-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Instructor</label>
+            <select
+              value={formData.instructorId}
+              onInput={(e) => handleInputChange('instructorId', (e.target as HTMLSelectElement).value)}
+              class={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                hasConflict ? 'border-red-500 bg-red-50' : 'border-gray-300'
+              }`}
+            >
+              <option value="">Seleccionar instructor...</option>
+              {instructors.map((instructor) => (
+                <option key={instructor.id} value={instructor.id}>
+                  {instructor.name}
+                </option>
+              ))}
+            </select>
           </div>
-
-          <div class="space-y-4">
-            {/* Title */}
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Título *</label>
-              <input
-                type="text"
-                value={formData.title}
-                onInput={(e) => handleInputChange('title', (e.target as HTMLInputElement).value)}
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-              />
-            </div>
-
-            {/* Details */}
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Detalles</label>
-              
-              {/* Selector de descripciones predefinidas */}
-              {!useCustomDetails && (
-                <select
-                  value={formData.details}
-                  onInput={(e) => handleDetailsSelect((e.target as HTMLSelectElement).value)}
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white mb-2"
-                >
-                  <option value="">Selecciona una descripción...</option>
-                  {predefinedDescriptions.map((description) => (
-                    <option key={description} value={description} class="text-gray-900 bg-white">
-                      {description}
-                    </option>
-                  ))}
-                  <option value="custom" class="text-gray-900 bg-white font-semibold">
-                    ✏️ Escribir descripción personalizada
-                  </option>
-                </select>
-              )}
-
-              {/* Campo de texto personalizado para detalles */}
-              {(useCustomDetails || formData.details) && (
-                <div class="flex items-center space-x-2">
-                  <textarea
-                    value={formData.details}
-                    onInput={(e) => handleInputChange('details', (e.target as HTMLTextAreaElement).value)}
-                    rows={3}
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                    placeholder="Detalles del evento (una línea por detalle)"
-                  />
-                  {useCustomDetails && (
-                    <button
-                      onClick={() => {
-                        setUseCustomDetails(false);
-                        setFormData(prev => ({ ...prev, details: '' }));
-                      }}
-                      class="px-2 py-2 text-gray-500 hover:text-gray-700"
-                      title="Volver a opciones predefinidas"
-                    >
-                      ↶
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Time Selectors */}
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Hora de Inicio</label>
-                <select
-                  value={formData.startTime}
-                  onInput={(e) => handleInputChange('startTime', (e.target as HTMLSelectElement).value)}
-                  class={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black ${
-                    hasConflict ? 'border-red-500 bg-red-50' : 'border-gray-300'
-                  }`}
-                >
-                  <option value="">Seleccionar hora...</option>
-                  {startTimes.map((time) => (
-                    <option key={time} value={time} class="text-black bg-white">
-                      {time}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Hora de Fin</label>
-                <select
-                  value={formData.endTime}
-                  onInput={(e) => handleInputChange('endTime', (e.target as HTMLSelectElement).value)}
-                  class={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black ${
-                    hasConflict ? 'border-red-500 bg-red-50' : 'border-gray-300'
-                  }`}
-                >
-                  <option value="">Seleccionar hora...</option>
-                  {endTimes.map((time) => (
-                    <option key={time} value={time} class="text-black bg-white">
-                      {time}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            {hasConflict && (
-              <div class="text-sm text-red-600">
-                ⚠️ Conflicto de horarios con: {conflictingEvent?.title}
-              </div>
-            )}
-
-            {/* Location */}
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Ubicación</label>
-              <input
-                type="text"
-                value={formData.location}
-                onInput={(e) => handleInputChange('location', (e.target as HTMLInputElement).value)}
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-              />
-            </div>
-
-            {/* Color Picker */}
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Color</label>
-              <div class="grid grid-cols-6 gap-2">
-                {['bg-red-600', 'bg-blue-600', 'bg-green-600', 'bg-yellow-500', 'bg-purple-600', 'bg-pink-600', 'bg-indigo-600', 'bg-gray-600', 'bg-rose-500', 'bg-orange-500', 'bg-teal-500', 'bg-cyan-500'].map((color) => (
-                  <button
-                    key={color}
-                    onClick={() => handleInputChange('color', color)}
-                    class={`w-8 h-8 rounded-full border-2 ${formData.color === color ? 'border-gray-800 ring-2 ring-offset-1 ring-gray-800' : 'border-gray-300'} ${color}`}
-                  />
-                ))}
-              </div>
-            </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Actividad</label>
+            <input
+              type="text"
+              value={formData.activity}
+              onInput={(e) => handleInputChange('activity', (e.target as HTMLInputElement).value)}
+              class={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                hasConflict ? 'border-red-500 bg-red-50' : 'border-gray-300'
+              }`}
+              placeholder="Nombre de la actividad"
+            />
           </div>
-
-          <div class="flex justify-between mt-6">
-            <button onClick={handleDelete} class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
-              Eliminar
-            </button>
-            <div class="space-x-2">
-              <button onClick={onClose} class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500">
-                Cancelar
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={hasConflict || !formData.title.trim()}
-                class={`px-4 py-2 rounded-md focus:outline-none focus:ring-2 ${
-                  hasConflict || !formData.title.trim()
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500'
-                }`}
-              >
-                Guardar
-              </button>
-            </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Hora de Inicio</label>
+            <select
+              value={formData.startTime}
+              onInput={(e) => handleInputChange('startTime', (e.target as HTMLSelectElement).value)}
+              class={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                hasConflict ? 'border-red-500 bg-red-50' : 'border-gray-300'
+              }`}
+            >
+              <option value="">Seleccionar hora...</option>
+              {startTimes.map((time) => (
+                <option key={time} value={time}>
+                  {time}
+                </option>
+              ))}
+            </select>
           </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Hora de Fin</label>
+            <select
+              value={formData.endTime}
+              onInput={(e) => handleInputChange('endTime', (e.target as HTMLSelectElement).value)}
+              class={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                hasConflict ? 'border-red-500 bg-red-50' : 'border-gray-300'
+              }`}
+            >
+              <option value="">Seleccionar hora...</option>
+              {endTimes.map((time) => (
+                <option key={time} value={time}>
+                  {time}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div class="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2">
+          <button
+            onClick={handleDelete}
+            class="w-full sm:w-auto flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+          >
+            Eliminar
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={!isValid || hasConflict}
+            class={`w-full sm:w-auto flex items-center justify-center px-4 py-2 rounded-md transition-colors ${
+              isValid && !hasConflict
+                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
+          >
+            Guardar
+          </button>
         </div>
       </div>
     </div>
