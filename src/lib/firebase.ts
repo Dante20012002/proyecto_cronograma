@@ -1,4 +1,5 @@
 import { initializeApp } from 'firebase/app';
+import type { FirebaseApp } from 'firebase/app';
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 
 // Configuración de Firebase - Usar variables de entorno o valores directos como fallback
@@ -11,15 +12,10 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:553437786995:web:e027a4f1cc3852a1c58b06"
 };
 
-let app, db;
-try {
-  // Inicializar Firebase
-  app = initializeApp(firebaseConfig);
-  // Inicializar Firestore
-  db = getFirestore(app);
-} catch (error) {
-  console.error('❌ Error inicializando Firebase:', error);
-}
+// Inicializar Firebase
+const app: FirebaseApp = initializeApp(firebaseConfig);
+// Inicializar Firestore
+const db = getFirestore(app);
 
 // Conectar al emulador en desarrollo (opcional)
 if (import.meta.env.DEV) {

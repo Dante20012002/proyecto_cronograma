@@ -1,187 +1,143 @@
 import { useState } from 'preact/hooks';
-import { useStore } from '@nanostores/preact';
-import { draftGlobalConfig, updateTitle, updateWeek } from '../stores/schedule';
+import { 
+  draftGlobalConfig, 
+  updateTitle, 
+  updateWeek, 
+  navigateWeek, 
+  formatDateDisplay 
+} from '../stores/schedule';
+import type { JSX } from 'preact';
+import type { GlobalConfig } from '../types/schedule';
 
-export default function GlobalConfig() {
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [newTitle, setNewTitle] = useState('');
-  const [isEditingWeek, setIsEditingWeek] = useState(false);
-  const [newStartDate, setNewStartDate] = useState('');
-  const [newEndDate, setNewEndDate] = useState('');
-  
-  const config = useStore(draftGlobalConfig);
+/**
+ * Componente para gestionar la configuración global del cronograma.
+ * Permite editar el título y la semana actual.
+ * 
+ * @component
+ * @returns {JSX.Element} Componente GlobalConfig
+ * 
+ * @example
+ * ```tsx
+ * <GlobalConfig />
+ * ```
+ */
+export default function GlobalConfig(): JSX.Element {
+  const config = draftGlobalConfig.value;
+  const [formData, setFormData] = useState({
+    title: config.title,
+    startDate: config.currentWeek.startDate,
+    endDate: config.currentWeek.endDate
+  });
 
-  const handleEditTitle = () => {
-    setNewTitle(config.title);
-    setIsEditingTitle(true);
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSaveTitle = () => {
-    if (newTitle.trim()) {
-      updateTitle(newTitle.trim());
+  const handleSubmit = async (e: Event) => {
+    e.preventDefault();
+    
+    if (!formData.title.trim()) {
+      alert('Por favor ingresa un título.');
+      return;
     }
-    setIsEditingTitle(false);
-  };
 
-  const handleEditWeek = () => {
-    setNewStartDate(config.currentWeek.startDate);
-    setNewEndDate(config.currentWeek.endDate);
-    setIsEditingWeek(true);
-  };
-
-  const handleSaveWeek = () => {
-    if (newStartDate && newEndDate) {
-      updateWeek(newStartDate, newEndDate);
+    if (!formData.startDate || !formData.endDate) {
+      alert('Por favor selecciona las fechas de inicio y fin.');
+      return;
     }
-    setIsEditingWeek(false);
-  };
 
-  const navigateWeek = (direction: 'prev' | 'next') => {
-    const startDate = new Date(config.currentWeek.startDate + 'T00:00:00');
-    
-    if (direction === 'prev') {
-      startDate.setDate(startDate.getDate() - 7);
-    } else {
-      startDate.setDate(startDate.getDate() + 7);
+    const startDate = new Date(formData.startDate);
+    const endDate = new Date(formData.endDate);
+
+    if (endDate < startDate) {
+      alert('La fecha de fin debe ser posterior a la fecha de inicio.');
+      return;
     }
-    
-    const formatDate = (date: Date) => date.toISOString().split('T')[0];
-    const newStartDateStr = formatDate(startDate);
-    
-    // Calcular fecha de fin (asumiendo 5 días laborales)
-    const endDate = new Date(newStartDateStr + 'T00:00:00');
-    endDate.setDate(endDate.getDate() + 4);
-    const newEndDateStr = formatDate(endDate);
-    
-    updateWeek(newStartDateStr, newEndDateStr);
+
+    await updateTitle(formData.title);
+    await updateWeek(formData.startDate, formData.endDate);
   };
 
-  const formatDateDisplay = (dateString: string) => {
-    const date = new Date(dateString + 'T00:00:00');
-    return date.toLocaleDateString('es-ES', { 
-      day: 'numeric', 
-      month: 'long', 
-      year: 'numeric' 
-    });
+  const handleNavigate = async (direction: 'prev' | 'next') => {
+    const newDates = navigateWeek(direction);
+    setFormData(prev => ({
+      ...prev,
+      startDate: newDates.startDate,
+      endDate: newDates.endDate
+    }));
   };
 
   return (
-    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Configuración del título */}
+    <div class="bg-white rounded-lg shadow-md p-4">
+      <form onSubmit={handleSubmit} class="space-y-4">
         <div>
-          <h2 class="text-lg font-semibold text-gray-900 mb-4">Configuración General</h2>
-          
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Título del Cronograma
-              </label>
-              {isEditingTitle ? (
-                <div class="flex space-x-2">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Título del Cronograma</label>
+          <input
+            type="text"
+            value={formData.title}
+            onInput={(e) => handleInputChange('title', (e.target as HTMLInputElement).value)}
+            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Navegación de Semana</label>
+          <div class="flex flex-col space-y-3">
+            <div class="flex items-center space-x-4">
+              <div class="text-sm font-medium text-gray-700">
+                {formatDateDisplay(formData.startDate)} - {formatDateDisplay(formData.endDate)}
+              </div>
+              <div class="flex items-center space-x-2">
+                <button
+                  type="button"
+                  onClick={() => handleNavigate('prev')}
+                  class="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  <span class="mr-1">←</span> Anterior
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleNavigate('next')}
+                  class="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Siguiente <span class="ml-1">→</span>
+                </button>
+              </div>
+            </div>
+            <div class="flex">
+              <div class="grid grid-cols-2 gap-4 w-1/2">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de Inicio</label>
                   <input
-                    type="text"
-                    value={newTitle}
-                    onInput={(e) => setNewTitle((e.target as HTMLInputElement).value)}
-                    class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Título del cronograma"
+                    type="date"
+                    value={formData.startDate}
+                    onInput={(e) => handleInputChange('startDate', (e.target as HTMLInputElement).value)}
+                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   />
-                  <button
-                    onClick={handleSaveTitle}
-                    class="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-                  >
-                    ✓
-                  </button>
-                  <button
-                    onClick={() => setIsEditingTitle(false)}
-                    class="px-3 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                  >
-                    ✕
-                  </button>
                 </div>
-              ) : (
-                <div class="flex items-center space-x-2">
-                  <span class="text-gray-900 font-medium">{config.title}</span>
-                  <button
-                    onClick={handleEditTitle}
-                    class="text-blue-600 hover:text-blue-800 text-sm"
-                  >
-                    Editar
-                  </button>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de Fin</label>
+                  <input
+                    type="date"
+                    value={formData.endDate}
+                    onInput={(e) => handleInputChange('endDate', (e.target as HTMLInputElement).value)}
+                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Navegación de semana */}
-        <div>
-          <h2 class="text-lg font-semibold text-gray-900 mb-4">Navegación de Semana</h2>
-          
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Semana Actual
-              </label>
-              {isEditingWeek ? (
-                <div class="space-y-2">
-                  <div class="flex space-x-2">
-                    <input
-                      type="date"
-                      value={newStartDate}
-                      onInput={(e) => setNewStartDate((e.target as HTMLInputElement).value)}
-                      class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div class="flex space-x-2">
-                    <button
-                      onClick={handleSaveWeek}
-                      class="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-                    >
-                      Guardar
-                    </button>
-                    <button
-                      onClick={() => setIsEditingWeek(false)}
-                      class="px-3 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div class="space-y-2">
-                  <div class="flex items-center space-x-2">
-                    <span class="text-gray-900">
-                      {formatDateDisplay(config.currentWeek.startDate)} - {formatDateDisplay(config.currentWeek.endDate)}
-                    </span>
-                    <button
-                      onClick={handleEditWeek}
-                      class="text-blue-600 hover:text-blue-800 text-sm"
-                    >
-                      Editar (cambia el inicio)
-                    </button>
-                  </div>
-                  
-                  <div class="flex space-x-2">
-                    <button
-                      onClick={() => navigateWeek('prev')}
-                      class="px-3 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                    >
-                      ← Semana Anterior
-                    </button>
-                    <button
-                      onClick={() => navigateWeek('next')}
-                      class="px-3 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                    >
-                      Semana Siguiente →
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+        <div class="flex justify-end pt-2">
+          <button
+            type="submit"
+            class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            Guardar Cambios
+          </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 } 

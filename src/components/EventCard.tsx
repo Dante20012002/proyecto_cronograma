@@ -2,13 +2,78 @@ import { useState, useEffect } from 'preact/hooks';
 import { updateEvent, deleteEvent, checkTimeConflict, startTimes, endTimes } from '../stores/schedule';
 import type { Event } from '../stores/schedule';
 
+/**
+ * Props para el componente EventCard
+ * @interface EventCardProps
+ */
 interface EventCardProps {
+  /** Datos del evento a editar */
   event: Event;
+  /** ID del instructor/fila donde está el evento */
   rowId: string;
+  /** Día del mes donde está el evento */
   day: string;
+  /** Función para cerrar el modal */
   onClose: () => void;
 }
 
+/**
+ * Lista de descripciones predefinidas para eventos.
+ */
+const predefinedDescriptions = [
+  'MODULO PROTAGONISTAS DEL SERVICIO',
+  'MODULO FORMATIVO GNV',
+  'MODULO FORMATIVO LIQUIDOS',
+  'MODULO FORMATIVO LUBRICANTES',
+  'PROTOCOLO DE SERVICIO EDS',
+  'GESTION AMBIENTAL, SEGURIDAD Y SALUD EN EL TRABAJO',
+  'MODULO ESCUELA DE INDUSTRIA',
+  'EXCELENCIA ADMINISTRATIVA',
+  'VIVE PITS',
+  'LA TOMA VIVE TERPEL & VIVE PITS',
+  'FORMACION INICIAL TERPEL POS OPERATIVO',
+  'FACTURACION ELECTRONICA OPERATIVA',
+  'FACTURACION ELECTRONICA ADMINISTRATIVA',
+  'CANASTILLA',
+  'ENTRENAMIENTO TERPEL POS OPERATIVO',
+  'ENTRENAMIENTO TERPEL POS ADMINISTRATIVO',
+  'FORMACION INICIAL TERPEL POS ADMINISTRATIVO',
+  'CLIENTES PROPIOS',
+  'MASTERLUB OPERATIVO',
+  'MASTERLUB ADMINISTRATIVO',
+  'EDS CONFIABLE',
+  'CAMPO DE ENTRENAMIENTO DE INDUSTRIA LIMPIA',
+  'CARAVANA RUMBO PITS',
+  'APP TERPEL',
+  'MODULO ROLLOS',
+  'MODULO HISTORIA Y MASA',
+  'MODULO STROMBOLIS',
+  'MODULO PERROS Y MAS PERROS',
+  'MODULO SANDUCHES',
+  'MODULO SBARRO',
+  'MODULO BEBIDAS CALIENTES',
+  'CONSTRUYENDO EQUIPOS ALTAMENTE EFECTIVOS',
+  'TALLER EDS CONFIABLE'
+];
+
+/**
+ * Componente modal para editar eventos existentes en el cronograma.
+ * Permite editar todos los aspectos de un evento y validar conflictos de horario.
+ * 
+ * @component
+ * @param {EventCardProps} props - Props del componente
+ * @returns {JSX.Element} Componente EventCard
+ * 
+ * @example
+ * ```tsx
+ * <EventCard
+ *   event={eventData}
+ *   rowId="instructor-1"
+ *   day="25"
+ *   onClose={() => setShowModal(false)}
+ * />
+ * ```
+ */
 export default function EventCard({ event, rowId, day, onClose }: EventCardProps) {
   const [formData, setFormData] = useState({
     title: event.title,
@@ -21,6 +86,7 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
 
   const [hasConflict, setHasConflict] = useState(false);
   const [conflictingEvent, setConflictingEvent] = useState<Event | undefined>(undefined);
+  const [useCustomDetails, setUseCustomDetails] = useState(true);
 
   // Parsear el tiempo existente al cargar
   useEffect(() => {
@@ -32,7 +98,14 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
         setFormData(prev => ({ ...prev, startTime: event.time || '' }));
       }
     }
-  }, [event.time]);
+
+    // Determinar si los detalles son personalizados o predefinidos
+    if (typeof event.details === 'string' && predefinedDescriptions.includes(event.details)) {
+      setUseCustomDetails(false);
+    } else {
+      setUseCustomDetails(true);
+    }
+  }, [event.time, event.details]);
 
   useEffect(() => {
     // Construir el string de tiempo combinado para la validación
@@ -52,6 +125,16 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleDetailsSelect = (details: string) => {
+    if (details === 'custom') {
+      setUseCustomDetails(true);
+      setFormData(prev => ({ ...prev, details: '' }));
+    } else {
+      setUseCustomDetails(false);
+      setFormData(prev => ({ ...prev, details }));
+    }
   };
 
   const handleSave = () => {
@@ -128,12 +211,50 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
             {/* Details */}
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Detalles</label>
-              <textarea
-                value={formData.details}
-                onInput={(e) => handleInputChange('details', (e.target as HTMLTextAreaElement).value)}
-                rows={3}
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-              />
+              
+              {/* Selector de descripciones predefinidas */}
+              {!useCustomDetails && (
+                <select
+                  value={formData.details}
+                  onInput={(e) => handleDetailsSelect((e.target as HTMLSelectElement).value)}
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white mb-2"
+                >
+                  <option value="">Selecciona una descripción...</option>
+                  {predefinedDescriptions.map((description) => (
+                    <option key={description} value={description} class="text-gray-900 bg-white">
+                      {description}
+                    </option>
+                  ))}
+                  <option value="custom" class="text-gray-900 bg-white font-semibold">
+                    ✏️ Escribir descripción personalizada
+                  </option>
+                </select>
+              )}
+
+              {/* Campo de texto personalizado para detalles */}
+              {(useCustomDetails || formData.details) && (
+                <div class="flex items-center space-x-2">
+                  <textarea
+                    value={formData.details}
+                    onInput={(e) => handleInputChange('details', (e.target as HTMLTextAreaElement).value)}
+                    rows={3}
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    placeholder="Detalles del evento (una línea por detalle)"
+                  />
+                  {useCustomDetails && (
+                    <button
+                      onClick={() => {
+                        setUseCustomDetails(false);
+                        setFormData(prev => ({ ...prev, details: '' }));
+                      }}
+                      class="px-2 py-2 text-gray-500 hover:text-gray-700"
+                      title="Volver a opciones predefinidas"
+                    >
+                      ↶
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Time Selectors */}
@@ -143,13 +264,14 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
                 <select
                   value={formData.startTime}
                   onInput={(e) => handleInputChange('startTime', (e.target as HTMLSelectElement).value)}
-                  class={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white ${
+                  class={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black ${
                     hasConflict ? 'border-red-500 bg-red-50' : 'border-gray-300'
                   }`}
                 >
+                  <option value="">Seleccionar hora...</option>
                   {startTimes.map((time) => (
-                    <option key={time.value} value={time.value} class="text-gray-900 bg-white">
-                      {time.label}
+                    <option key={time} value={time} class="text-black bg-white">
+                      {time}
                     </option>
                   ))}
                 </select>
@@ -159,13 +281,14 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
                 <select
                   value={formData.endTime}
                   onInput={(e) => handleInputChange('endTime', (e.target as HTMLSelectElement).value)}
-                  class={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white ${
+                  class={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black ${
                     hasConflict ? 'border-red-500 bg-red-50' : 'border-gray-300'
                   }`}
                 >
+                  <option value="">Seleccionar hora...</option>
                   {endTimes.map((time) => (
-                    <option key={time.value} value={time.value} class="text-gray-900 bg-white">
-                      {time.label}
+                    <option key={time} value={time} class="text-black bg-white">
+                      {time}
                     </option>
                   ))}
                 </select>

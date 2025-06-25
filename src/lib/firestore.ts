@@ -6,7 +6,12 @@ import {
   collection,
   query,
   orderBy,
-  serverTimestamp 
+  serverTimestamp,
+  getDocs,
+  where,
+  writeBatch,
+  Firestore,
+  deleteDoc
 } from 'firebase/firestore';
 import { db } from './firebase';
 import type { Instructor, ScheduleRow, GlobalConfig } from '../stores/schedule';
@@ -17,6 +22,139 @@ interface FirestoreSchedule {
   scheduleRows: ScheduleRow[];
   globalConfig: GlobalConfig;
   lastUpdated: any;
+}
+
+// Sistema de logging
+interface FirestoreLog {
+  timestamp: any;
+  operation: string;
+  status: 'success' | 'error';
+  details: any;
+  error?: any;
+}
+
+// Función para registrar logs en Firebase
+export async function logOperation(operation: string, status: 'success' | 'error', details: any, error?: any) {
+  try {
+    const log: FirestoreLog = {
+      timestamp: serverTimestamp(),
+      operation,
+      status,
+      details,
+      ...(error && { error: JSON.stringify(error) })
+    };
+    
+    await setDoc(doc(db as Firestore, 'logs', `${Date.now()}`), log);
+    console.log(`[Firebase Log] ${operation}:`, status, details);
+  } catch (e) {
+    console.error('Error logging to Firebase:', e);
+  }
+}
+
+// Función para verificar la integridad de los datos
+async function verifyDataIntegrity(data: FirestoreSchedule): Promise<boolean> {
+  try {
+    // Verificar que todos los instructores tienen una fila correspondiente
+    const instructorIds = new Set(data.instructors.map(i => i.id));
+    const rowIds = new Set(data.scheduleRows.map(r => r.id));
+    
+    const allInstructorsHaveRows = Array.from(instructorIds).every(id => rowIds.has(id));
+    if (!allInstructorsHaveRows) {
+      await logOperation('verifyDataIntegrity', 'error', {
+        message: 'No todos los instructores tienen filas correspondientes',
+        instructorIds: Array.from(instructorIds),
+        rowIds: Array.from(rowIds)
+      });
+      return false;
+    }
+
+    // Verificar que todos los eventos tienen IDs válidos y únicos
+    const eventIds = new Set<string>();
+    for (const row of data.scheduleRows) {
+      for (const [day, events] of Object.entries(row.events)) {
+        for (const event of events) {
+          // Verificar que el ID es único
+          if (eventIds.has(event.id)) {
+            await logOperation('verifyDataIntegrity', 'error', {
+              message: 'ID de evento duplicado detectado',
+              eventId: event.id,
+              rowId: row.id,
+              day
+            });
+            return false;
+          }
+          eventIds.add(event.id);
+
+          // Verificar que el ID tiene un formato válido (más permisivo)
+          if (!event.id.startsWith('evt-')) {
+            await logOperation('verifyDataIntegrity', 'error', {
+              message: 'Formato de ID de evento inválido',
+              eventId: event.id,
+              rowId: row.id,
+              day
+            });
+            return false;
+          }
+        }
+      }
+    }
+
+    return true;
+  } catch (error) {
+    await logOperation('verifyDataIntegrity', 'error', {
+      message: 'Error verificando integridad de datos'
+    }, error);
+    return false;
+  }
+}
+
+// Función mejorada para guardar datos con verificación y retry
+async function saveWithRetry(
+  docRef: string,
+  data: FirestoreSchedule,
+  maxRetries = 3,
+  currentTry = 1
+): Promise<boolean> {
+  try {
+    // Intentar guardar los datos
+    await setDoc(doc(db, 'schedule', docRef), {
+      ...data,
+      lastUpdated: serverTimestamp()
+    });
+
+    // Verificar que los datos se guardaron correctamente
+    const savedDoc = await getDoc(doc(db, 'schedule', docRef));
+    if (!savedDoc.exists()) {
+      throw new Error('Los datos no se guardaron correctamente');
+    }
+
+    const savedData = savedDoc.data() as FirestoreSchedule;
+    const isValid = await verifyDataIntegrity(savedData);
+
+    if (!isValid) {
+      throw new Error('Los datos guardados no pasaron la verificación de integridad');
+    }
+
+    await logOperation('saveWithRetry', 'success', {
+      docRef,
+      attempt: currentTry
+    });
+
+    return true;
+  } catch (error) {
+    await logOperation('saveWithRetry', 'error', {
+      docRef,
+      attempt: currentTry
+    }, error);
+
+    if (currentTry < maxRetries) {
+      console.log(`Reintentando guardar datos (intento ${currentTry + 1} de ${maxRetries})...`);
+      await new Promise(resolve => setTimeout(resolve, 1000 * currentTry));
+      return saveWithRetry(docRef, data, maxRetries, currentTry + 1);
+    }
+
+    throw error;
+  }
 }
 
 // Datos iniciales
@@ -87,17 +225,8 @@ export async function saveDraftData(data: {
   instructors: Instructor[];
   scheduleRows: ScheduleRow[];
   globalConfig: GlobalConfig;
-}) {
-  try {
-    await setDoc(doc(db, 'schedule', DRAFT_DOC), {
-      ...data,
-      lastUpdated: serverTimestamp()
-    });
-    console.log('Borrador guardado en Firestore');
-  } catch (error) {
-    console.error('Error guardando borrador:', error);
-    throw error;
-  }
+}): Promise<boolean> {
+  return saveWithRetry('draft', data as FirestoreSchedule);
 }
 
 // Función para publicar cambios
@@ -105,17 +234,8 @@ export async function publishData(data: {
   instructors: Instructor[];
   scheduleRows: ScheduleRow[];
   globalConfig: GlobalConfig;
-}) {
-  try {
-    await setDoc(doc(db, 'schedule', PUBLISHED_DOC), {
-      ...data,
-      lastUpdated: serverTimestamp()
-    });
-    console.log('Datos publicados en Firestore');
-  } catch (error) {
-    console.error('Error publicando datos:', error);
-    throw error;
-  }
+}): Promise<boolean> {
+  return saveWithRetry('published', data as FirestoreSchedule);
 }
 
 // Función para suscribirse a cambios en tiempo real
@@ -160,4 +280,52 @@ export async function getPublishedData(): Promise<FirestoreSchedule | null> {
     console.error('Error obteniendo datos publicados:', error);
     return null;
   }
-} 
+}
+
+/**
+ * Inicializa un administrador en la base de datos
+ * @param email - Correo electrónico del administrador
+ */
+export const initializeAdmin = async (email: string) => {
+  try {
+    const adminRef = doc(db, 'admins', email);
+    await setDoc(adminRef, {
+      email,
+      createdAt: new Date().toISOString(),
+    });
+    return true;
+  } catch (error) {
+    console.error('Error al inicializar administrador:', error);
+    return false;
+  }
+};
+
+/**
+ * Verifica si un correo electrónico está registrado como administrador
+ * @param email - Correo electrónico a verificar
+ */
+export const checkAdminStatus = async (email: string) => {
+  try {
+    const adminRef = doc(db, 'admins', email);
+    const adminDoc = await getDocs(query(collection(db, 'admins'), where('email', '==', email)));
+    return !adminDoc.empty;
+  } catch (error) {
+    console.error('Error al verificar estado de administrador:', error);
+    return false;
+  }
+};
+
+/**
+ * Elimina un administrador de la base de datos
+ * @param email - Correo electrónico del administrador a eliminar
+ */
+export const removeAdmin = async (email: string) => {
+  try {
+    const adminRef = doc(db, 'admins', email);
+    await deleteDoc(adminRef);
+    return true;
+  } catch (error) {
+    console.error('Error al eliminar administrador:', error);
+    return false;
+  }
+}; 

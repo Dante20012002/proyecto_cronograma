@@ -1,13 +1,89 @@
 import { useState } from 'preact/hooks';
-import { addEvent, startTimes, endTimes } from '../stores/schedule';
+import { addEvent, startTimes, endTimes, checkTimeConflict } from '../stores/schedule';
 import type { Event } from '../stores/schedule';
 
+/**
+ * Lista de títulos predefinidos para eventos.
+ */
+const predefinedTitles = [
+  'ESCUELA DE PROMOTORES',
+  'INDUSTRIA LIMPIA',
+  'ESCUELA DE ADMINISTRADORES',
+  'LEALTAD',
+  'RED VIRTUAL',
+  'EDS CONFIABLE',
+  'RUMBO',
+  'ESCUELA DE TIENDAS'
+];
+
+/**
+ * Lista de descripciones predefinidas para eventos.
+ */
+const predefinedDescriptions = [
+  'MODULO PROTAGONISTAS DEL SERVICIO',
+  'MODULO FORMATIVO GNV',
+  'MODULO FORMATIVO LIQUIDOS',
+  'MODULO FORMATIVO LUBRICANTES',
+  'PROTOCOLO DE SERVICIO EDS',
+  'GESTION AMBIENTAL, SEGURIDAD Y SALUD EN EL TRABAJO',
+  'MODULO ESCUELA DE INDUSTRIA',
+  'EXCELENCIA ADMINISTRATIVA',
+  'VIVE PITS',
+  'LA TOMA VIVE TERPEL & VIVE PITS',
+  'FORMACION INICIAL TERPEL POS OPERATIVO',
+  'FACTURACION ELECTRONICA OPERATIVA',
+  'FACTURACION ELECTRONICA ADMINISTRATIVA',
+  'CANASTILLA',
+  'ENTRENAMIENTO TERPEL POS OPERATIVO',
+  'ENTRENAMIENTO TERPEL POS ADMINISTRATIVO',
+  'FORMACION INICIAL TERPEL POS ADMINISTRATIVO',
+  'CLIENTES PROPIOS',
+  'MASTERLUB OPERATIVO',
+  'MASTERLUB ADMINISTRATIVO',
+  'EDS CONFIABLE',
+  'CAMPO DE ENTRENAMIENTO DE INDUSTRIA LIMPIA',
+  'CARAVANA RUMBO PITS',
+  'APP TERPEL',
+  'MODULO ROLLOS',
+  'MODULO HISTORIA Y MASA',
+  'MODULO STROMBOLIS',
+  'MODULO PERROS Y MAS PERROS',
+  'MODULO SANDUCHES',
+  'MODULO SBARRO',
+  'MODULO BEBIDAS CALIENTES',
+  'CONSTRUYENDO EQUIPOS ALTAMENTE EFECTIVOS',
+  'TALLER EDS CONFIABLE'
+];
+
+/**
+ * Props para el componente AddEventCard
+ * @interface AddEventCardProps
+ */
 interface AddEventCardProps {
+  /** ID del instructor/fila donde se agregará el evento */
   rowId: string;
+  /** Día del mes donde se agregará el evento */
   day: string;
+  /** Función para cerrar el modal */
   onClose: () => void;
 }
 
+/**
+ * Componente modal para agregar nuevos eventos al cronograma.
+ * 
+ * @component
+ * @param {AddEventCardProps} props - Props del componente
+ * @returns {JSX.Element} Componente AddEventCard
+ * 
+ * @example
+ * ```tsx
+ * <AddEventCard
+ *   rowId="instructor-1"
+ *   day="25"
+ *   onClose={() => setShowModal(false)}
+ * />
+ * ```
+ */
 export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps) {
   const [formData, setFormData] = useState({
     title: '',
@@ -17,15 +93,52 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
     location: '',
     color: 'bg-blue-600'
   });
+  const [useCustomTitle, setUseCustomTitle] = useState(false);
+  const [useCustomDetails, setUseCustomDetails] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleTitleSelect = (title: string) => {
+    if (title === 'custom') {
+      setUseCustomTitle(true);
+      setFormData(prev => ({ ...prev, title: '' }));
+    } else {
+      setUseCustomTitle(false);
+      setFormData(prev => ({ ...prev, title }));
+    }
+  };
+
+  const handleDetailsSelect = (details: string) => {
+    if (details === 'custom') {
+      setUseCustomDetails(true);
+      setFormData(prev => ({ ...prev, details: '' }));
+    } else {
+      setUseCustomDetails(false);
+      setFormData(prev => ({ ...prev, details }));
+    }
   };
 
   const handleSave = () => {
     if (!formData.title.trim()) {
       alert('Por favor ingresa un título para el evento.');
       return;
+    }
+
+    // Validar conflictos de horario
+    if (formData.startTime && formData.endTime) {
+      const { hasConflict, conflictingEvent } = checkTimeConflict(
+        rowId,
+        day,
+        formData.startTime,
+        formData.endTime
+      );
+
+      if (hasConflict && conflictingEvent) {
+        alert(`No se puede crear el evento porque existe un conflicto de horario con el evento "${conflictingEvent.title}" programado de ${conflictingEvent.time}`);
+        return;
+      }
     }
 
     // Construir el string de tiempo combinado
@@ -66,25 +179,99 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
             {/* Title */}
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Título *</label>
-              <input
-                type="text"
-                value={formData.title}
-                onInput={(e) => handleInputChange('title', (e.target as HTMLInputElement).value)}
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                placeholder="Título del evento"
-              />
+              
+              {/* Selector de títulos predefinidos */}
+              {!useCustomTitle && (
+                <select
+                  value={formData.title}
+                  onInput={(e) => handleTitleSelect((e.target as HTMLSelectElement).value)}
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white mb-2"
+                >
+                  <option value="">Selecciona un título...</option>
+                  {predefinedTitles.map((title) => (
+                    <option key={title} value={title} class="text-gray-900 bg-white">
+                      {title}
+                    </option>
+                  ))}
+                  <option value="custom" class="text-gray-900 bg-white font-semibold">
+                    ✏️ Escribir título personalizado
+                  </option>
+                </select>
+              )}
+
+              {/* Campo de texto personalizado para título */}
+              {(useCustomTitle || formData.title) && (
+                <div class="flex items-center space-x-2">
+                  <input
+                    type="text"
+                    value={formData.title}
+                    onInput={(e) => handleInputChange('title', (e.target as HTMLInputElement).value)}
+                    class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    placeholder="Escribe el título personalizado"
+                  />
+                  {useCustomTitle && (
+                    <button
+                      onClick={() => {
+                        setUseCustomTitle(false);
+                        setFormData(prev => ({ ...prev, title: '' }));
+                      }}
+                      class="px-2 py-2 text-gray-500 hover:text-gray-700"
+                      title="Volver a opciones predefinidas"
+                    >
+                      ↶
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Details */}
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Detalles</label>
-              <textarea
-                value={formData.details}
-                onInput={(e) => handleInputChange('details', (e.target as HTMLTextAreaElement).value)}
-                rows={3}
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                placeholder="Detalles del evento (una línea por detalle)"
-              />
+              
+              {/* Selector de descripciones predefinidas */}
+              {!useCustomDetails && (
+                <select
+                  value={formData.details}
+                  onInput={(e) => handleDetailsSelect((e.target as HTMLSelectElement).value)}
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white mb-2"
+                >
+                  <option value="">Selecciona una descripción...</option>
+                  {predefinedDescriptions.map((description) => (
+                    <option key={description} value={description} class="text-gray-900 bg-white">
+                      {description}
+                    </option>
+                  ))}
+                  <option value="custom" class="text-gray-900 bg-white font-semibold">
+                    ✏️ Escribir descripción personalizada
+                  </option>
+                </select>
+              )}
+
+              {/* Campo de texto personalizado para detalles */}
+              {(useCustomDetails || formData.details) && (
+                <div class="flex items-center space-x-2">
+                  <textarea
+                    value={formData.details}
+                    onInput={(e) => handleInputChange('details', (e.target as HTMLTextAreaElement).value)}
+                    rows={3}
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    placeholder="Detalles del evento (una línea por detalle)"
+                  />
+                  {useCustomDetails && (
+                    <button
+                      onClick={() => {
+                        setUseCustomDetails(false);
+                        setFormData(prev => ({ ...prev, details: '' }));
+                      }}
+                      class="px-2 py-2 text-gray-500 hover:text-gray-700"
+                      title="Volver a opciones predefinidas"
+                    >
+                      ↶
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Time Selectors */}
@@ -94,11 +281,12 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
                 <select
                   value={formData.startTime}
                   onInput={(e) => handleInputChange('startTime', (e.target as HTMLSelectElement).value)}
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black"
                 >
+                  <option value="">Seleccionar hora...</option>
                   {startTimes.map((time) => (
-                    <option key={time.value} value={time.value} class="text-gray-900 bg-white">
-                      {time.label}
+                    <option key={time} value={time} class="text-black bg-white">
+                      {time}
                     </option>
                   ))}
                 </select>
@@ -108,11 +296,12 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
                 <select
                   value={formData.endTime}
                   onInput={(e) => handleInputChange('endTime', (e.target as HTMLSelectElement).value)}
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black"
                 >
+                  <option value="">Seleccionar hora...</option>
                   {endTimes.map((time) => (
-                    <option key={time.value} value={time.value} class="text-gray-900 bg-white">
-                      {time.label}
+                    <option key={time} value={time} class="text-black bg-white">
+                      {time}
                     </option>
                   ))}
                 </select>

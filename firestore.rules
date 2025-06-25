@@ -1,0 +1,41 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Función para verificar si el usuario es administrador
+    function isAdmin() {
+      return request.auth != null && 
+             request.auth.token.email_verified && 
+             exists(/databases/$(database)/documents/admins/$(request.auth.token.email));
+    }
+
+    // Colección de administradores - solo accesible por otros administradores
+    match /admins/{email} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // Colección de eventos publicados - lectura pública, escritura solo admin
+    match /events/{eventId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Colección de borradores - solo accesible por administradores
+    match /drafts/{draftId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Colección de instructores - lectura pública, escritura solo admin
+    match /instructors/{instructorId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Colección de configuración - lectura pública, escritura solo admin
+    match /config/{configId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+} 

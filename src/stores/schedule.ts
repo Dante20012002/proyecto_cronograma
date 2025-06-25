@@ -1,12 +1,13 @@
-import { atom } from 'nanostores';
+import { signal } from '@preact/signals';
 import { 
   initializeDataIfNeeded, 
   saveDraftData, 
   publishData, 
-  subscribeToDraftData, 
-  subscribeToPublishedData,
-  getDraftData,
-  getPublishedData
+  subscribeToDraftData as subscribeToFirestoreDraft, 
+  subscribeToPublishedData as subscribeToFirestorePublished,
+  getDraftData as getFirestoreDraftData,
+  getPublishedData as getFirestorePublishedData,
+  logOperation
 } from '../lib/firestore';
 
 // --- INTERFACES ---
@@ -44,6 +45,59 @@ export interface GlobalConfig {
   };
 }
 
+// --- CONSTANTES DE TIEMPO ---
+export const startTimes = [
+  '7:00 a.m.',
+  '7:30 a.m.',
+  '8:00 a.m.',
+  '8:30 a.m.',
+  '9:00 a.m.',
+  '9:30 a.m.',
+  '10:00 a.m.',
+  '10:30 a.m.',
+  '11:00 a.m.',
+  '11:30 a.m.',
+  '12:00 p.m.',
+  '12:30 p.m.',
+  '1:00 p.m.',
+  '1:30 p.m.',
+  '2:00 p.m.',
+  '2:30 p.m.',
+  '3:00 p.m.',
+  '3:30 p.m.',
+  '4:00 p.m.',
+  '4:30 p.m.',
+  '5:00 p.m.',
+  '5:30 p.m.',
+  '6:00 p.m.'
+];
+
+export const endTimes = [
+  '8:00 a.m.',
+  '8:30 a.m.',
+  '9:00 a.m.',
+  '9:30 a.m.',
+  '10:00 a.m.',
+  '10:30 a.m.',
+  '11:00 a.m.',
+  '11:30 a.m.',
+  '12:00 p.m.',
+  '12:30 p.m.',
+  '1:00 p.m.',
+  '1:30 p.m.',
+  '2:00 p.m.',
+  '2:30 p.m.',
+  '3:00 p.m.',
+  '3:30 p.m.',
+  '4:00 p.m.',
+  '4:30 p.m.',
+  '5:00 p.m.',
+  '5:30 p.m.',
+  '6:00 p.m.',
+  '6:30 p.m.',
+  '7:00 p.m.'
+];
+
 // --- DATOS INICIALES ---
 const initialInstructors: Instructor[] = [
   { id: 'instructor-1', name: 'JUAN PABLO HERNANDEZ', city: 'Bucaramanga', regional: 'BUCARAMANGA' },
@@ -75,7 +129,7 @@ const initialScheduleRows: ScheduleRow[] = [
 ];
 
 const initialGlobalConfig: GlobalConfig = {
-  title: 'Cronograma Junio 2024',
+  title: 'Cronograma 2025',
   currentWeek: {
     startDate: '2024-06-24',
     endDate: '2024-06-28'
@@ -83,16 +137,48 @@ const initialGlobalConfig: GlobalConfig = {
 };
 
 // --- ESTADO (DRAFT & PUBLISHED) ---
-export const draftInstructors = atom<Instructor[]>(initialInstructors);
-export const draftScheduleRows = atom<ScheduleRow[]>(initialScheduleRows);
-export const draftGlobalConfig = atom<GlobalConfig>(initialGlobalConfig);
+export const draftInstructors = signal<Instructor[]>(initialInstructors);
+export const draftScheduleRows = signal<ScheduleRow[]>(initialScheduleRows);
+export const draftGlobalConfig = signal<GlobalConfig>(initialGlobalConfig);
 
-export const publishedInstructors = atom<Instructor[]>(initialInstructors);
-export const publishedScheduleRows = atom<ScheduleRow[]>(initialScheduleRows);
-export const publishedGlobalConfig = atom<GlobalConfig>(initialGlobalConfig);
+export const publishedInstructors = signal<Instructor[]>(initialInstructors);
+export const publishedScheduleRows = signal<ScheduleRow[]>(initialScheduleRows);
+export const publishedGlobalConfig = signal<GlobalConfig>(initialGlobalConfig);
 
-export const hasUnpublishedChanges = atom<boolean>(false);
-export const isConnected = atom<boolean>(false);
+export const hasUnpublishedChanges = signal<boolean>(false);
+export const isConnected = signal<boolean>(false);
+
+// Función auxiliar para obtener la semana inicial
+function getInitialWeek(): { startDate: string; endDate: string } {
+  try {
+    const config = publishedGlobalConfig.value;
+    return {
+      startDate: config.currentWeek.startDate,
+      endDate: config.currentWeek.endDate
+    };
+  } catch (error) {
+    console.error('Error al inicializar selectedWeek:', error);
+    // Valores por defecto en caso de error
+    const today = new Date();
+    const endDate = new Date(today);
+    endDate.setDate(today.getDate() + 4);
+
+    const formatDate = (date: Date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    return {
+      startDate: formatDate(today),
+      endDate: formatDate(endDate)
+    };
+  }
+}
+
+// Estado para la semana seleccionada en la vista de usuario
+export const selectedWeek = signal<{ startDate: string; endDate: string }>(getInitialWeek());
 
 // --- INICIALIZACIÓN DE FIREBASE ---
 let unsubscribeDraft: (() => void) | null = null;
@@ -104,24 +190,24 @@ export async function initializeFirebase() {
     await initializeDataIfNeeded();
     
     // Suscribirse a cambios en tiempo real
-    unsubscribeDraft = subscribeToDraftData((data) => {
-      draftInstructors.set(data.instructors);
-      draftScheduleRows.set(data.scheduleRows);
-      draftGlobalConfig.set(data.globalConfig);
-      isConnected.set(true);
+    unsubscribeDraft = subscribeToFirestoreDraft((data) => {
+      draftInstructors.value = data.instructors;
+      draftScheduleRows.value = data.scheduleRows;
+      draftGlobalConfig.value = data.globalConfig;
+      isConnected.value = true;
     });
 
-    unsubscribePublished = subscribeToPublishedData((data) => {
-      publishedInstructors.set(data.instructors);
-      publishedScheduleRows.set(data.scheduleRows);
-      publishedGlobalConfig.set(data.globalConfig);
-      isConnected.set(true);
+    unsubscribePublished = subscribeToFirestorePublished((data) => {
+      publishedInstructors.value = data.instructors;
+      publishedScheduleRows.value = data.scheduleRows;
+      publishedGlobalConfig.value = data.globalConfig;
+      isConnected.value = true;
     });
 
     console.log('Firebase inicializado correctamente');
   } catch (error) {
     console.error('Error inicializando Firebase:', error);
-    isConnected.set(false);
+    isConnected.value = false;
   }
 }
 
@@ -140,314 +226,435 @@ export function cleanupFirebase() {
 // --- LÓGICA DE PUBLICACIÓN ---
 export async function publishChanges() {
   try {
-    const currentDraftInstructors = draftInstructors.get();
-    const currentDraftScheduleRows = draftScheduleRows.get();
-    const currentDraftGlobalConfig = draftGlobalConfig.get();
+    const currentDraftInstructors = draftInstructors.value;
+    const currentDraftScheduleRows = draftScheduleRows.value;
+    const currentDraftGlobalConfig = draftGlobalConfig.value;
 
-    await publishData({
+    // Intentar publicar los cambios
+    const saveSuccess = await publishData({
       instructors: currentDraftInstructors,
       scheduleRows: currentDraftScheduleRows,
       globalConfig: currentDraftGlobalConfig
     });
 
-    hasUnpublishedChanges.set(false);
-    console.log('Cambios publicados exitosamente!');
+    if (!saveSuccess) {
+      throw new Error('No se pudieron publicar los cambios después de varios intentos');
+    }
+
+    // Esperar un momento para asegurar que Firebase procese los cambios
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // Verificar que los datos se publicaron correctamente
+    const publishedData = await getFirestorePublishedData();
+    if (!publishedData) {
+      throw new Error('No se pudo verificar la publicación de datos');
+    }
+
+    // Actualizar el estado local
+    publishedInstructors.value = currentDraftInstructors;
+    publishedScheduleRows.value = currentDraftScheduleRows;
+    publishedGlobalConfig.value = currentDraftGlobalConfig;
+    hasUnpublishedChanges.value = false;
+
+    return true;
   } catch (error) {
-    console.error('Error publicando cambios:', error);
-    throw error;
+    console.error('Error al publicar cambios:', error);
+    return false;
   }
 }
 
-/**
- * Guarda el estado actual del borrador (draft) en Firebase.
- * Esto persiste los cambios para el administrador sin publicarlos.
- */
-export async function saveDraftChanges(): Promise<void> {
+// --- OPERACIONES DE DRAFT ---
+export async function saveDraftChanges() {
   try {
-    const currentDraftInstructors = draftInstructors.get();
-    const currentDraftScheduleRows = draftScheduleRows.get();
-    const currentDraftGlobalConfig = draftGlobalConfig.get();
-
-    await saveDraftData({
-      instructors: currentDraftInstructors,
-      scheduleRows: currentDraftScheduleRows,
-      globalConfig: currentDraftGlobalConfig
+    const success = await saveDraftData({
+      instructors: draftInstructors.value,
+      scheduleRows: draftScheduleRows.value,
+      globalConfig: draftGlobalConfig.value
     });
 
-    markAsDirty(); // Marca que hay cambios listos para ser publicados.
-    console.log('Borrador guardado en Firebase.');
+    if (success) {
+      hasUnpublishedChanges.value = true;
+    }
+
+    return success;
   } catch (error) {
-    console.error('Error guardando borrador:', error);
-    throw error;
+    console.error('Error al guardar borrador:', error);
+    return false;
   }
 }
 
-/**
- * Limpia todos los eventos del cronograma en el estado de borrador (draft).
- * Mantiene a los instructores y la configuración global.
- */
-export function clearAllDraftEvents(): void {
-  const currentRows = draftScheduleRows.get();
-  
-  const newRows = currentRows.map(row => ({
+export function clearAllDraftEvents() {
+  const updatedRows = draftScheduleRows.value.map(row => ({
     ...row,
-    events: {} // Limpia todos los eventos
+    events: {}
   }));
   
-  draftScheduleRows.set(newRows);
-  console.log('Todas las actividades del borrador han sido eliminadas.');
+  draftScheduleRows.value = updatedRows;
+  hasUnpublishedChanges.value = true;
 }
 
-// Función para limpiar todos los datos guardados
-export function clearAllData(): void {
-  // Resetear los stores a los valores iniciales
-  draftInstructors.set(initialInstructors);
-  draftScheduleRows.set(initialScheduleRows);
-  draftGlobalConfig.set(initialGlobalConfig);
-  publishedInstructors.set(initialInstructors);
-  publishedScheduleRows.set(initialScheduleRows);
-  publishedGlobalConfig.set(initialGlobalConfig);
-  hasUnpublishedChanges.set(false);
-  
-  console.log('Todos los datos han sido limpiados y reseteados a los valores iniciales');
+export function clearAllData() {
+  draftInstructors.value = [];
+  draftScheduleRows.value = [];
+  draftGlobalConfig.value = initialGlobalConfig;
+  publishedInstructors.value = [];
+  publishedScheduleRows.value = [];
+  publishedGlobalConfig.value = initialGlobalConfig;
+  hasUnpublishedChanges.value = false;
 }
 
 function markAsDirty() {
-  hasUnpublishedChanges.set(true);
+  hasUnpublishedChanges.value = true;
 }
 
-// --- FUNCIONES DE EDICIÓN (Modifican el estado DRAFT) ---
+// --- OPERACIONES DE EVENTOS ---
 export function updateEvent(rowId: string, day: string, updatedEvent: Event) {
-    const newRows = draftScheduleRows.get().map(row => {
-        if (row.id === rowId && row.events[day]) {
-            const newEvents = row.events[day].map(e => e.id === updatedEvent.id ? updatedEvent : e);
-            return { ...row, events: { ...row.events, [day]: newEvents } };
-        }
-        return row;
-    });
-    draftScheduleRows.set(newRows);
-}
-
-export function moveEvent(eventId: string, fromRowId: string, fromDay: string, toRowId: string, toDay: string) {
-    let eventToMove: Event | null = null;
-    let tempRows = draftScheduleRows.get();
-
-    // Extraer el evento
-    tempRows = tempRows.map(row => {
-        if (row.id === fromRowId && row.events[fromDay]) {
-            eventToMove = row.events[fromDay].find(e => e.id === eventId) || null;
-            if (eventToMove) {
-                const newDayEvents = row.events[fromDay].filter(e => e.id !== eventId);
-                return { ...row, events: { ...row.events, [fromDay]: newDayEvents }};
-            }
-        }
-        return row;
-    });
-
-    if (!eventToMove) return;
-
-    // Insertar el evento
-    tempRows = tempRows.map(row => {
-        if (row.id === toRowId) {
-            const newDayEvents = row.events[toDay] ? [...row.events[toDay]] : [];
-            newDayEvents.push(eventToMove!);
-            return { ...row, events: { ...row.events, [toDay]: newDayEvents }};
-        }
-        return row;
-    });
-
-    draftScheduleRows.set(tempRows);
-}
-
-export function copyEvent(eventId: string, fromRowId: string, fromDay: string, toRowId: string, toDay: string) {
-    const currentRows = draftScheduleRows.get();
-    let originalEvent: Event | null = null;
+  const rows = [...draftScheduleRows.value];
+  const rowIndex = rows.findIndex(row => row.id === rowId);
+  
+  if (rowIndex !== -1) {
+    const row = rows[rowIndex];
+    const events = row.events[day] || [];
+    const eventIndex = events.findIndex(e => e.id === updatedEvent.id);
     
-    const fromRow = currentRows.find(r => r.id === fromRowId);
-    if (fromRow && fromRow.events[fromDay]) {
-        originalEvent = fromRow.events[fromDay].find(e => e.id === eventId) || null;
+    if (eventIndex !== -1) {
+      events[eventIndex] = updatedEvent;
+      row.events[day] = events;
+      rows[rowIndex] = row;
+      draftScheduleRows.value = rows;
+      markAsDirty();
     }
-    
-    if (!originalEvent) return;
-
-    const copiedEvent: Event = {
-        ...originalEvent,
-        id: `${originalEvent.id}-copy-${Date.now()}`
-    };
-
-    const newRows = currentRows.map(row => {
-        if (row.id === toRowId) {
-            const newDayEvents = row.events[toDay] ? [...row.events[toDay]] : [];
-            newDayEvents.push(copiedEvent);
-            return { ...row, events: { ...row.events, [toDay]: newDayEvents }};
-        }
-        return row;
-    });
-
-    draftScheduleRows.set(newRows);
+  }
 }
 
-export function deleteEvent(eventId: string, rowId: string, day: string) {
-    const newRows = draftScheduleRows.get().map(row => {
-        if (row.id === rowId && row.events[day]) {
-            const newDayEvents = row.events[day].filter(e => e.id !== eventId);
-            return { ...row, events: { ...row.events, [day]: newDayEvents } };
-        }
-        return row;
-    });
-    draftScheduleRows.set(newRows);
+export function deleteEvent(rowId: string, day: string, eventId: string) {
+  const rows = [...draftScheduleRows.value];
+  const rowIndex = rows.findIndex(row => row.id === rowId);
+  
+  if (rowIndex !== -1) {
+    const row = rows[rowIndex];
+    const events = row.events[day] || [];
+    row.events[day] = events.filter(e => e.id !== eventId);
+    rows[rowIndex] = row;
+    draftScheduleRows.value = rows;
+    markAsDirty();
+  }
 }
 
 export function addEvent(rowId: string, day: string, newEvent: Event) {
-    const newRows = draftScheduleRows.get().map(row => {
-        if (row.id === rowId) {
-            const newDayEvents = row.events[day] ? [...row.events[day]] : [];
-            newDayEvents.push(newEvent);
-            return { ...row, events: { ...row.events, [day]: newDayEvents } };
-        }
-        return row;
-    });
-    draftScheduleRows.set(newRows);
+  const rows = [...draftScheduleRows.value];
+  const rowIndex = rows.findIndex(row => row.id === rowId);
+  
+  if (rowIndex !== -1) {
+    const row = rows[rowIndex];
+    const events = row.events[day] || [];
+    events.push(newEvent);
+    row.events[day] = events;
+    rows[rowIndex] = row;
+    draftScheduleRows.value = rows;
+    markAsDirty();
+  }
 }
 
+// --- OPERACIONES DE INSTRUCTORES ---
 export function addInstructor(name: string, city: string, regional: string) {
-    const newInstructor: Instructor = {
-        id: `instructor-${Date.now()}`,
-        name,
-        city,
-        regional
-    };
-    
-    const currentInstructors = draftInstructors.get();
-    draftInstructors.set([...currentInstructors, newInstructor]);
-    
-    // Agregar fila correspondiente al cronograma
-    const newRow: ScheduleRow = {
-        id: newInstructor.id,
-        instructor: name,
-        city,
-        regional,
-        events: {}
-    };
-    
-    const currentRows = draftScheduleRows.get();
-    draftScheduleRows.set([...currentRows, newRow]);
+  const newInstructor: Instructor = {
+    id: `instructor-${Date.now()}`,
+    name,
+    city,
+    regional
+  };
+
+  const newRow: ScheduleRow = {
+    id: newInstructor.id,
+    instructor: name,
+    city,
+    regional,
+    events: {}
+  };
+
+  draftInstructors.value = [...draftInstructors.value, newInstructor];
+  draftScheduleRows.value = [...draftScheduleRows.value, newRow];
+  markAsDirty();
 }
 
 export function updateInstructor(id: string, name: string, city: string, regional: string) {
-    const newInstructors = draftInstructors.get().map(instructor => 
-        instructor.id === id ? { ...instructor, name, city, regional } : instructor
-    );
-    draftInstructors.set(newInstructors);
+  const instructors = [...draftInstructors.value];
+  const rows = [...draftScheduleRows.value];
+  
+  const instructorIndex = instructors.findIndex(i => i.id === id);
+  const rowIndex = rows.findIndex(r => r.id === id);
+  
+  if (instructorIndex !== -1 && rowIndex !== -1) {
+    instructors[instructorIndex] = { ...instructors[instructorIndex], name, city, regional };
+    rows[rowIndex] = { ...rows[rowIndex], instructor: name, city, regional };
     
-    // Actualizar fila correspondiente en el cronograma
-    const newRows = draftScheduleRows.get().map(row => 
-        row.id === id ? { ...row, instructor: name, city, regional } : row
-    );
-    draftScheduleRows.set(newRows);
+    draftInstructors.value = instructors;
+    draftScheduleRows.value = rows;
+    markAsDirty();
+  }
 }
 
 export function deleteInstructor(id: string) {
-    const newInstructors = draftInstructors.get().filter(instructor => instructor.id !== id);
-    draftInstructors.set(newInstructors);
-    
-    // Eliminar fila correspondiente del cronograma
-    const newRows = draftScheduleRows.get().filter(row => row.id !== id);
-    draftScheduleRows.set(newRows);
+  draftInstructors.value = draftInstructors.value.filter(i => i.id !== id);
+  draftScheduleRows.value = draftScheduleRows.value.filter(r => r.id !== id);
+  markAsDirty();
 }
 
+// --- OPERACIONES DE CONFIGURACIÓN ---
 export function updateTitle(newTitle: string) {
-    const currentConfig = draftGlobalConfig.get();
-    draftGlobalConfig.set({ ...currentConfig, title: newTitle });
+  draftGlobalConfig.value = { ...draftGlobalConfig.value, title: newTitle };
+  markAsDirty();
 }
 
 export function updateWeek(startDate: string, endDate: string) {
-    const currentConfig = draftGlobalConfig.get();
-    draftGlobalConfig.set({ 
-        ...currentConfig, 
-        currentWeek: { startDate, endDate } 
-    });
+  draftGlobalConfig.value = {
+    ...draftGlobalConfig.value,
+    currentWeek: { startDate, endDate }
+  };
+  markAsDirty();
 }
 
-// Función para verificar conflictos de horario
-export function checkTimeConflict(eventId: string, rowId: string, day: string, time: string): { hasConflict: boolean; conflictingEvent?: Event } {
-    if (!time) return { hasConflict: false };
+// --- UTILIDADES ---
+export function checkTimeConflict(
+  rowId: string,
+  day: string,
+  startTime: string,
+  endTime: string,
+  excludeEventId?: string
+): { hasConflict: boolean; conflictingEvent?: Event } {
+  const row = draftScheduleRows.value.find(r => r.id === rowId);
+  if (!row || !row.events[day]) return { hasConflict: false };
+
+  const events = row.events[day].filter(e => e.id !== excludeEventId);
+  
+  // Convertir tiempos a minutos para facilitar la comparación
+  const startMinutes = timeToMinutes(startTime);
+  const endMinutes = timeToMinutes(endTime);
+
+  for (const event of events) {
+    if (!event.time) continue;
+
+    // Manejar eventos con múltiples sesiones
+    const sessions = Array.isArray(event.time) ? event.time : [event.time];
     
-    const currentRows = draftScheduleRows.get();
-    const targetRow = currentRows.find(row => row.id === rowId);
-    
-    if (!targetRow || !targetRow.events[day]) {
-        return { hasConflict: false };
+    for (const session of sessions) {
+      const { start: eventStart, end: eventEnd } = parseEventTime(session);
+      const eventStartMinutes = timeToMinutes(eventStart);
+      const eventEndMinutes = timeToMinutes(eventEnd);
+
+      if (
+        (startMinutes >= eventStartMinutes && startMinutes < eventEndMinutes) ||
+        (endMinutes > eventStartMinutes && endMinutes <= eventEndMinutes) ||
+        (startMinutes <= eventStartMinutes && endMinutes >= eventEndMinutes)
+      ) {
+        return { hasConflict: true, conflictingEvent: event };
+      }
     }
-    
-    const conflictingEvent = targetRow.events[day].find(event => 
-        event.id !== eventId && event.time === time
-    );
-    
-    return {
-        hasConflict: !!conflictingEvent,
-        conflictingEvent
-    };
+  }
+
+  return { hasConflict: false };
 }
 
-// --- SELECTORES Y UTILIDADES ---
-export const timeSlots = [
-    { value: '', label: 'Sin horario específico' },
-    { value: '6:00 a.m. a 7:00 a.m.', label: '6:00 a.m. - 7:00 a.m.' },
-    { value: '7:00 a.m. a 8:00 a.m.', label: '7:00 a.m. - 8:00 a.m.' },
-    { value: '8:00 a.m. a 9:00 a.m.', label: '8:00 a.m. - 9:00 a.m.' },
-    { value: '9:00 a.m. a 10:00 a.m.', label: '9:00 a.m. - 10:00 a.m.' },
-    { value: '10:00 a.m. a 11:00 a.m.', label: '10:00 a.m. - 11:00 a.m.' },
-    { value: '11:00 a.m. a 12:00 p.m.', label: '11:00 a.m. - 12:00 p.m.' },
-    { value: '12:00 p.m. a 1:00 p.m.', label: '12:00 p.m. - 1:00 p.m.' },
-    { value: '1:00 p.m. a 2:00 p.m.', label: '1:00 p.m. - 2:00 p.m.' },
-    { value: '2:00 p.m. a 3:00 p.m.', label: '2:00 p.m. - 3:00 p.m.' },
-    { value: '3:00 p.m. a 4:00 p.m.', label: '3:00 p.m. - 4:00 p.m.' },
-    { value: '4:00 p.m. a 5:00 p.m.', label: '4:00 p.m. - 5:00 p.m.' },
-    { value: '5:00 p.m. a 6:00 p.m.', label: '5:00 p.m. - 6:00 p.m.' },
-];
+function timeToMinutes(time: string): number {
+  // Extraer la hora y los minutos del formato "HH:mm a.m./p.m."
+  const match = time.match(/(\d{1,2}):(\d{2})\s*(a\.m\.|p\.m\.)/i);
+  if (!match) return 0;
 
-// Horarios individuales para inicio y fin
-export const startTimes = [
-    { value: '', label: 'Sin horario específico' },
-    { value: '6:00 a.m.', label: '6:00 a.m.' },
-    { value: '7:00 a.m.', label: '7:00 a.m.' },
-    { value: '8:00 a.m.', label: '8:00 a.m.' },
-    { value: '9:00 a.m.', label: '9:00 a.m.' },
-    { value: '10:00 a.m.', label: '10:00 a.m.' },
-    { value: '11:00 a.m.', label: '11:00 a.m.' },
-    { value: '12:00 p.m.', label: '12:00 p.m.' },
-    { value: '1:00 p.m.', label: '1:00 p.m.' },
-    { value: '2:00 p.m.', label: '2:00 p.m.' },
-    { value: '3:00 p.m.', label: '3:00 p.m.' },
-    { value: '4:00 p.m.', label: '4:00 p.m.' },
-    { value: '5:00 p.m.', label: '5:00 p.m.' },
-    { value: '6:00 p.m.', label: '6:00 p.m.' },
-];
+  let hours = parseInt(match[1]);
+  const minutes = parseInt(match[2]);
+  const period = match[3].toLowerCase();
 
-export const endTimes = [
-    { value: '', label: 'Sin horario específico' },
-    { value: '6:00 a.m.', label: '6:00 a.m.' },
-    { value: '7:00 a.m.', label: '7:00 a.m.' },
-    { value: '8:00 a.m.', label: '8:00 a.m.' },
-    { value: '9:00 a.m.', label: '9:00 a.m.' },
-    { value: '10:00 a.m.', label: '10:00 a.m.' },
-    { value: '11:00 a.m.', label: '11:00 a.m.' },
-    { value: '12:00 p.m.', label: '12:00 p.m.' },
-    { value: '1:00 p.m.', label: '1:00 p.m.' },
-    { value: '2:00 p.m.', label: '2:00 p.m.' },
-    { value: '3:00 p.m.', label: '3:00 p.m.' },
-    { value: '4:00 p.m.', label: '4:00 p.m.' },
-    { value: '5:00 p.m.', label: '5:00 p.m.' },
-    { value: '6:00 p.m.', label: '6:00 p.m.' },
-];
+  // Ajustar las horas según el período
+  if (period === 'p.m.' && hours !== 12) {
+    hours += 12;
+  } else if (period === 'a.m.' && hours === 12) {
+    hours = 0;
+  }
 
-export const regionalOptions = [
-    'ANTIOQUIA',
-    'BUCARAMANGA', 
-    'CENTRO',
-    'NORTE',
-    'OCCIDENTE',
-    'SABANA',
-    'SUR'
-]; 
+  return hours * 60 + minutes;
+}
+
+function parseEventTime(timeString: string): { start: string; end: string } {
+  // Extraer tiempos de inicio y fin del formato "Presencial/Virtual - HH:mm a.m. a HH:mm p.m."
+  const match = timeString.match(/(?:Presencial|Virtual)\s*-\s*(\d{1,2}:\d{2}\s*(?:a\.m\.|p\.m\.))(?:\s*a\s*)(\d{1,2}:\d{2}\s*(?:a\.m\.|p\.m\.))/i);
+  
+  if (match) {
+    return {
+      start: match[1],
+      end: match[2]
+    };
+  }
+
+  return { start: '8:00 a.m.', end: '5:00 p.m.' }; // Valores por defecto
+}
+
+export function navigateWeek(direction: 'prev' | 'next'): { startDate: string; endDate: string } {
+  const isAdminUser = isAdmin.value;
+  const currentWeek = isAdminUser ? draftGlobalConfig.value.currentWeek : selectedWeek.value;
+  const startDate = new Date(currentWeek.startDate);
+  const endDate = new Date(currentWeek.endDate);
+
+  if (direction === 'prev') {
+    startDate.setDate(startDate.getDate() - 7);
+    endDate.setDate(endDate.getDate() - 7);
+  } else {
+    startDate.setDate(startDate.getDate() + 7);
+    endDate.setDate(endDate.getDate() + 7);
+  }
+
+  const formatDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const newDates = {
+    startDate: formatDate(startDate),
+    endDate: formatDate(endDate)
+  };
+
+  // Actualizar el estado según el tipo de usuario
+  if (isAdminUser) {
+    draftGlobalConfig.value = {
+      ...draftGlobalConfig.value,
+      currentWeek: newDates
+    };
+  } else {
+    selectedWeek.value = newDates;
+  }
+
+  return newDates;
+}
+
+export function formatDateDisplay(dateString: string): string {
+  const date = new Date(dateString);
+  const day = date.getDate();
+  const month = date.toLocaleString('es', { month: 'long' });
+  const year = date.getFullYear();
+  return `${day} de ${month} de ${year}`;
+}
+
+// --- FUNCIONES DE MANIPULACIÓN DE EVENTOS ---
+export function moveEvent(
+  eventId: string,
+  fromRowId: string,
+  fromDay: string,
+  toRowId: string,
+  toDay: string
+) {
+  try {
+    const rows = draftScheduleRows.value;
+    const fromRow = rows.find(row => row.id === fromRowId);
+    const toRow = rows.find(row => row.id === toRowId);
+
+    if (!fromRow || !toRow) {
+      console.error('Filas no encontradas para mover el evento');
+      return;
+    }
+
+    // Encontrar el evento en la fila de origen
+    const fromEvents = fromRow.events[fromDay] || [];
+    const eventIndex = fromEvents.findIndex(e => e.id === eventId);
+
+    if (eventIndex === -1) {
+      console.error('Evento no encontrado en la fila de origen');
+      return;
+    }
+
+    // Obtener el evento y eliminarlo de la fila de origen
+    const event = fromEvents[eventIndex];
+    fromEvents.splice(eventIndex, 1);
+
+    // Inicializar el array de eventos del día destino si no existe
+    if (!toRow.events[toDay]) {
+      toRow.events[toDay] = [];
+    }
+
+    // Agregar el evento a la fila destino
+    toRow.events[toDay].push(event);
+
+    // Actualizar el estado
+    draftScheduleRows.value = [...rows];
+    markAsDirty();
+    saveDraftChanges();
+  } catch (error) {
+    console.error('Error al mover el evento:', error);
+  }
+}
+
+export function copyEvent(
+  eventId: string,
+  fromRowId: string,
+  fromDay: string,
+  toRowId: string,
+  toDay: string
+) {
+  try {
+    const rows = draftScheduleRows.value;
+    const fromRow = rows.find(row => row.id === fromRowId);
+    const toRow = rows.find(row => row.id === toRowId);
+
+    if (!fromRow || !toRow) {
+      console.error('Filas no encontradas para copiar el evento');
+      return;
+    }
+
+    // Encontrar el evento en la fila de origen
+    const fromEvents = fromRow.events[fromDay] || [];
+    const event = fromEvents.find(e => e.id === eventId);
+
+    if (!event) {
+      console.error('Evento no encontrado en la fila de origen');
+      return;
+    }
+
+    // Crear una copia del evento con un nuevo ID
+    const newEvent = {
+      ...event,
+      id: `evt-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    };
+
+    // Inicializar el array de eventos del día destino si no existe
+    if (!toRow.events[toDay]) {
+      toRow.events[toDay] = [];
+    }
+
+    // Agregar la copia del evento a la fila destino
+    toRow.events[toDay].push(newEvent);
+
+    // Actualizar el estado
+    draftScheduleRows.value = [...rows];
+    markAsDirty();
+    saveDraftChanges();
+  } catch (error) {
+    console.error('Error al copiar el evento:', error);
+  }
+}
+
+// --- FUNCIONES DE ADMINISTRACIÓN ---
+export const isAdmin = signal<boolean>(false);
+
+export function updateDraftSchedule(newSchedule: ScheduleRow[]) {
+  draftScheduleRows.value = newSchedule;
+  markAsDirty();
+  saveDraftChanges();
+}
+
+export function updateDraftEvent(rowId: string, day: string, eventId: string, updatedEvent: Event) {
+  const rows = [...draftScheduleRows.value];
+  const rowIndex = rows.findIndex(row => row.id === rowId);
+  
+  if (rowIndex !== -1) {
+    const events = rows[rowIndex].events[day] || [];
+    const eventIndex = events.findIndex(e => e.id === eventId);
+    
+    if (eventIndex !== -1) {
+      events[eventIndex] = { ...updatedEvent };
+      draftScheduleRows.value = rows;
+      markAsDirty();
+      saveDraftChanges();
+    }
+  }
+} 

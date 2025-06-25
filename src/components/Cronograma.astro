@@ -1,7 +1,30 @@
 ---
-import CronogramaWrapper from './CronogramaWrapper.tsx';
+import Layout from '../layouts/Layout.astro';
+import CronogramaWrapper from './CronogramaWrapper';
+
+// Obtener el parámetro mode de la URL
+const { searchParams } = Astro.url;
+const isAdmin = searchParams.get('mode') === 'admin';
 ---
- 
-<div class="bg-white min-h-screen p-4 sm:p-6 md:p-8 font-sans">
-  <CronogramaWrapper client:load />
-</div> 
+
+<!--
+/**
+ * Componente Astro que sirve como punto de entrada de la aplicación.
+ * Integra el componente CronogramaWrapper con el layout principal.
+ * 
+ * @component
+ * @returns {JSX.Element} Componente Cronograma
+ * 
+ * @example
+ * ```astro
+ * ---
+ * import Cronograma from '../components/Cronograma.astro';
+ * ---
+ * 
+ * <Cronograma />
+ * ```
+ */
+-->
+<Layout title="Cronograma de Formación">
+  <CronogramaWrapper client:load isAdmin={isAdmin} />
+</Layout> 
