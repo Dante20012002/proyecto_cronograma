@@ -2,10 +2,10 @@
 // Copia este archivo como firebase-config.js y reemplaza los valores con los de tu proyecto
 
 export const firebaseConfig = {
-  apiKey: "tu_api_key_aqui",
-  authDomain: "tu-proyecto.firebaseapp.com",
-  projectId: "tu-proyecto",
-  storageBucket: "tu-proyecto.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abcdef123456"
+  apiKey: "AIzaSyCQTvAp_CUNztd8xlq30aYxYpAM0WvwNIY",
+  authDomain: "conograma-terpel.firebaseapp.com",
+  projectId: "conograma-terpel",
+  storageBucket: "conograma-terpel.firebasestorage.app",
+  messagingSenderId: "553437786995",
+  appId: "1:553437786995:web:e027a4f1cc3852a1c58b06"
 }; 
