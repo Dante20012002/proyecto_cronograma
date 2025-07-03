@@ -62,7 +62,10 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
   const getWeekDays = () => {
     try {
       const days = [];
-      const startDate = new Date(currentWeek.startDate);
+      
+      // Crear fecha local evitando el desfase de zona horaria
+      const [year, month, day] = currentWeek.startDate.split('-').map(Number);
+      const startDate = new Date(year, month - 1, day); // month es 0-based
       
       if (isNaN(startDate.getTime())) {
         throw new Error('Fecha de inicio inválida');

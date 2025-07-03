@@ -128,12 +128,36 @@ const initialScheduleRows: ScheduleRow[] = [
   }
 ];
 
+// Función para obtener la semana actual
+function getCurrentWeek(): { startDate: string; endDate: string } {
+  const today = new Date();
+  const currentDay = today.getDay(); // 0 = domingo, 1 = lunes, etc.
+  
+  // Calcular el lunes de la semana actual
+  const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay;
+  const monday = new Date(today);
+  monday.setDate(today.getDate() + mondayOffset);
+  
+  // Calcular el viernes de la semana actual
+  const friday = new Date(monday);
+  friday.setDate(monday.getDate() + 4);
+  
+  const formatDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  return {
+    startDate: formatDate(monday),
+    endDate: formatDate(friday)
+  };
+}
+
 const initialGlobalConfig: GlobalConfig = {
   title: 'Cronograma 2025',
-  currentWeek: {
-    startDate: '2024-06-24',
-    endDate: '2024-06-28'
-  }
+  currentWeek: getCurrentWeek()
 };
 
 // --- ESTADO (DRAFT & PUBLISHED) ---
@@ -158,22 +182,8 @@ function getInitialWeek(): { startDate: string; endDate: string } {
     };
   } catch (error) {
     console.error('Error al inicializar selectedWeek:', error);
-    // Valores por defecto en caso de error
-    const today = new Date();
-    const endDate = new Date(today);
-    endDate.setDate(today.getDate() + 4);
-
-    const formatDate = (date: Date) => {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    };
-
-    return {
-      startDate: formatDate(today),
-      endDate: formatDate(endDate)
-    };
+    // Usar la semana actual como fallback
+    return getCurrentWeek();
   }
 }
 
@@ -492,8 +502,13 @@ function parseEventTime(timeString: string): { start: string; end: string } {
 export function navigateWeek(direction: 'prev' | 'next'): { startDate: string; endDate: string } {
   const isAdminUser = isAdmin.value;
   const currentWeek = isAdminUser ? draftGlobalConfig.value.currentWeek : selectedWeek.value;
-  const startDate = new Date(currentWeek.startDate);
-  const endDate = new Date(currentWeek.endDate);
+  
+  // Crear fechas locales evitando el desfase de zona horaria
+  const [startYear, startMonth, startDay] = currentWeek.startDate.split('-').map(Number);
+  const [endYear, endMonth, endDay] = currentWeek.endDate.split('-').map(Number);
+  
+  const startDate = new Date(startYear, startMonth - 1, startDay); // month es 0-based
+  const endDate = new Date(endYear, endMonth - 1, endDay);
 
   if (direction === 'prev') {
     startDate.setDate(startDate.getDate() - 7);
@@ -529,11 +544,14 @@ export function navigateWeek(direction: 'prev' | 'next'): { startDate: string; e
 }
 
 export function formatDateDisplay(dateString: string): string {
-  const date = new Date(dateString);
-  const day = date.getDate();
-  const month = date.toLocaleString('es', { month: 'long' });
-  const year = date.getFullYear();
-  return `${day} de ${month} de ${year}`;
+  // Crear fecha local evitando el desfase de zona horaria
+  const [year, month, day] = dateString.split('-').map(Number);
+  const date = new Date(year, month - 1, day); // month es 0-based
+  
+  const dayNumber = date.getDate();
+  const monthName = date.toLocaleString('es', { month: 'long' });
+  const yearNumber = date.getFullYear();
+  return `${dayNumber} de ${monthName} de ${yearNumber}`;
 }
 
 // --- FUNCIONES DE MANIPULACIÓN DE EVENTOS ---
@@ -545,17 +563,21 @@ export function moveEvent(
   toDay: string
 ) {
   try {
-    const rows = draftScheduleRows.value;
-    const fromRow = rows.find(row => row.id === fromRowId);
-    const toRow = rows.find(row => row.id === toRowId);
+    const rows = [...draftScheduleRows.value]; // Crear copia del array principal
+    const fromRowIndex = rows.findIndex(row => row.id === fromRowId);
+    const toRowIndex = rows.findIndex(row => row.id === toRowId);
 
-    if (!fromRow || !toRow) {
+    if (fromRowIndex === -1 || toRowIndex === -1) {
       console.error('Filas no encontradas para mover el evento');
       return;
     }
 
-    // Encontrar el evento en la fila de origen
-    const fromEvents = fromRow.events[fromDay] || [];
+    // Crear copias de las filas afectadas
+    const fromRow = { ...rows[fromRowIndex], events: { ...rows[fromRowIndex].events } };
+    const toRow = { ...rows[toRowIndex], events: { ...rows[toRowIndex].events } };
+
+    // Crear copia del array de eventos del día origen
+    const fromEvents = [...(fromRow.events[fromDay] || [])];
     const eventIndex = fromEvents.findIndex(e => e.id === eventId);
 
     if (eventIndex === -1) {
@@ -563,20 +585,28 @@ export function moveEvent(
       return;
     }
 
-    // Obtener el evento y eliminarlo de la fila de origen
+    // Obtener el evento y eliminarlo de la copia del array origen
     const event = fromEvents[eventIndex];
     fromEvents.splice(eventIndex, 1);
 
-    // Inicializar el array de eventos del día destino si no existe
-    if (!toRow.events[toDay]) {
-      toRow.events[toDay] = [];
-    }
+    // Actualizar el array de eventos del día origen en la fila origen
+    fromRow.events[fromDay] = fromEvents;
 
-    // Agregar el evento a la fila destino
-    toRow.events[toDay].push(event);
+    // Crear copia del array de eventos del día destino (o array vacío si no existe)
+    const toEvents = [...(toRow.events[toDay] || [])];
+    
+    // Agregar el evento a la copia del array destino
+    toEvents.push(event);
+    
+    // Actualizar el array de eventos del día destino en la fila destino
+    toRow.events[toDay] = toEvents;
 
-    // Actualizar el estado
-    draftScheduleRows.value = [...rows];
+    // Actualizar las filas en el array principal
+    rows[fromRowIndex] = fromRow;
+    rows[toRowIndex] = toRow;
+
+    // Actualizar el estado con el nuevo array
+    draftScheduleRows.value = rows;
     markAsDirty();
     saveDraftChanges();
   } catch (error) {
@@ -592,17 +622,20 @@ export function copyEvent(
   toDay: string
 ) {
   try {
-    const rows = draftScheduleRows.value;
-    const fromRow = rows.find(row => row.id === fromRowId);
-    const toRow = rows.find(row => row.id === toRowId);
+    const rows = [...draftScheduleRows.value]; // Crear copia del array principal
+    const fromRowIndex = rows.findIndex(row => row.id === fromRowId);
+    const toRowIndex = rows.findIndex(row => row.id === toRowId);
 
-    if (!fromRow || !toRow) {
+    if (fromRowIndex === -1 || toRowIndex === -1) {
       console.error('Filas no encontradas para copiar el evento');
       return;
     }
 
+    // Crear copia de la fila destino
+    const toRow = { ...rows[toRowIndex], events: { ...rows[toRowIndex].events } };
+
     // Encontrar el evento en la fila de origen
-    const fromEvents = fromRow.events[fromDay] || [];
+    const fromEvents = rows[fromRowIndex].events[fromDay] || [];
     const event = fromEvents.find(e => e.id === eventId);
 
     if (!event) {
@@ -616,16 +649,20 @@ export function copyEvent(
       id: `evt-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     };
 
-    // Inicializar el array de eventos del día destino si no existe
-    if (!toRow.events[toDay]) {
-      toRow.events[toDay] = [];
-    }
+    // Crear copia del array de eventos del día destino (o array vacío si no existe)
+    const toEvents = [...(toRow.events[toDay] || [])];
+    
+    // Agregar la copia del evento al array destino
+    toEvents.push(newEvent);
+    
+    // Actualizar el array de eventos del día destino en la fila destino
+    toRow.events[toDay] = toEvents;
 
-    // Agregar la copia del evento a la fila destino
-    toRow.events[toDay].push(newEvent);
+    // Actualizar la fila en el array principal
+    rows[toRowIndex] = toRow;
 
-    // Actualizar el estado
-    draftScheduleRows.value = [...rows];
+    // Actualizar el estado con el nuevo array
+    draftScheduleRows.value = rows;
     markAsDirty();
     saveDraftChanges();
   } catch (error) {

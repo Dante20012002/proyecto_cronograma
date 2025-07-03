@@ -157,6 +157,33 @@ async function saveWithRetry(
   }
 }
 
+// Función para obtener la semana actual
+function getCurrentWeek(): { startDate: string; endDate: string } {
+  const today = new Date();
+  const currentDay = today.getDay(); // 0 = domingo, 1 = lunes, etc.
+  
+  // Calcular el lunes de la semana actual
+  const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay;
+  const monday = new Date(today);
+  monday.setDate(today.getDate() + mondayOffset);
+  
+  // Calcular el viernes de la semana actual
+  const friday = new Date(monday);
+  friday.setDate(monday.getDate() + 4);
+  
+  const formatDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  return {
+    startDate: formatDate(monday),
+    endDate: formatDate(friday)
+  };
+}
+
 // Datos iniciales
 const initialData: FirestoreSchedule = {
   instructors: [
@@ -187,11 +214,8 @@ const initialData: FirestoreSchedule = {
     }
   ],
   globalConfig: {
-    title: 'Cronograma Junio 2024',
-    currentWeek: {
-      startDate: '2024-06-24',
-      endDate: '2024-06-28'
-    }
+    title: 'Cronograma Escuelas Colombia',
+    currentWeek: getCurrentWeek()
   },
   lastUpdated: serverTimestamp()
 };
