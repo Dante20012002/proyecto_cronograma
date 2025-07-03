@@ -54,27 +54,52 @@ export async function logOperation(operation: string, status: 'success' | 'error
 // Función para verificar la integridad de los datos
 async function verifyDataIntegrity(data: FirestoreSchedule): Promise<boolean> {
   try {
+    console.log('=== VERIFICANDO INTEGRIDAD DE DATOS ===');
+    console.log('Datos a verificar:', {
+      instructorsCount: data.instructors.length,
+      scheduleRowsCount: data.scheduleRows.length,
+      globalConfig: data.globalConfig
+    });
+
     // Verificar que todos los instructores tienen una fila correspondiente
     const instructorIds = new Set(data.instructors.map(i => i.id));
     const rowIds = new Set(data.scheduleRows.map(r => r.id));
     
+    console.log('IDs de instructores:', Array.from(instructorIds));
+    console.log('IDs de filas:', Array.from(rowIds));
+    
     const allInstructorsHaveRows = Array.from(instructorIds).every(id => rowIds.has(id));
     if (!allInstructorsHaveRows) {
+      console.error('ERROR: No todos los instructores tienen filas correspondientes');
+      const missingRows = Array.from(instructorIds).filter(id => !rowIds.has(id));
+      console.error('Instructores sin filas:', missingRows);
+      
       await logOperation('verifyDataIntegrity', 'error', {
         message: 'No todos los instructores tienen filas correspondientes',
         instructorIds: Array.from(instructorIds),
-        rowIds: Array.from(rowIds)
+        rowIds: Array.from(rowIds),
+        missingRows
       });
       return false;
     }
 
     // Verificar que todos los eventos tienen IDs válidos y únicos
     const eventIds = new Set<string>();
+    let totalEvents = 0;
+    
     for (const row of data.scheduleRows) {
+      console.log(`Verificando eventos de la fila: ${row.instructor} (${row.id})`);
+      
       for (const [day, events] of Object.entries(row.events)) {
+        console.log(`  Día ${day}: ${events.length} eventos`);
+        
         for (const event of events) {
+          totalEvents++;
+          console.log(`    Evento: ${event.id} - ${event.title}`);
+          
           // Verificar que el ID es único
           if (eventIds.has(event.id)) {
+            console.error(`ERROR: ID de evento duplicado: ${event.id}`);
             await logOperation('verifyDataIntegrity', 'error', {
               message: 'ID de evento duplicado detectado',
               eventId: event.id,
@@ -87,6 +112,7 @@ async function verifyDataIntegrity(data: FirestoreSchedule): Promise<boolean> {
 
           // Verificar que el ID tiene un formato válido (más permisivo)
           if (!event.id.startsWith('evt-')) {
+            console.error(`ERROR: Formato de ID de evento inválido: ${event.id}`);
             await logOperation('verifyDataIntegrity', 'error', {
               message: 'Formato de ID de evento inválido',
               eventId: event.id,
@@ -95,12 +121,25 @@ async function verifyDataIntegrity(data: FirestoreSchedule): Promise<boolean> {
             });
             return false;
           }
+
+          // Verificar que el evento tiene propiedades requeridas
+          if (!event.title || !event.location || !event.color) {
+            console.error(`ERROR: Evento incompleto: ${event.id}`, event);
+            await logOperation('verifyDataIntegrity', 'error', {
+              message: 'Evento con propiedades faltantes',
+              eventId: event.id,
+              event: event
+            });
+            return false;
+          }
         }
       }
     }
 
+    console.log(`✅ Verificación exitosa: ${totalEvents} eventos únicos verificados`);
     return true;
   } catch (error) {
+    console.error('ERROR en verifyDataIntegrity:', error);
     await logOperation('verifyDataIntegrity', 'error', {
       message: 'Error verificando integridad de datos'
     }, error);

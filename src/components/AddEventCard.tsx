@@ -56,6 +56,74 @@ const predefinedDescriptions = [
 ];
 
 /**
+ * Mapeo de detalles predefinidos a colores específicos.
+ * Cada detalle tiene un color único asociado para facilitar la identificación visual.
+ */
+const detailColorMap: { [key: string]: string } = {
+  // Módulos formativos - Tonos azules
+  'MODULO PROTAGONISTAS DEL SERVICIO': 'bg-blue-600',
+  'MODULO FORMATIVO GNV': 'bg-blue-700',
+  'MODULO FORMATIVO LIQUIDOS': 'bg-blue-800',
+  'MODULO FORMATIVO LUBRICANTES': 'bg-blue-500',
+  'MODULO ESCUELA DE INDUSTRIA': 'bg-blue-900',
+  
+  // Protocolos y gestión - Tonos verdes
+  'PROTOCOLO DE SERVICIO EDS': 'bg-green-600',
+  'GESTION AMBIENTAL, SEGURIDAD Y SALUD EN EL TRABAJO': 'bg-green-700',
+  'EXCELENCIA ADMINISTRATIVA': 'bg-green-800',
+  
+  // Programas VIVE - Tonos púrpuras
+  'VIVE PITS': 'bg-purple-600',
+  'LA TOMA VIVE TERPEL & VIVE PITS': 'bg-purple-700',
+  'CARAVANA RUMBO PITS': 'bg-purple-800',
+  
+  // Formación TERPEL POS - Tonos naranjas
+  'FORMACION INICIAL TERPEL POS OPERATIVO': 'bg-orange-600',
+  'FORMACION INICIAL TERPEL POS ADMINISTRATIVO': 'bg-orange-700',
+  'ENTRENAMIENTO TERPEL POS OPERATIVO': 'bg-orange-800',
+  'ENTRENAMIENTO TERPEL POS ADMINISTRATIVO': 'bg-orange-500',
+  
+  // Facturación - Tonos rosados
+  'FACTURACION ELECTRONICA OPERATIVA': 'bg-pink-600',
+  'FACTURACION ELECTRONICA ADMINISTRATIVA': 'bg-pink-700',
+  
+  // Productos específicos - Tonos índigo
+  'CANASTILLA': 'bg-indigo-600',
+  'CLIENTES PROPIOS': 'bg-indigo-700',
+  'APP TERPEL': 'bg-indigo-800',
+  
+  // MASTERLUB - Tonos teal
+  'MASTERLUB OPERATIVO': 'bg-teal-600',
+  'MASTERLUB ADMINISTRATIVO': 'bg-teal-700',
+  
+  // EDS - Tonos amber
+  'EDS CONFIABLE': 'bg-amber-600',
+  'TALLER EDS CONFIABLE': 'bg-amber-700',
+  
+  // Campos y entrenamientos - Tonos emerald
+  'CAMPO DE ENTRENAMIENTO DE INDUSTRIA LIMPIA': 'bg-emerald-600',
+  'CONSTRUYENDO EQUIPOS ALTAMENTE EFECTIVOS': 'bg-emerald-700',
+  
+  // Módulos de comida - Tonos cálidos
+  'MODULO ROLLOS': 'bg-red-600',
+  'MODULO HISTORIA Y MASA': 'bg-red-700',
+  'MODULO STROMBOLIS': 'bg-red-800',
+  'MODULO PERROS Y MAS PERROS': 'bg-red-500',
+  'MODULO SANDUCHES': 'bg-red-900',
+  'MODULO SBARRO': 'bg-rose-600',
+  'MODULO BEBIDAS CALIENTES': 'bg-rose-700'
+};
+
+/**
+ * Función para obtener el color asociado a un detalle específico.
+ * @param detail - El detalle del evento
+ * @returns El color asociado al detalle o null si no está mapeado
+ */
+const getColorForDetail = (detail: string): string | null => {
+  return detailColorMap[detail] || null;
+};
+
+/**
  * Props para el componente AddEventCard
  * @interface AddEventCardProps
  */
@@ -116,7 +184,13 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
       setFormData(prev => ({ ...prev, details: '' }));
     } else {
       setUseCustomDetails(false);
-      setFormData(prev => ({ ...prev, details }));
+      // Asignar color automáticamente basado en el detalle seleccionado
+      const autoColor = getColorForDetail(details);
+      setFormData(prev => ({ 
+        ...prev, 
+        details,
+        color: autoColor || prev.color // Mantener color actual si no hay mapeo
+      }));
     }
   };
 
@@ -128,6 +202,13 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
 
     // Validar conflictos de horario
     if (formData.startTime && formData.endTime) {
+      console.log('🕐 AddEventCard - Validando conflictos para nuevo evento:', {
+        rowId,
+        day,
+        startTime: formData.startTime,
+        endTime: formData.endTime
+      });
+
       const { hasConflict, conflictingEvent } = checkTimeConflict(
         rowId,
         day,
@@ -136,8 +217,20 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
       );
 
       if (hasConflict && conflictingEvent) {
-        alert(`No se puede crear el evento porque existe un conflicto de horario con el evento "${conflictingEvent.title}" programado de ${conflictingEvent.time}`);
+        const conflictMessage = conflictingEvent.time 
+          ? `"${conflictingEvent.title}" programado de ${conflictingEvent.time}`
+          : `"${conflictingEvent.title}"`;
+        
+        console.log('❌ AddEventCard - Conflicto detectado:', {
+          newEvent: `${formData.startTime} a ${formData.endTime}`,
+          conflictingEvent: conflictingEvent.title,
+          conflictingTime: conflictingEvent.time
+        });
+
+        alert(`No se puede crear el evento porque existe un conflicto de horario con el evento ${conflictMessage}.`);
         return;
+      } else {
+        console.log('✅ AddEventCard - Sin conflictos, procediendo a crear evento');
       }
     }
 
@@ -274,6 +367,35 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
               )}
             </div>
 
+            {/* Mostrar información del color automático */}
+            {formData.details && !useCustomDetails && (
+              <div class="bg-blue-50 border border-blue-200 rounded-md p-3">
+                <div class="flex items-center space-x-2">
+                  <div class={`w-4 h-4 rounded-full ${formData.color}`}></div>
+                  <span class="text-sm text-blue-800">
+                    Color asignado automáticamente para este detalle
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Color Picker - Solo mostrar para detalles personalizados */}
+            {useCustomDetails && (
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Color del Evento</label>
+                <div class="flex flex-wrap gap-2">
+                  {['bg-blue-600', 'bg-green-600', 'bg-purple-600', 'bg-orange-600', 'bg-pink-600', 'bg-indigo-600', 'bg-teal-600', 'bg-amber-600', 'bg-red-600', 'bg-rose-600', 'bg-emerald-600', 'bg-cyan-500'].map((color) => (
+                    <button
+                      key={color}
+                      onClick={() => handleInputChange('color', color)}
+                      class={`w-8 h-8 rounded-full border-2 ${formData.color === color ? 'border-gray-800 ring-2 ring-offset-1 ring-gray-800' : 'border-gray-300'} ${color}`}
+                      title={`Seleccionar color ${color}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Time Selectors */}
             <div class="grid grid-cols-2 gap-3">
               <div>
@@ -320,19 +442,7 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
               />
             </div>
 
-            {/* Color Picker */}
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Color</label>
-              <div class="grid grid-cols-6 gap-2">
-                {['bg-red-600', 'bg-blue-600', 'bg-green-600', 'bg-yellow-500', 'bg-purple-600', 'bg-pink-600', 'bg-indigo-600', 'bg-gray-600', 'bg-rose-500', 'bg-orange-500', 'bg-teal-500', 'bg-cyan-500'].map((color) => (
-                  <button
-                    key={color}
-                    onClick={() => handleInputChange('color', color)}
-                    class={`w-8 h-8 rounded-full border-2 ${formData.color === color ? 'border-gray-800 ring-2 ring-offset-1 ring-gray-800' : 'border-gray-300'} ${color}`}
-                  />
-                ))}
-              </div>
-            </div>
+
           </div>
 
           <div class="flex justify-end space-x-2 mt-6">

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'preact/hooks';
-import { isConnected, initializeFirebase, cleanupFirebase } from '../stores/schedule';
+import { isConnected, initializeFirebase, cleanupFirebase, debugDataIntegrity, removeDuplicateEvents, clearAllDraftEvents, fixIncompleteEvents, debugPublishState, copyEventInSameCell, debugOperationQueue } from '../stores/schedule';
 import { isAdmin, currentUser } from '../lib/auth';
 import type { JSX } from 'preact';
 import AdminToolbar from './AdminToolbar';
@@ -33,6 +33,63 @@ export default function CronogramaWrapper(): JSX.Element {
       console.error('Error al inicializar Firebase:', err);
       setError('Error al conectar con el servidor. Por favor, recarga la página.');
     });
+
+    // Exponer funciones de debugging globalmente
+    (window as any).debugDataIntegrity = debugDataIntegrity;
+    (window as any).removeDuplicateEvents = removeDuplicateEvents;
+    (window as any).fixIncompleteEvents = fixIncompleteEvents;
+    (window as any).clearAllDraftEvents = clearAllDraftEvents;
+    (window as any).debugPublishState = debugPublishState;
+    (window as any).copyEventInSameCell = copyEventInSameCell;
+    (window as any).debugOperationQueue = debugOperationQueue;
+
+    // Mostrar instrucciones de debugging en la consola
+    console.log('%c=== HERRAMIENTAS DE DEBUGGING DISPONIBLES ===', 'color: #00ff00; font-weight: bold; font-size: 14px;');
+    console.log('%cPara resolver problemas de integridad:', 'color: #00bfff; font-weight: bold;');
+    console.log('%c1. debugDataIntegrity()   - Verificar la integridad de los datos', 'color: #ffff00;');
+    console.log('%c2. removeDuplicateEvents() - Limpiar eventos duplicados', 'color: #ffff00;');
+    console.log('%c3. fixIncompleteEvents()   - Corregir eventos incompletos', 'color: #ffff00;');
+    console.log('%c4. debugPublishState()     - Ver estado de publicación', 'color: #ffff00;');
+    console.log('%c5. debugOperationQueue()   - Ver estado de la cola de operaciones', 'color: #ffff00;');
+    console.log('%c6. copyEventInSameCell()   - Copiar evento (eventId, rowId, day)', 'color: #ffff00;');
+    console.log('%c7. clearAllDraftEvents()   - Borrar todos los eventos (⚠️ CUIDADO)', 'color: #ff6600;');
+    console.log('%c', 'color: #ffffff;');
+    console.log('%cEjemplo de uso:', 'color: #00bfff; font-weight: bold;');
+    console.log('%cdebugDataIntegrity() // Verificar problemas', 'color: #ffff00;');
+    console.log('%cremoveDuplicateEvents() // Limpiar duplicados', 'color: #ffff00;');
+    console.log('%cdebugPublishState() // Ver estado de publicación', 'color: #ffff00;');
+    console.log('%cdebugOperationQueue() // Ver cola de operaciones', 'color: #ffff00;');
+    console.log('%ccopyEventInSameCell("evt-123", "row-456", "1") // Copiar evento', 'color: #ffff00;');
+    console.log('%cfixIncompleteEvents([{issue: "incomplete_event", ...}]) // Corregir específicos', 'color: #ffff00;');
+    console.log('%c==============================================', 'color: #00ff00; font-weight: bold;');
+
+    // Ejecutar verificación automática
+    setTimeout(() => {
+      console.log('%c🔍 Ejecutando verificación automática...', 'color: #00bfff; font-weight: bold;');
+      const result = debugDataIntegrity();
+      if (!result.isValid) {
+        const duplicates = result.problematicEvents.filter(p => p.issue === 'duplicate_id');
+        const incompleteEvents = result.problematicEvents.filter(p => p.issue === 'incomplete_event');
+        
+        if (duplicates.length > 0) {
+          console.log('%c⚠️ Se encontraron eventos duplicados. Limpiando automáticamente...', 'color: #ff6600; font-weight: bold;');
+          const removed = removeDuplicateEvents();
+          console.log(`%c✅ Se eliminaron ${removed} eventos duplicados automáticamente.`, 'color: #00ff00; font-weight: bold;');
+        }
+        
+        if (incompleteEvents.length > 0) {
+          console.log('%c⚠️ Se encontraron eventos incompletos. Corrigiendo automáticamente...', 'color: #ff6600; font-weight: bold;');
+          const fixed = fixIncompleteEvents(incompleteEvents);
+          console.log(`%c✅ Se corrigieron ${fixed} eventos incompletos automáticamente.`, 'color: #00ff00; font-weight: bold;');
+        }
+        
+        if (duplicates.length === 0 && incompleteEvents.length === 0) {
+          console.log('%c⚠️ Se encontraron otros problemas en los datos. Revisa los logs para más detalles.', 'color: #ff6600; font-weight: bold;');
+        }
+      } else {
+        console.log('%c✅ Todos los datos están íntegros.', 'color: #00ff00; font-weight: bold;');
+      }
+    }, 2000);
 
     // Limpiar suscripciones al desmontar
     return () => {

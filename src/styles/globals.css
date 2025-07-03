@@ -1,3 +1,186 @@
 @tailwind base;
 @tailwind components;
-@tailwind utilities; 
+@tailwind utilities;
+
+/* Estilos para SortableJS drag & drop */
+.sortable-chosen {
+  opacity: 0.8 !important;
+  transform: scale(1.02);
+  transition: all 0.2s ease;
+  z-index: 9999;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+}
+
+.sortable-drag {
+  opacity: 0.6 !important;
+  transform: rotate(3deg);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  z-index: 9999;
+}
+
+.sortable-ghost {
+  opacity: 0.3 !important;
+  background-color: rgba(59, 130, 246, 0.2) !important;
+  border: 2px dashed #3b82f6;
+  border-radius: 8px;
+}
+
+.sortable-fallback {
+  opacity: 0.8 !important;
+  transform: rotate(5deg) scale(1.05);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+  z-index: 10000;
+  cursor: grabbing;
+}
+
+/* Mejoras visuales para las celdas de drop */
+[data-sortable="true"] {
+  transition: background-color 0.2s ease;
+}
+
+[data-sortable="true"]:hover {
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+/* Indicador visual cuando se puede hacer drop */
+.sortable-drop-target {
+  background-color: rgba(34, 197, 94, 0.1) !important;
+  border: 2px dashed #22c55e;
+  border-radius: 8px;
+}
+
+/* Cursor durante drag */
+.sortable-chosen {
+  cursor: grabbing !important;
+}
+
+/* Mejorar la apariencia del elemento durante drag */
+.sortable-chosen * {
+  pointer-events: none;
+}
+
+/* Estilo para las celdas cuando son targets válidos */
+[data-sortable="true"].sortable-over {
+  background-color: rgba(59, 130, 246, 0.1) !important;
+  border-radius: 8px;
+}
+
+/* Animación suave para todos los elementos arrastrables */
+[data-event-id] {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Estilo mejorado durante el hover del elemento */
+[data-event-id]:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Prevenir selección de texto en toda la aplicación durante drag */
+body.dragging {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+}
+
+/* Mejorar la accesibilidad del handle de drag */
+.drag-handle {
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+[data-event-id]:hover .drag-handle {
+  opacity: 0.7;
+}
+
+.drag-handle:hover {
+  opacity: 1 !important;
+}
+
+/* Estilo cuando se está arrastrando */
+.sortable-chosen .drag-handle {
+  cursor: grabbing;
+}
+
+/* Estilos para el menú contextual */
+.context-menu {
+  position: fixed;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  z-index: 10000;
+  min-width: 160px;
+  overflow: hidden;
+  animation: contextMenuFadeIn 0.15s ease-out;
+}
+
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  text-align: left;
+  color: #374151;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  font-size: 14px;
+}
+
+.context-menu-item:hover {
+  background-color: #f3f4f6;
+  color: #111827;
+}
+
+.context-menu-item:active {
+  background-color: #e5e7eb;
+}
+
+.context-menu-item svg {
+  flex-shrink: 0;
+  color: #6b7280;
+}
+
+.context-menu-item:hover svg {
+  color: #374151;
+}
+
+/* Animación de entrada del menú contextual */
+@keyframes contextMenuFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Prevenir clic derecho en elementos que no deben tener menú contextual */
+.no-context-menu {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.no-context-menu::-webkit-scrollbar {
+  display: none;
+} 
