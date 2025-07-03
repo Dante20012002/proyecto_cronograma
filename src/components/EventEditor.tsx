@@ -16,7 +16,8 @@ export default function EventEditor({ event, rowId, day, isOpen, onClose }: Even
     details: Array.isArray(event.details) ? event.details.join('\n') : event.details,
     time: event.time || '',
     location: event.location,
-    color: event.color
+    color: event.color,
+    modalidad: event.modalidad || ''
   });
 
   useEffect(() => {
@@ -26,16 +27,17 @@ export default function EventEditor({ event, rowId, day, isOpen, onClose }: Even
         details: Array.isArray(event.details) ? event.details.join('\n') : event.details,
         time: event.time || '',
         location: event.location,
-        color: event.color
+        color: event.color,
+        modalidad: event.modalidad || ''
       });
     }
   }, [isOpen, event]);
 
   const handleSave = () => {
-    const currentRows = draftScheduleRows.get();
-    const newRows = currentRows.map(row => {
+    const currentRows = draftScheduleRows.value;
+    const newRows = currentRows.map((row: any) => {
       if (row.id === rowId && row.events[day]) {
-        const eventIndex = row.events[day].findIndex(e => e.id === event.id);
+        const eventIndex = row.events[day].findIndex((e: any) => e.id === event.id);
         if (eventIndex !== -1) {
           const updatedEvent: Event = {
             ...row.events[day][eventIndex],
@@ -43,7 +45,8 @@ export default function EventEditor({ event, rowId, day, isOpen, onClose }: Even
             details: formData.details.includes('\n') ? formData.details.split('\n') : formData.details,
             time: formData.time || undefined,
             location: formData.location,
-            color: formData.color
+            color: formData.color,
+            modalidad: formData.modalidad || undefined
           };
           
           const newEvents = [...row.events[day]];
@@ -61,7 +64,7 @@ export default function EventEditor({ event, rowId, day, isOpen, onClose }: Even
       return row;
     });
 
-    draftScheduleRows.set(newRows);
+    draftScheduleRows.value = newRows;
     onClose();
   };
 
@@ -154,6 +157,22 @@ export default function EventEditor({ event, rowId, day, isOpen, onClose }: Even
               class="w-full bg-slate-700 text-white p-3 rounded-lg border border-slate-600 focus:border-blue-500 focus:outline-none"
               placeholder="Ingresa la ubicación"
             />
+          </div>
+
+          {/* Modalidad */}
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2">
+              Modalidad (opcional)
+            </label>
+            <select
+              value={formData.modalidad}
+              onChange={(e) => setFormData({ ...formData, modalidad: (e.target as HTMLSelectElement).value })}
+              class="w-full bg-slate-700 text-white p-3 rounded-lg border border-slate-600 focus:border-blue-500 focus:outline-none"
+            >
+              <option value="">Seleccionar modalidad</option>
+              <option value="Presencial">Presencial</option>
+              <option value="Virtual">Virtual</option>
+            </select>
           </div>
 
           {/* Color */}

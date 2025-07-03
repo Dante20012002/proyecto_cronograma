@@ -18,6 +18,7 @@ export interface Event {
   time?: string;
   location: string;
   color: string;
+  modalidad?: string; // Nueva propiedad para modalidad (Presencial, Virtual)
 }
 
 export interface Instructor {
@@ -564,8 +565,13 @@ export function addEvent(rowId: string, day: string, newEvent: Event) {
 
 // --- OPERACIONES DE INSTRUCTORES ---
 export function addInstructor(name: string, city: string, regional: string) {
+  // Generar ID único con timestamp, random y counter para evitar duplicados
+  const timestamp = Date.now();
+  const randomId = Math.random().toString(36).substr(2, 9);
+  const counter = Math.floor(Math.random() * 1000); // Número aleatorio adicional
+  
   const newInstructor: Instructor = {
-    id: `instructor-${Date.now()}`,
+    id: `instructor-${timestamp}-${randomId}-${counter}`,
     name,
     city,
     regional
@@ -579,9 +585,18 @@ export function addInstructor(name: string, city: string, regional: string) {
     events: {}
   };
 
+  console.log('➕ addInstructor - Creando instructor:', {
+    id: newInstructor.id,
+    name: name,
+    city: city,
+    regional: regional
+  });
+
   draftInstructors.value = [...draftInstructors.value, newInstructor];
   draftScheduleRows.value = [...draftScheduleRows.value, newRow];
   markAsDirty();
+  
+  console.log('✅ addInstructor - Instructor creado correctamente');
 }
 
 export function updateInstructor(id: string, name: string, city: string, regional: string) {

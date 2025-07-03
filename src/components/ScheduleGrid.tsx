@@ -534,6 +534,7 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
                             <div class="text-sm">{event.details}</div>
                           )}
                           {event.time && <div class="text-sm mt-1">{event.time}</div>}
+                          {event.modalidad && <div class="text-xs mt-1 font-medium opacity-80">📍 {event.modalidad}</div>}
                           {event.location && <div class="text-xs mt-1">{event.location}</div>}
                         </div>
                       ))}

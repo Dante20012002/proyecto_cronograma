@@ -17,6 +17,7 @@ import { isAdmin, currentUser, logout } from '../lib/auth';
 import GlobalConfig from './GlobalConfig';
 import InstructorManager from './InstructorManager';
 import { LoginForm } from './LoginForm';
+import ExcelUploader from './ExcelUploader';
 import type { JSX } from 'preact';
 
 /**
@@ -52,6 +53,7 @@ export default function AdminToolbar({ onClose }: AdminToolbarProps): JSX.Elemen
   const allowPublish = useSignal(canPublish.value);
   const [notificationMessage, setNotificationMessage] = useState<string | null>(null);
   const [notificationType, setNotificationType] = useState<'success' | 'error' | 'info'>('info');
+  const [showExcelUploader, setShowExcelUploader] = useState(false);
 
   useEffect(() => {
     dirty.value = hasUnpublishedChanges.value;
@@ -225,6 +227,18 @@ export default function AdminToolbar({ onClose }: AdminToolbarProps): JSX.Elemen
             {publishing.value ? '📦 Publicando...' : 'Publicar'}
           </button>
           <button
+            onClick={() => setShowExcelUploader(true)}
+            disabled={processing.value}
+            class={`flex-1 sm:flex-none flex items-center justify-center px-3 py-2 rounded-md transition-colors text-sm ${
+              processing.value
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-indigo-600 text-white hover:bg-indigo-700'
+            }`}
+            title="Cargar eventos desde Excel"
+          >
+            📊 Excel
+          </button>
+          <button
             onClick={handleFixDuplicates}
             disabled={processing.value}
             class={`flex-1 sm:flex-none flex items-center justify-center px-3 py-2 rounded-md transition-colors text-sm ${
@@ -260,6 +274,11 @@ export default function AdminToolbar({ onClose }: AdminToolbarProps): JSX.Elemen
           </button>
         </div>
       </div>
+      
+      {/* Modal de carga masiva de Excel */}
+      {showExcelUploader && (
+        <ExcelUploader onClose={() => setShowExcelUploader(false)} />
+      )}
     </div>
   );
 } 

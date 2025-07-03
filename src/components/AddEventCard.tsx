@@ -159,7 +159,8 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
     startTime: '',
     endTime: '',
     location: '',
-    color: 'bg-blue-600'
+    color: 'bg-blue-600',
+    modalidad: ''
   });
   const [useCustomTitle, setUseCustomTitle] = useState(false);
   const [useCustomDetails, setUseCustomDetails] = useState(false);
@@ -250,7 +251,8 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
       details: formData.details.includes('\n') ? formData.details.split('\n') : formData.details,
       time: timeString || undefined,
       location: formData.location || 'Sin ubicación',
-      color: formData.color
+      color: formData.color,
+      modalidad: formData.modalidad || undefined
     };
     
     addEvent(rowId, day, newEvent);
@@ -442,6 +444,19 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
               />
             </div>
 
+            {/* Modalidad */}
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Modalidad</label>
+              <select
+                value={formData.modalidad}
+                onInput={(e) => handleInputChange('modalidad', (e.target as HTMLSelectElement).value)}
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
+              >
+                <option value="">Seleccionar modalidad...</option>
+                <option value="Presencial">Presencial</option>
+                <option value="Virtual">Virtual</option>
+              </select>
+            </div>
 
           </div>
 
