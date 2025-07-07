@@ -1,6 +1,8 @@
 import { useState } from 'preact/hooks';
 import { publishedGlobalConfig, selectedWeek, navigateWeek, formatDateDisplay } from '../stores/schedule';
 import type { JSX } from 'preact';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 /**
  * Barra de herramientas para usuarios.
@@ -18,34 +20,47 @@ export default function UserToolbar(): JSX.Element {
   const config = publishedGlobalConfig.value;
   const week = selectedWeek.value;
 
-  const handleDownload = () => {
-    const element = document.createElement('a');
-    const content = document.getElementById('schedule-grid')?.outerHTML;
+  const handleDownload = async () => {
+    const element = document.getElementById('schedule-grid');
     
-    if (content) {
-      const blob = new Blob([`
-        <html>
-          <head>
-            <title>${config.title} - ${formatDateDisplay(week.startDate)}</title>
-            <meta charset="utf-8">
-            <style>
-              body { font-family: system, -apple-system, sans-serif; }
-              table { border-collapse: collapse; width: 100%; }
-              th, td { border: 1px solid #ccc; padding: 8px; }
-              th { background: #f0f0f0; }
-            </style>
-          </head>
-          <body>
-            ${content}
-          </body>
-        </html>
-      `], { type: 'text/html' });
-      
-      element.href = URL.createObjectURL(blob);
-      element.download = `cronograma-${formatDateDisplay(week.startDate)}.html`;
-      document.body.appendChild(element);
-      element.click();
-      document.body.removeChild(element);
+    if (element) {
+      try {
+        // Capturar el elemento como imagen
+        const canvas = await html2canvas(element, {
+          scale: 2, // Mejor calidad de imagen
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: '#ffffff'
+        });
+        
+        // Crear el PDF
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+          orientation: 'landscape', // Paisaje para mejor ajuste del cronograma
+          unit: 'mm',
+          format: 'a4'
+        });
+        
+        // Calcular dimensiones para ajustar la imagen al PDF
+        const imgWidth = 297; // Ancho A4 en paisaje
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        // Agregar título al PDF
+        pdf.setFontSize(16);
+        pdf.text(`${config.title}`, 20, 20);
+        pdf.setFontSize(12);
+        pdf.text(`${formatDateDisplay(week.startDate)} - ${formatDateDisplay(week.endDate)}`, 20, 30);
+        
+        // Agregar la imagen del cronograma
+        pdf.addImage(imgData, 'PNG', 0, 40, imgWidth, imgHeight);
+        
+        // Descargar el PDF
+        pdf.save(`cronograma-${formatDateDisplay(week.startDate)}.pdf`);
+        
+      } catch (error) {
+        console.error('Error al generar el PDF:', error);
+        alert('Error al generar el PDF. Por favor, inténtelo de nuevo.');
+      }
     }
   };
 

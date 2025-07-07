@@ -541,7 +541,7 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
                       {isAdminProp && (
                         <button
                           onClick={() => handleAddEvent(row.id, day.dayNumber)}
-                          class="absolute bottom-0 left-0 right-0 py-1 px-2 bg-slate-600/70 text-slate-300 rounded hover:bg-slate-600 hover:text-white transition-all duration-200 text-sm z-[10] backdrop-blur-sm border border-slate-500/30"
+                          class="no-drag absolute bottom-0 left-0 right-0 py-1 px-2 bg-slate-600/70 text-slate-300 rounded hover:bg-slate-600 hover:text-white transition-all duration-200 text-sm z-[10] backdrop-blur-sm border border-slate-500/30"
                         >
                           + Agregar Evento
                         </button>
