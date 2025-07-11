@@ -74,15 +74,7 @@ export default function GlobalConfig(): JSX.Element {
   };
 
   return (
-    <div class="space-y-4">
-      <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h3 class="text-lg font-semibold text-blue-800 mb-2">Configuración de Semana</h3>
-        <p class="text-sm text-blue-700">
-          Cada semana puede tener su propio título independiente. 
-          Navega entre semanas para editar sus títulos específicos.
-        </p>
-      </div>
-      
+    <div class="space-y-4">      
       <form onSubmit={handleSubmit}>
         <div class="grid grid-cols-1 gap-4">
           <div>
