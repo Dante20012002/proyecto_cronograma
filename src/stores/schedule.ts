@@ -55,20 +55,36 @@ export interface GlobalConfig {
 // Horarios predefinidos para inicio de eventos
 export const startTimes = [
   '6:00 a.m.',
+  '6:30 a.m.',
   '7:00 a.m.',
+  '7:30 a.m.',
   '8:00 a.m.',
+  '8:30 a.m.',
   '9:00 a.m.',
+  '9:30 a.m.',
   '10:00 a.m.',
+  '10:30 a.m.',
   '11:00 a.m.',
+  '11:30 a.m.',
   '12:00 p.m.',
   '1:00 p.m.',
+  '1:30 p.m.',
   '2:00 p.m.',
+  '2:30 p.m.',
   '3:00 p.m.',
+  '3:30 p.m.',
   '4:00 p.m.',
+  '4:30 p.m.',
   '5:00 p.m.',
+  '5:30 p.m.',
   '6:00 p.m.',
+  '6:30 p.m.',
   '7:00 p.m.',
-  '8:00 p.m.'
+  '7:30 p.m.',
+  '8:00 p.m.',
+  '8:30 p.m.',
+  '9:00 p.m.',
+  '9:30 p.m.',
 ];
 
 // Horarios predefinidos para fin de eventos
