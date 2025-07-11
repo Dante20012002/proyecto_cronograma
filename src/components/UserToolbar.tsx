@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks';
-import { publishedGlobalConfig, selectedWeek, navigateWeek, formatDateDisplay } from '../stores/schedule';
+import { publishedGlobalConfig, selectedWeek, navigateWeek, formatDateDisplay, getPublishedWeekTitle } from '../stores/schedule';
 import type { JSX } from 'preact';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -19,6 +19,9 @@ import jsPDF from 'jspdf';
 export default function UserToolbar(): JSX.Element {
   const config = publishedGlobalConfig.value;
   const week = selectedWeek.value;
+  
+  // Obtener el título específico de la semana actual
+  const weekTitle = getPublishedWeekTitle();
 
   const handleDownload = async () => {
     const element = document.getElementById('schedule-grid');
@@ -45,9 +48,9 @@ export default function UserToolbar(): JSX.Element {
         const imgWidth = 297; // Ancho A4 en paisaje
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
         
-        // Agregar título al PDF
+        // Agregar título al PDF (usar el título específico de la semana)
         pdf.setFontSize(16);
-        pdf.text(`${config.title}`, 20, 20);
+        pdf.text(weekTitle, 20, 20);
         pdf.setFontSize(12);
         pdf.text(`${formatDateDisplay(week.startDate)} - ${formatDateDisplay(week.endDate)}`, 20, 30);
         
@@ -67,7 +70,7 @@ export default function UserToolbar(): JSX.Element {
   return (
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full space-y-2 sm:space-y-0">
       <div>
-        <h2 class="text-lg font-bold text-gray-900">{config.title}</h2>
+        <h2 class="text-lg font-bold text-gray-900">{weekTitle}</h2>
         <p class="text-sm text-gray-600">
           {formatDateDisplay(week.startDate)} - {formatDateDisplay(week.endDate)}
         </p>

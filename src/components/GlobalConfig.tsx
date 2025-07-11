@@ -1,17 +1,17 @@
 import { useState } from 'preact/hooks';
 import { 
   draftGlobalConfig, 
-  updateTitle, 
+  updateWeekTitle, 
   updateWeek, 
   navigateWeek, 
-  formatDateDisplay 
+  formatDateDisplay,
+  getCurrentWeekTitle
 } from '../stores/schedule';
 import type { JSX } from 'preact';
-import type { GlobalConfig } from '../types/schedule';
 
 /**
  * Componente para gestionar la configuración global del cronograma.
- * Permite editar el título y la semana actual.
+ * Permite editar el título de la semana actual y navegar entre semanas.
  * 
  * @component
  * @returns {JSX.Element} Componente GlobalConfig
@@ -24,7 +24,7 @@ import type { GlobalConfig } from '../types/schedule';
 export default function GlobalConfig(): JSX.Element {
   const config = draftGlobalConfig.value;
   const [formData, setFormData] = useState({
-    title: config.title,
+    title: getCurrentWeekTitle(),
     startDate: config.currentWeek.startDate,
     endDate: config.currentWeek.endDate
   });
@@ -37,7 +37,7 @@ export default function GlobalConfig(): JSX.Element {
     e.preventDefault();
     
     if (!formData.title.trim()) {
-      alert('Por favor ingresa un título.');
+      alert('Por favor ingresa un título para esta semana.');
       return;
     }
 
@@ -54,14 +54,20 @@ export default function GlobalConfig(): JSX.Element {
       return;
     }
 
-    await updateTitle(formData.title);
+    // Actualizar el título específico de esta semana
+    await updateWeekTitle(formData.startDate, formData.endDate, formData.title);
     await updateWeek(formData.startDate, formData.endDate);
   };
 
   const handleNavigate = async (direction: 'prev' | 'next') => {
     const newDates = navigateWeek(direction);
+    
+    // Actualizar el título para mostrar el de la nueva semana
+    const newWeekTitle = getCurrentWeekTitle();
+    
     setFormData(prev => ({
       ...prev,
+      title: newWeekTitle,
       startDate: newDates.startDate,
       endDate: newDates.endDate
     }));
@@ -69,17 +75,32 @@ export default function GlobalConfig(): JSX.Element {
 
   return (
     <div class="space-y-4">
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <h3 class="text-lg font-semibold text-blue-800 mb-2">Configuración de Semana</h3>
+        <p class="text-sm text-blue-700">
+          Cada semana puede tener su propio título independiente. 
+          Navega entre semanas para editar sus títulos específicos.
+        </p>
+      </div>
+      
       <form onSubmit={handleSubmit}>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 gap-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Título del Cronograma</label>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Título de la Semana Actual
+            </label>
             <input
               type="text"
               value={formData.title}
               onInput={(e) => handleInputChange('title', (e.target as HTMLInputElement).value)}
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Ej: Cronograma Semana 1 - Enero 2025"
             />
+            <p class="text-xs text-gray-500 mt-1">
+              Semana: {formatDateDisplay(formData.startDate)} - {formatDateDisplay(formData.endDate)}
+            </p>
           </div>
+          
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Navegación de Semana</label>
             <div class="flex flex-col space-y-3">
@@ -106,34 +127,39 @@ export default function GlobalConfig(): JSX.Element {
               </div>
             </div>
           </div>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+          
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Fecha de Inicio</label>
-            <input
-              type="date"
-              value={formData.startDate}
-              onInput={(e) => handleInputChange('startDate', (e.target as HTMLInputElement).value)}
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <label class="block text-sm font-medium text-gray-700 mb-2">Fechas Específicas</label>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de Inicio</label>
+                <input
+                  type="date"
+                  value={formData.startDate}
+                  onInput={(e) => handleInputChange('startDate', (e.target as HTMLInputElement).value)}
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de Fin</label>
+                <input
+                  type="date"
+                  value={formData.endDate}
+                  onInput={(e) => handleInputChange('endDate', (e.target as HTMLInputElement).value)}
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
           </div>
+          
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Fecha de Fin</label>
-            <input
-              type="date"
-              value={formData.endDate}
-              onInput={(e) => handleInputChange('endDate', (e.target as HTMLInputElement).value)}
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <button
+              type="submit"
+              class="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium"
+            >
+              Guardar Título y Fechas de la Semana
+            </button>
           </div>
-        </div>
-        <div class="flex justify-end mt-4">
-          <button
-            type="submit"
-            class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-          >
-            Guardar Cambios
-          </button>
         </div>
       </form>
     </div>

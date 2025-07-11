@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'preact/hooks';
-import { isConnected, initializeFirebase, cleanupFirebase, debugDataIntegrity, removeDuplicateEvents, clearAllDraftEvents, fixIncompleteEvents, debugPublishState, copyEventInSameCell, debugOperationQueue, migrateAllEventsToNewFormat, cleanupLegacyEvents } from '../stores/schedule';
+import { isConnected, initializeFirebase, cleanupFirebase, debugDataIntegrity, removeDuplicateEvents, clearAllDraftEvents, fixIncompleteEvents, debugPublishState, copyEventInSameCell, debugOperationQueue, migrateAllEventsToNewFormat, cleanupLegacyEvents, resetToCurrentWeek, updateWeekTitle, getWeekTitle, getCurrentWeekTitle } from '../stores/schedule';
 import { isAdmin, currentUser } from '../lib/auth';
 import type { JSX } from 'preact';
 import AdminToolbar from './AdminToolbar';
@@ -44,6 +44,10 @@ export default function CronogramaWrapper(): JSX.Element {
     (window as any).debugOperationQueue = debugOperationQueue;
     (window as any).migrateAllEventsToNewFormat = migrateAllEventsToNewFormat;
     (window as any).cleanupLegacyEvents = cleanupLegacyEvents;
+    (window as any).resetToCurrentWeek = resetToCurrentWeek;
+    (window as any).updateWeekTitle = updateWeekTitle;
+    (window as any).getWeekTitle = getWeekTitle;
+    (window as any).getCurrentWeekTitle = getCurrentWeekTitle;
 
     // Mostrar instrucciones de debugging en la consola
     console.log('%c=== HERRAMIENTAS DE DEBUGGING DISPONIBLES ===', 'color: #00ff00; font-weight: bold; font-size: 14px;');
@@ -56,7 +60,11 @@ export default function CronogramaWrapper(): JSX.Element {
     console.log('%c6. copyEventInSameCell()   - Copiar evento (eventId, rowId, day)', 'color: #ffff00;');
     console.log('%c7. migrateAllEventsToNewFormat() - Migrar eventos al nuevo formato de fechas', 'color: #ffff00;');
     console.log('%c8. cleanupLegacyEvents()   - Limpiar eventos del formato anterior', 'color: #ffff00;');
-    console.log('%c9. clearAllDraftEvents()   - Borrar todos los eventos (⚠️ CUIDADO)', 'color: #ff6600;');
+    console.log('%c9. resetToCurrentWeek()    - Resetear a la semana actual (solo admin)', 'color: #ffff00;');
+    console.log('%c10. clearAllDraftEvents()  - Borrar todos los eventos (⚠️ CUIDADO)', 'color: #ff6600;');
+    console.log('%c11. updateWeekTitle()     - Actualizar el título de la semana (solo admin)', 'color: #ffff00;');
+    console.log('%c12. getWeekTitle()        - Obtener el título de una semana por ID (solo admin)', 'color: #ffff00;');
+    console.log('%c13. getCurrentWeekTitle() - Obtener el título de la semana actual', 'color: #ffff00;');
     console.log('%c', 'color: #ffffff;');
     console.log('%cPara usuarios externos (verificar datos published):', 'color: #00bfff; font-weight: bold;');
     console.log('%cdebugPublishState() // Ver si los datos están migrados correctamente', 'color: #ffff00;');

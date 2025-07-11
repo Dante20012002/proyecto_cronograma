@@ -254,6 +254,7 @@ const initialData: FirestoreSchedule = {
   ],
   globalConfig: {
     title: 'Cronograma Escuelas Colombia',
+    weekTitles: {}, // Inicialmente vacío
     currentWeek: getCurrentWeek()
   },
   lastUpdated: serverTimestamp()

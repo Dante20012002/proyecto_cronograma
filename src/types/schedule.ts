@@ -17,8 +17,10 @@ export interface ScheduleRow {
 }
 
 export interface GlobalConfig {
-  title: string;
-  days: string[];
+  title: string; // Título por defecto
+  weekTitles: {
+    [weekKey: string]: string; // weekKey será "YYYY-MM-DD" del lunes de la semana
+  };
   currentWeek: {
     startDate: string;
     endDate: string;

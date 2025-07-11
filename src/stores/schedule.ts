@@ -9,6 +9,7 @@ import {
   getPublishedData as getFirestorePublishedData,
   logOperation
 } from '../lib/firestore';
+import { isAdmin } from '../lib/auth';
 
 // --- INTERFACES ---
 export interface Event {
@@ -39,65 +40,169 @@ export interface ScheduleRow {
 }
 
 export interface GlobalConfig {
-  title: string;
+  title: string; // Este será el título por defecto
+  weekTitles: {
+    [weekKey: string]: string; // weekKey será "YYYY-MM-DD" del lunes de la semana
+  };
   currentWeek: {
     startDate: string;
     endDate: string;
   };
 }
 
-// --- CONSTANTES DE TIEMPO ---
+// --- DATOS DE HORARIOS ---
+
+// Horarios predefinidos para inicio de eventos
 export const startTimes = [
+  '6:00 a.m.',
   '7:00 a.m.',
-  '7:30 a.m.',
   '8:00 a.m.',
-  '8:30 a.m.',
   '9:00 a.m.',
-  '9:30 a.m.',
   '10:00 a.m.',
-  '10:30 a.m.',
   '11:00 a.m.',
-  '11:30 a.m.',
   '12:00 p.m.',
-  '12:30 p.m.',
   '1:00 p.m.',
-  '1:30 p.m.',
   '2:00 p.m.',
-  '2:30 p.m.',
   '3:00 p.m.',
-  '3:30 p.m.',
   '4:00 p.m.',
-  '4:30 p.m.',
   '5:00 p.m.',
-  '5:30 p.m.',
-  '6:00 p.m.'
+  '6:00 p.m.',
+  '7:00 p.m.',
+  '8:00 p.m.'
 ];
 
+// Horarios predefinidos para fin de eventos
 export const endTimes = [
+  '7:00 a.m.',
   '8:00 a.m.',
-  '8:30 a.m.',
   '9:00 a.m.',
-  '9:30 a.m.',
   '10:00 a.m.',
-  '10:30 a.m.',
   '11:00 a.m.',
-  '11:30 a.m.',
   '12:00 p.m.',
-  '12:30 p.m.',
   '1:00 p.m.',
-  '1:30 p.m.',
   '2:00 p.m.',
-  '2:30 p.m.',
   '3:00 p.m.',
-  '3:30 p.m.',
   '4:00 p.m.',
-  '4:30 p.m.',
   '5:00 p.m.',
-  '5:30 p.m.',
   '6:00 p.m.',
-  '6:30 p.m.',
-  '7:00 p.m.'
+  '7:00 p.m.',
+  '8:00 p.m.',
+  '9:00 p.m.',
+  '10:00 p.m.'
 ];
+
+// --- FUNCIONES DE VALIDACIÓN DE HORARIOS ---
+
+/**
+ * Convierte un horario en formato string a minutos desde medianoche
+ * @param timeStr - Horario en formato "8:00 a.m." o "2:00 p.m."
+ * @returns Número de minutos desde medianoche
+ */
+function timeToMinutes(timeStr: string): number {
+  const parts = timeStr.toLowerCase().replace(/\s+/g, ' ').split(' ');
+  if (parts.length < 2) return 0;
+  
+  const [time, period] = parts;
+  const [hours, minutes] = time.split(':').map(Number);
+  
+  let totalMinutes = (hours % 12) * 60 + (minutes || 0);
+  if (period === 'p.m.' && hours !== 12) {
+    totalMinutes += 12 * 60;
+  } else if (period === 'a.m.' && hours === 12) {
+    totalMinutes = minutes || 0;
+  }
+  
+  return totalMinutes;
+}
+
+/**
+ * Verifica si dos rangos de tiempo se superponen
+ * @param start1 - Hora de inicio del primer evento
+ * @param end1 - Hora de fin del primer evento
+ * @param start2 - Hora de inicio del segundo evento
+ * @param end2 - Hora de fin del segundo evento
+ * @returns true si hay superposición, false en caso contrario
+ */
+function timesOverlap(start1: string, end1: string, start2: string, end2: string): boolean {
+  const start1Minutes = timeToMinutes(start1);
+  const end1Minutes = timeToMinutes(end1);
+  const start2Minutes = timeToMinutes(start2);
+  const end2Minutes = timeToMinutes(end2);
+  
+  // Verificar si hay superposición
+  return start1Minutes < end2Minutes && start2Minutes < end1Minutes;
+}
+
+/**
+ * Verifica si hay conflictos de horario para un evento
+ * @param rowId - ID del instructor/fila
+ * @param day - Día del mes
+ * @param startTime - Hora de inicio del evento
+ * @param endTime - Hora de fin del evento
+ * @param excludeEventId - ID del evento a excluir de la verificación (para edición)
+ * @returns Objeto con información sobre el conflicto
+ */
+export function checkTimeConflict(
+  rowId: string,
+  day: string,
+  startTime: string,
+  endTime: string,
+  excludeEventId?: string
+): { hasConflict: boolean; conflictingEvent?: Event } {
+  try {
+    // Validar horarios
+    if (!startTime || !endTime) {
+      return { hasConflict: false };
+    }
+    
+    // Buscar la fila del instructor
+    const row = draftScheduleRows.value.find(r => r.id === rowId);
+    if (!row) {
+      return { hasConflict: false };
+    }
+    
+    // Obtener la fecha completa
+    const fullDate = getFullDateFromDay(day);
+    
+    // Obtener eventos del día (considerar ambos formatos)
+    const dayEvents = [
+      ...(row.events[day] || []),
+      ...(row.events[fullDate] || [])
+    ];
+    
+    // Verificar conflictos con otros eventos del mismo día
+    for (const event of dayEvents) {
+      // Excluir el evento actual si estamos editando
+      if (excludeEventId && event.id === excludeEventId) {
+        continue;
+      }
+      
+      // Verificar si el evento tiene horario definido
+      if (!event.time) {
+        continue;
+      }
+      
+      // Parsear el horario del evento existente
+      const timeParts = event.time.split(' a ');
+      if (timeParts.length === 2) {
+        const [eventStart, eventEnd] = timeParts;
+        
+        // Verificar superposición
+        if (timesOverlap(startTime, endTime, eventStart, eventEnd)) {
+          return {
+            hasConflict: true,
+            conflictingEvent: event
+          };
+        }
+      }
+    }
+    
+    return { hasConflict: false };
+  } catch (error) {
+    console.error('Error al verificar conflictos de horario:', error);
+    return { hasConflict: false };
+  }
+}
 
 // --- DATOS INICIALES ---
 const initialInstructors: Instructor[] = [
@@ -158,6 +263,7 @@ function getCurrentWeek(): { startDate: string; endDate: string } {
 
 const initialGlobalConfig: GlobalConfig = {
   title: 'Cronograma 2025',
+  weekTitles: {}, // Inicialmente vacío
   currentWeek: getCurrentWeek()
 };
 
@@ -258,6 +364,14 @@ export async function initializeFirebase() {
       draftScheduleRows.value = data.scheduleRows;
       draftGlobalConfig.value = data.globalConfig;
       isConnected.value = true;
+      
+      // Resetear a la semana actual para admins después de cargar datos
+      setTimeout(() => {
+        if (isAdmin.value && isWeekOutdated()) {
+          console.log('📅 Reseteando automáticamente a la semana actual para admin');
+          resetToCurrentWeek();
+        }
+      }, 1000);
     });
 
     unsubscribePublished = subscribeToFirestorePublished((data) => {
@@ -780,6 +894,86 @@ export function updateTitle(newTitle: string) {
   markAsDirty();
 }
 
+// --- FUNCIONES DE TÍTULOS POR SEMANA ---
+
+/**
+ * Genera la clave de semana basada en la fecha de inicio (lunes)
+ * @param startDate - Fecha de inicio en formato YYYY-MM-DD
+ * @returns Clave de semana
+ */
+function getWeekKey(startDate: string): string {
+  return startDate;
+}
+
+/**
+ * Obtiene el título de una semana específica
+ * @param startDate - Fecha de inicio de la semana
+ * @param endDate - Fecha de fin de la semana
+ * @returns Título de la semana o título por defecto
+ */
+export function getWeekTitle(startDate: string, endDate: string): string {
+  const weekKey = getWeekKey(startDate);
+  const weekTitles = draftGlobalConfig.value.weekTitles || {};
+  
+  if (weekTitles[weekKey]) {
+    return weekTitles[weekKey];
+  }
+  
+  // Usar título por defecto si no hay título específico para esta semana
+  return draftGlobalConfig.value.title;
+}
+
+/**
+ * Actualiza el título de una semana específica
+ * @param startDate - Fecha de inicio de la semana
+ * @param endDate - Fecha de fin de la semana
+ * @param title - Nuevo título para la semana
+ */
+export function updateWeekTitle(startDate: string, endDate: string, title: string) {
+  const weekKey = getWeekKey(startDate);
+  const currentWeekTitles = draftGlobalConfig.value.weekTitles || {};
+  
+  const updatedWeekTitles = {
+    ...currentWeekTitles,
+    [weekKey]: title
+  };
+  
+  draftGlobalConfig.value = {
+    ...draftGlobalConfig.value,
+    weekTitles: updatedWeekTitles
+  };
+  
+  markAsDirty();
+  
+  console.log(`📝 Título actualizado para semana ${startDate}: "${title}"`);
+}
+
+/**
+ * Obtiene el título de la semana actual (para admins)
+ * @returns Título de la semana actual
+ */
+export function getCurrentWeekTitle(): string {
+  const currentWeek = draftGlobalConfig.value.currentWeek;
+  return getWeekTitle(currentWeek.startDate, currentWeek.endDate);
+}
+
+/**
+ * Obtiene el título de la semana publicada (para usuarios externos)
+ * @returns Título de la semana publicada
+ */
+export function getPublishedWeekTitle(): string {
+  const currentWeek = selectedWeek.value;
+  const publishedConfig = publishedGlobalConfig.value;
+  const weekKey = getWeekKey(currentWeek.startDate);
+  const weekTitles = publishedConfig.weekTitles || {};
+  
+  if (weekTitles[weekKey]) {
+    return weekTitles[weekKey];
+  }
+  
+  return publishedConfig.title;
+}
+
 export function updateWeek(startDate: string, endDate: string) {
   draftGlobalConfig.value = {
     ...draftGlobalConfig.value,
@@ -788,108 +982,38 @@ export function updateWeek(startDate: string, endDate: string) {
   markAsDirty();
 }
 
-// --- UTILIDADES ---
-export function checkTimeConflict(
-  rowId: string,
-  day: string,
-  startTime: string,
-  endTime: string,
-  excludeEventId?: string
-): { hasConflict: boolean; conflictingEvent?: Event } {
-  const row = draftScheduleRows.value.find(r => r.id === rowId);
-  if (!row) {
-    return { hasConflict: false };
-  }
+// --- NUEVA FUNCIÓN PARA RESETEAR A LA SEMANA ACTUAL ---
 
-  const events = getEventsForDay(row, day).filter(e => e.id !== excludeEventId);
+/**
+ * Resetea la semana del draft a la semana actual (para admins)
+ */
+export function resetToCurrentWeek() {
+  const currentWeek = getCurrentWeek();
+  console.log('📅 Reseteando a la semana actual:', currentWeek);
   
-  const startMinutes = timeToMinutes(startTime);
-  const endMinutes = timeToMinutes(endTime);
-
-  for (const event of events) {
-    if (!event.time) continue;
-
-    const sessions = Array.isArray(event.time) ? event.time : [event.time];
-    
-    for (const session of sessions) {
-      const { start: eventStart, end: eventEnd } = parseEventTime(session);
-      const eventStartMinutes = timeToMinutes(eventStart);
-      const eventEndMinutes = timeToMinutes(eventEnd);
-
-      const hasOverlap = (
-        (startMinutes >= eventStartMinutes && startMinutes < eventEndMinutes) ||
-        (endMinutes > eventStartMinutes && endMinutes <= eventEndMinutes) ||
-        (startMinutes <= eventStartMinutes && endMinutes >= eventEndMinutes)
-      );
-
-      if (hasOverlap) {
-        return { hasConflict: true, conflictingEvent: event };
-      }
-    }
-  }
-
-  return { hasConflict: false };
+  draftGlobalConfig.value = {
+    ...draftGlobalConfig.value,
+    currentWeek: currentWeek
+  };
+  
+  // Guardar el cambio automáticamente
+  markAsDirty();
+  
+  return currentWeek;
 }
 
-function timeToMinutes(time: string): number {
-  // Extraer la hora y los minutos del formato "HH:mm a.m./p.m."
-  const match = time.match(/(\d{1,2}):(\d{2})\s*(a\.m\.|p\.m\.)/i);
-  if (!match) return 0;
-
-  let hours = parseInt(match[1]);
-  const minutes = parseInt(match[2]);
-  const period = match[3].toLowerCase();
-
-  // Ajustar las horas según el período
-  if (period === 'p.m.' && hours !== 12) {
-    hours += 12;
-  } else if (period === 'a.m.' && hours === 12) {
-    hours = 0;
-  }
-
-  return hours * 60 + minutes;
+/**
+ * Verifica si la semana actual del draft es diferente a la semana actual del calendario
+ */
+export function isWeekOutdated(): boolean {
+  const currentWeek = getCurrentWeek();
+  const draftWeek = draftGlobalConfig.value.currentWeek;
+  
+  return currentWeek.startDate !== draftWeek.startDate || 
+         currentWeek.endDate !== draftWeek.endDate;
 }
 
-function parseEventTime(timeString: string): { start: string; end: string } {
-  // Formato 1: "Presencial/Virtual - HH:mm a.m. a HH:mm p.m."
-  let match = timeString.match(/(?:Presencial|Virtual)\s*-\s*(\d{1,2}:\d{2}\s*(?:a\.m\.|p\.m\.))(?:\s*a\s*)(\d{1,2}:\d{2}\s*(?:a\.m\.|p\.m\.))/i);
-  
-  if (match) {
-    const result = { start: match[1], end: match[2] };
-    console.log('🕐 parseEventTime - Formato complejo:', timeString, '→', result);
-    return result;
-  }
-
-  // Formato 2: "HH:mm a.m. a HH:mm p.m." (formato simple)
-  match = timeString.match(/(\d{1,2}:\d{2}\s*(?:a\.m\.|p\.m\.))(?:\s*a\s*)(\d{1,2}:\d{2}\s*(?:a\.m\.|p\.m\.))/i);
-  
-  if (match) {
-    const result = { start: match[1], end: match[2] };
-    console.log('🕐 parseEventTime - Formato simple:', timeString, '→', result);
-    return result;
-  }
-
-  // Formato 3: Solo una hora (sin hora de fin)
-  match = timeString.match(/(\d{1,2}:\d{2}\s*(?:a\.m\.|p\.m\.))/i);
-  
-  if (match) {
-    // Si solo hay una hora, asumimos que es de 1 hora de duración
-    const startMinutes = timeToMinutes(match[1]);
-    const endMinutes = startMinutes + 60; // +1 hora
-    const endHour = Math.floor(endMinutes / 60);
-    const endMin = endMinutes % 60;
-    const endPeriod = endHour >= 12 ? 'p.m.' : 'a.m.';
-    const displayHour = endHour > 12 ? endHour - 12 : (endHour === 0 ? 12 : endHour);
-    const endTime = `${displayHour}:${endMin.toString().padStart(2, '0')} ${endPeriod}`;
-    
-    const result = { start: match[1], end: endTime };
-    console.log('🕐 parseEventTime - Solo inicio:', timeString, '→', result);
-    return result;
-  }
-
-  console.log('⚠️ parseEventTime - Formato no reconocido:', timeString);
-  return { start: '8:00 a.m.', end: '5:00 p.m.' }; // Valores por defecto
-}
+// --- FUNCIONES DE NAVEGACIÓN ---
 
 export function navigateWeek(direction: 'prev' | 'next'): { startDate: string; endDate: string } {
   const isAdminUser = isAdmin.value;
@@ -1149,7 +1273,7 @@ export function copyEventInSameCell(eventId: string, rowId: string, day: string)
 }
 
 // --- FUNCIONES DE ADMINISTRACIÓN ---
-export const isAdmin = signal<boolean>(false);
+// isAdmin se importa desde ../lib/auth
 
 // Función temporal para debuggear integridad de datos
 export function debugDataIntegrity() {

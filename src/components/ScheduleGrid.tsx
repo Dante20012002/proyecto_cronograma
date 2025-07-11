@@ -11,9 +11,10 @@ import {
   copyEvent,
   copyEventInSameCell,
   formatDateDisplay,
-  isAdmin,
   updateEvent,
-  addEvent as addScheduleEvent
+  addEvent as addScheduleEvent,
+  getWeekTitle,
+  getPublishedWeekTitle
 } from '../stores/schedule';
 import EventCard from './EventCard';
 import AddEventCard from './AddEventCard';
@@ -493,11 +494,16 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
     }
   }, [moveNotification]);
 
+  // Obtener el título específico de la semana actual
+  const weekTitle = isAdminProp 
+    ? getWeekTitle(currentWeek.startDate, currentWeek.endDate)
+    : getPublishedWeekTitle();
+
   return (
     <div id="schedule-grid" class="bg-slate-800 rounded-lg shadow-xl overflow-hidden text-white relative">
-      {/* Header con título dinámico */}
+      {/* Header con título dinámico por semana */}
       <div class="bg-slate-900 text-white p-6">
-        <h1 class="text-3xl font-bold text-center tracking-tight">{config.title}</h1>
+        <h1 class="text-3xl font-bold text-center tracking-tight">{weekTitle}</h1>
         <p class="text-center text-slate-300 mt-2">
           {formatDateDisplay(currentWeek.startDate)} - {formatDateDisplay(currentWeek.endDate)}
         </p>
