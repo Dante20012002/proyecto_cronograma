@@ -269,8 +269,22 @@ export async function initializeFirebase() {
 
     console.log('Firebase inicializado correctamente');
     
-    // Verificar y limpiar duplicados automáticamente después de la inicialización
+    // Ejecutar migración automática después de la inicialización
     setTimeout(() => {
+      console.log('🔄 Ejecutando migración automática al nuevo formato de fechas...');
+      const migrated = migrateAllEventsToNewFormat();
+      
+      if (migrated > 0) {
+        console.log(`✅ Migración completada: ${migrated} instructores migrados`);
+        // Guardar automáticamente después de migrar
+        saveDraftChanges().then(() => {
+          console.log('✅ Datos migrados guardados en Firebase');
+        }).catch(error => {
+          console.error('❌ Error al guardar datos migrados:', error);
+        });
+      }
+      
+      // Verificar y limpiar duplicados automáticamente después de la migración
       console.log('🔍 Verificando integridad de datos al inicializar...');
       const result = debugDataIntegrity();
       
@@ -482,22 +496,127 @@ function markAsDirty() {
 }
 
 // --- OPERACIONES DE EVENTOS ---
+
+// --- FUNCIONES AUXILIARES PARA FECHAS COMPLETAS ---
+
+/**
+ * Genera la fecha completa (YYYY-MM-DD) basada en la semana actual y el día del mes
+ * @param dayOfMonth - Día del mes (1-31)
+ * @returns Fecha completa en formato YYYY-MM-DD
+ */
+function getFullDateFromDay(dayOfMonth: string): string {
+  const currentWeek = draftGlobalConfig.value.currentWeek;
+  const [year, month, day] = currentWeek.startDate.split('-').map(Number);
+  const startDate = new Date(year, month - 1, day);
+  
+  // Buscar el día en la semana actual (lunes a viernes)
+  for (let i = 0; i < 5; i++) {
+    const checkDate = new Date(startDate);
+    checkDate.setDate(startDate.getDate() + i);
+    
+    if (checkDate.getDate().toString() === dayOfMonth) {
+      return checkDate.toISOString().split('T')[0];
+    }
+  }
+  
+  // Si no se encuentra en la semana actual, usar la fecha del mes actual
+  const today = new Date();
+  const fullDate = new Date(today.getFullYear(), today.getMonth(), parseInt(dayOfMonth));
+  return fullDate.toISOString().split('T')[0];
+}
+
+/**
+ * Migra eventos del formato anterior (solo día) al nuevo formato (fecha completa)
+ * @param row - Fila de eventos a migrar
+ * @returns Fila con eventos migrados
+ */
+function migrateEventsToFullDate(row: ScheduleRow): ScheduleRow {
+  const newEvents: { [key: string]: Event[] } = {};
+  
+  // Copiar eventos existentes
+  Object.entries(row.events).forEach(([key, events]) => {
+    if (key.includes('-')) {
+      // Ya está en formato de fecha completa
+      newEvents[key] = events;
+    } else {
+      // Formato anterior (solo día), migrar a fecha completa
+      const fullDate = getFullDateFromDay(key);
+      if (!newEvents[fullDate]) {
+        newEvents[fullDate] = [];
+      }
+      newEvents[fullDate].push(...events);
+    }
+  });
+  
+  return {
+    ...row,
+    events: newEvents
+  };
+}
+
+/**
+ * Obtiene eventos tanto del formato anterior como del nuevo formato
+ * @param row - Fila de eventos
+ * @param dayOfMonth - Día del mes
+ * @returns Array de eventos para ese día
+ */
+function getEventsForDay(row: ScheduleRow, dayOfMonth: string): Event[] {
+  const fullDate = getFullDateFromDay(dayOfMonth);
+  
+  // Obtener eventos del nuevo formato (fecha completa)
+  const eventsByFullDate = row.events[fullDate] || [];
+  
+  // Obtener eventos del formato anterior (solo día) para compatibilidad
+  const eventsByDay = row.events[dayOfMonth] || [];
+  
+  // Combinar y deduplicar
+  const allEvents = [...eventsByFullDate, ...eventsByDay];
+  const uniqueEvents = allEvents.filter((event, index, self) => 
+    index === self.findIndex(e => e.id === event.id)
+  );
+  
+  return uniqueEvents;
+}
+
+// --- OPERACIONES DE EVENTOS ACTUALIZADAS ---
+
 export function updateEvent(rowId: string, day: string, updatedEvent: Event) {
   const rows = [...draftScheduleRows.value];
   const rowIndex = rows.findIndex(row => row.id === rowId);
   
   if (rowIndex !== -1) {
     const row = rows[rowIndex];
-    const events = row.events[day] || [];
-    const eventIndex = events.findIndex(e => e.id === updatedEvent.id);
+    const fullDate = getFullDateFromDay(day);
     
-    if (eventIndex !== -1) {
+    // Buscar el evento en el nuevo formato primero
+    let events = row.events[fullDate] || [];
+    let eventIndex = events.findIndex(e => e.id === updatedEvent.id);
+    
+    if (eventIndex === -1) {
+      // Buscar en el formato anterior si no se encuentra en el nuevo
+      events = row.events[day] || [];
+      eventIndex = events.findIndex(e => e.id === updatedEvent.id);
+      
+      if (eventIndex !== -1) {
+        // Migrar evento al nuevo formato
+        events.splice(eventIndex, 1);
+        row.events[day] = events;
+        
+        // Agregar al nuevo formato
+        if (!row.events[fullDate]) {
+          row.events[fullDate] = [];
+        }
+        row.events[fullDate].push(updatedEvent);
+      }
+    } else {
+      // Actualizar en el nuevo formato
       events[eventIndex] = updatedEvent;
-      row.events[day] = events;
-      rows[rowIndex] = row;
-      draftScheduleRows.value = rows;
-      markAsDirty();
+      row.events[fullDate] = events;
     }
+    
+    rows[rowIndex] = row;
+    draftScheduleRows.value = rows;
+    markAsDirty();
   }
 }
 
@@ -513,33 +632,33 @@ export function deleteEvent(rowId: string, day: string, eventId: string) {
   
   if (rowIndex !== -1) {
     const row = rows[rowIndex];
-    const events = row.events[day] || [];
+    const fullDate = getFullDateFromDay(day);
     
-    console.log('🗑️ deleteEvent - Eventos antes de eliminar:', {
-      totalEvents: events.length,
-      eventIds: events.map(e => e.id),
-      eventTitles: events.map(e => e.title)
-    });
+    // Buscar y eliminar del nuevo formato
+    let events = row.events[fullDate] || [];
+    let eventIndex = events.findIndex(e => e.id === eventId);
     
-    const eventToDelete = events.find(e => e.id === eventId);
-    
-    if (eventToDelete) {
-      console.log('🗑️ deleteEvent - Evento encontrado, eliminando:', {
-        eventTitle: eventToDelete.title,
-        eventId: eventToDelete.id
-      });
+    if (eventIndex !== -1) {
+      console.log('🗑️ deleteEvent - Eliminando del nuevo formato (fecha completa)');
+      events.splice(eventIndex, 1);
+      row.events[fullDate] = events;
+    } else {
+      // Buscar y eliminar del formato anterior
+      events = row.events[day] || [];
+      eventIndex = events.findIndex(e => e.id === eventId);
       
-      row.events[day] = events.filter(e => e.id !== eventId);
+      if (eventIndex !== -1) {
+        console.log('🗑️ deleteEvent - Eliminando del formato anterior (solo día)');
+        events.splice(eventIndex, 1);
+        row.events[day] = events;
+      }
+    }
+    
+    if (eventIndex !== -1) {
       rows[rowIndex] = row;
       draftScheduleRows.value = rows;
       markAsDirty();
-      
       console.log('✅ deleteEvent - Evento eliminado exitosamente');
-      console.log('🗑️ deleteEvent - Eventos después de eliminar:', {
-        totalEvents: row.events[day].length,
-        eventIds: row.events[day].map(e => e.id),
-        eventTitles: row.events[day].map(e => e.title)
-      });
     } else {
       console.log('❌ deleteEvent - Evento no encontrado con ID:', eventId);
     }
@@ -554,12 +673,23 @@ export function addEvent(rowId: string, day: string, newEvent: Event) {
   
   if (rowIndex !== -1) {
     const row = rows[rowIndex];
-    const events = row.events[day] || [];
-    events.push(newEvent);
-    row.events[day] = events;
+    const fullDate = getFullDateFromDay(day);
+    
+    // Usar el nuevo formato (fecha completa)
+    if (!row.events[fullDate]) {
+      row.events[fullDate] = [];
+    }
+    row.events[fullDate].push(newEvent);
+    
     rows[rowIndex] = row;
     draftScheduleRows.value = rows;
     markAsDirty();
+    
+    console.log('✅ addEvent - Evento agregado con fecha completa:', {
+      eventId: newEvent.id,
+      day: day,
+      fullDate: fullDate
+    });
   }
 }
 
@@ -644,47 +774,19 @@ export function checkTimeConflict(
   endTime: string,
   excludeEventId?: string
 ): { hasConflict: boolean; conflictingEvent?: Event } {
-  console.log('🔍 checkTimeConflict - Iniciando validación:', {
-    rowId,
-    day,
-    startTime,
-    endTime,
-    excludeEventId
-  });
-
   const row = draftScheduleRows.value.find(r => r.id === rowId);
-  if (!row || !row.events[day]) {
-    console.log('❌ checkTimeConflict - Fila o día no encontrado');
+  if (!row) {
     return { hasConflict: false };
   }
 
-  const events = row.events[day].filter(e => e.id !== excludeEventId);
-  console.log('📋 checkTimeConflict - Eventos a verificar:', events.length);
+  const events = getEventsForDay(row, day).filter(e => e.id !== excludeEventId);
   
-  // Convertir tiempos a minutos para facilitar la comparación
   const startMinutes = timeToMinutes(startTime);
   const endMinutes = timeToMinutes(endTime);
-  
-  console.log('⏰ checkTimeConflict - Nuevo evento:', {
-    startTime,
-    endTime,
-    startMinutes,
-    endMinutes
-  });
 
   for (const event of events) {
-    if (!event.time) {
-      console.log('⚠️ checkTimeConflict - Evento sin tiempo:', event.title);
-      continue;
-    }
+    if (!event.time) continue;
 
-    console.log('🔎 checkTimeConflict - Verificando evento:', {
-      id: event.id,
-      title: event.title,
-      time: event.time
-    });
-
-    // Manejar eventos con múltiples sesiones
     const sessions = Array.isArray(event.time) ? event.time : [event.time];
     
     for (const session of sessions) {
@@ -692,35 +794,18 @@ export function checkTimeConflict(
       const eventStartMinutes = timeToMinutes(eventStart);
       const eventEndMinutes = timeToMinutes(eventEnd);
 
-      console.log('⏰ checkTimeConflict - Comparando con evento existente:', {
-        eventStart,
-        eventEnd,
-        eventStartMinutes,
-        eventEndMinutes
-      });
-
-      // Verificar solapamiento
       const hasOverlap = (
         (startMinutes >= eventStartMinutes && startMinutes < eventEndMinutes) ||
         (endMinutes > eventStartMinutes && endMinutes <= eventEndMinutes) ||
         (startMinutes <= eventStartMinutes && endMinutes >= eventEndMinutes)
       );
 
-      console.log('🔄 checkTimeConflict - Resultado de comparación:', {
-        condition1: `${startMinutes} >= ${eventStartMinutes} && ${startMinutes} < ${eventEndMinutes} = ${startMinutes >= eventStartMinutes && startMinutes < eventEndMinutes}`,
-        condition2: `${endMinutes} > ${eventStartMinutes} && ${endMinutes} <= ${eventEndMinutes} = ${endMinutes > eventStartMinutes && endMinutes <= eventEndMinutes}`,
-        condition3: `${startMinutes} <= ${eventStartMinutes} && ${endMinutes} >= ${eventEndMinutes} = ${startMinutes <= eventStartMinutes && endMinutes >= eventEndMinutes}`,
-        hasOverlap
-      });
-
       if (hasOverlap) {
-        console.log('❌ checkTimeConflict - CONFLICTO DETECTADO con evento:', event.title);
         return { hasConflict: true, conflictingEvent: event };
       }
     }
   }
 
-  console.log('✅ checkTimeConflict - Sin conflictos detectados');
   return { hasConflict: false };
 }
 
@@ -840,6 +925,9 @@ export function formatDateDisplay(dateString: string): string {
 }
 
 // --- FUNCIONES DE MANIPULACIÓN DE EVENTOS ---
+
+// --- FUNCIONES DE MANIPULACIÓN DE EVENTOS ACTUALIZADAS ---
+
 export function moveEvent(
   eventId: string,
   fromRowId: string,
@@ -861,84 +949,68 @@ export function moveEvent(
     const fromRowIndex = rows.findIndex(row => row.id === fromRowId);
     const toRowIndex = rows.findIndex(row => row.id === toRowId);
 
-    console.log('📊 Índices encontrados:', { fromRowIndex, toRowIndex });
-
-    if (fromRowIndex === -1) {
-      console.error('❌ Fila de origen no encontrada:', fromRowId);
+    if (fromRowIndex === -1 || toRowIndex === -1) {
+      console.error('❌ Fila no encontrada');
       return;
     }
 
-    if (toRowIndex === -1) {
-      console.error('❌ Fila de destino no encontrada:', toRowId);
-      return;
-    }
-
-    // Buscar el evento en la fila de origen
     const fromRow = { ...rows[fromRowIndex], events: { ...rows[fromRowIndex].events } };
-    const fromEvents = [...(fromRow.events[fromDay] || [])];
-    const eventIndex = fromEvents.findIndex(e => e.id === eventId);
-
-    if (eventIndex === -1) {
-      console.error('❌ Evento no encontrado en la fila de origen');
-      console.log('Eventos disponibles en la fila de origen:', fromEvents.map(e => ({ id: e.id, title: e.title })));
-      return;
-    }
-
-    const event = fromEvents[eventIndex];
-    console.log('📄 Evento encontrado:', {
-      id: event.id,
-      title: event.title,
-      location: event.location
-    });
-
-    // Crear copia de la fila destino
     const toRow = { ...rows[toRowIndex], events: { ...rows[toRowIndex].events } };
-    const toEvents = [...(toRow.events[toDay] || [])];
-
-    // Verificar que no exista ya el evento en el destino (prevenir duplicados)
-    const existsInDestination = toEvents.some(e => e.id === eventId);
-    if (existsInDestination) {
-      console.warn('⚠️ El evento ya existe en el destino, omitiendo movimiento');
-      return;
+    
+    const fromFullDate = getFullDateFromDay(fromDay);
+    const toFullDate = getFullDateFromDay(toDay);
+    
+    // Buscar evento en el formato nuevo primero
+    let fromEvents = fromRow.events[fromFullDate] || [];
+    let eventIndex = fromEvents.findIndex(e => e.id === eventId);
+    
+    if (eventIndex === -1) {
+      // Buscar en formato anterior
+      fromEvents = fromRow.events[fromDay] || [];
+      eventIndex = fromEvents.findIndex(e => e.id === eventId);
+      
+      if (eventIndex !== -1) {
+        // Migrar al mover
+        const event = fromEvents[eventIndex];
+        fromEvents.splice(eventIndex, 1);
+        fromRow.events[fromDay] = fromEvents;
+        
+        // Agregar al destino en nuevo formato
+        if (!toRow.events[toFullDate]) {
+          toRow.events[toFullDate] = [];
+        }
+        toRow.events[toFullDate].push(event);
+      }
+    } else {
+      // Mover en nuevo formato
+      const event = fromEvents[eventIndex];
+      fromEvents.splice(eventIndex, 1);
+      fromRow.events[fromFullDate] = fromEvents;
+      
+      if (!toRow.events[toFullDate]) {
+        toRow.events[toFullDate] = [];
+      }
+      toRow.events[toFullDate].push(event);
     }
 
-    // Remover el evento de la fila de origen
-    fromEvents.splice(eventIndex, 1);
-    fromRow.events[fromDay] = fromEvents;
-
-    // Agregar el evento a la fila destino
-    toEvents.push(event);
-    toRow.events[toDay] = toEvents;
-
-    // Actualizar las filas en el array principal
-    rows[fromRowIndex] = fromRow;
-    rows[toRowIndex] = toRow;
-
-    console.log('📊 Estado después del movimiento:', {
-      fromEventsCount: fromRow.events[fromDay]?.length || 0,
-      toEventsCount: toRow.events[toDay]?.length || 0,
-      movedEventId: event.id
-    });
-
-    // Actualizar el estado con el nuevo array
-    draftScheduleRows.value = rows;
-    markAsDirty();
-    
-    console.log('✅ Estado actualizado, agregando guardado a la cola...');
-    
-    // Agregar guardado a la cola de operaciones para evitar race conditions
-    addToOperationQueue(async () => {
-      if (!isSaving.value && !isPublishing.value && !isProcessing.value) {
-        await saveDraftChanges();
-        console.log('✅ EVENTO MOVIDO Y GUARDADO EN FIREBASE');
-      } else {
-        console.log('ℹ️ Operación ya en curso, omitiendo guardado automático');
-      }
-    }).catch(error => {
-      console.error('❌ Error al guardar en Firebase:', error);
-    });
-
-    console.log('=== FUNCIÓN MOVEEVENT COMPLETADA ===');
+    if (eventIndex !== -1) {
+      rows[fromRowIndex] = fromRow;
+      rows[toRowIndex] = toRow;
+      draftScheduleRows.value = rows;
+      markAsDirty();
+      
+      console.log('✅ EVENTO MOVIDO CORRECTAMENTE');
+      
+      // Agregar guardado a la cola
+      addToOperationQueue(async () => {
+        if (!isSaving.value && !isPublishing.value && !isProcessing.value) {
+          await saveDraftChanges();
+          console.log('✅ EVENTO MOVIDO Y GUARDADO EN FIREBASE');
+        }
+      }).catch(error => {
+        console.error('❌ Error al guardar en Firebase:', error);
+      });
+    }
   } catch (error) {
     console.error('❌ Error al mover el evento:', error);
   }
@@ -961,7 +1033,7 @@ export function copyEvent(
       return { success: false, error: 'Parámetros inválidos' };
     }
 
-    // Generar ID único garantizando que no exista
+    // Generar ID único
     const existingIds = new Set<string>();
     draftScheduleRows.value.forEach(row => {
       Object.values(row.events).forEach(events => {
@@ -978,34 +1050,31 @@ export function copyEvent(
     const fromRowIndex = rows.findIndex(row => row.id === fromRowId);
     const toRowIndex = rows.findIndex(row => row.id === toRowId);
 
-    console.log('📊 Índices encontrados:', { fromRowIndex, toRowIndex });
-
-    if (fromRowIndex === -1) {
-      console.error('❌ Fila de origen no encontrada:', fromRowId);
-      return { success: false, error: 'Fila de origen no encontrada' };
+    if (fromRowIndex === -1 || toRowIndex === -1) {
+      return { success: false, error: 'Fila no encontrada' };
     }
 
-    if (toRowIndex === -1) {
-      console.error('❌ Fila de destino no encontrada:', toRowId);
-      return { success: false, error: 'Fila de destino no encontrada' };
+    const fromRow = rows[fromRowIndex];
+    const toRow = { ...rows[toRowIndex], events: { ...rows[toRowIndex].events } };
+    
+    const fromFullDate = getFullDateFromDay(fromDay);
+    const toFullDate = getFullDateFromDay(toDay);
+    
+    // Buscar evento original
+    let fromEvents = fromRow.events[fromFullDate] || [];
+    let originalEvent = fromEvents.find(e => e.id === eventId);
+    
+    if (!originalEvent) {
+      // Buscar en formato anterior
+      fromEvents = fromRow.events[fromDay] || [];
+      originalEvent = fromEvents.find(e => e.id === eventId);
     }
-
-    // Encontrar el evento en la fila de origen
-    const fromEvents = rows[fromRowIndex].events[fromDay] || [];
-    const originalEvent = fromEvents.find(e => e.id === eventId);
 
     if (!originalEvent) {
-      console.error('❌ Evento no encontrado en la fila de origen');
       return { success: false, error: 'Evento no encontrado' };
     }
 
-    console.log('📄 Evento a copiar:', {
-      id: originalEvent.id,
-      title: originalEvent.title,
-      location: originalEvent.location
-    });
-
-    // Crear copia del evento con ID único
+    // Crear copia del evento
     const newEvent: Event = {
       id: newEventId,
       title: originalEvent.title,
@@ -1014,65 +1083,40 @@ export function copyEvent(
         : originalEvent.details,
       time: originalEvent.time,
       location: originalEvent.location,
-      color: originalEvent.color
+      color: originalEvent.color,
+      modalidad: originalEvent.modalidad
     };
 
-    console.log('🆕 Nuevo evento creado:', {
-      id: newEvent.id,
-      title: newEvent.title,
-      location: newEvent.location
-    });
+    // Agregar copia al destino usando nuevo formato
+    if (!toRow.events[toFullDate]) {
+      toRow.events[toFullDate] = [];
+    }
+    toRow.events[toFullDate].push(newEvent);
 
-    // Crear copia de la fila destino
-    const toRow = { ...rows[toRowIndex], events: { ...rows[toRowIndex].events } };
-    
-    // Crear copia del array de eventos del día destino
-    const toEvents = [...(toRow.events[toDay] || [])];
-    
-    // Agregar la copia del evento
-    toEvents.push(newEvent);
-    
-    // Actualizar el array de eventos del día destino
-    toRow.events[toDay] = toEvents;
-
-    // Actualizar la fila en el array principal
     rows[toRowIndex] = toRow;
-
-    console.log('📊 Estado actualizado:', {
-      toEventsCount: toRow.events[toDay]?.length || 0,
-      newEventId: newEvent.id
-    });
-
-    // Actualizar el estado con el nuevo array
     draftScheduleRows.value = rows;
     markAsDirty();
     
-    console.log('💾 Agregando guardado a la cola...');
+    console.log('✅ EVENTO COPIADO CORRECTAMENTE');
     
-    // Agregar guardado a la cola de operaciones para evitar race conditions
+    // Agregar guardado a la cola
     addToOperationQueue(async () => {
       if (!isSaving.value && !isPublishing.value && !isProcessing.value) {
         await saveDraftChanges();
         console.log('✅ EVENTO COPIADO Y GUARDADO EN FIREBASE');
-      } else {
-        console.log('ℹ️ Operación ya en curso, omitiendo guardado automático');
       }
     }).catch(error => {
       console.error('❌ Error al guardar copia en Firebase:', error);
     });
 
-    console.log('=== FUNCIÓN COPYEVENT COMPLETADA ===');
-    
-    return { 
-      success: true, 
-      newEventId: newEvent.id,
-      message: `Evento copiado exitosamente: ${newEvent.title}`
-    };
+    return { success: true, message: 'Evento copiado exitosamente' };
   } catch (error) {
     console.error('❌ Error al copiar el evento:', error);
-    return { success: false, error: error instanceof Error ? error.message : 'Error desconocido' };
+    return { success: false, error: 'Error interno' };
   }
 }
+
+// --- FUNCIONES DE UTILIDAD ACTUALIZADAS ---
 
 // Función específica para copiar un evento en la misma celda
 export function copyEventInSameCell(eventId: string, rowId: string, day: string) {
@@ -1341,3 +1385,82 @@ export function debugOperationQueue() {
     status: isProcessingQueue ? 'Procesando' : (operationQueue.length > 0 ? 'Pendiente' : 'Vacía')
   };
 }
+
+// --- FUNCIONES DE MIGRACIÓN ---
+
+/**
+ * Migra todos los eventos del formato anterior al nuevo formato
+ */
+export function migrateAllEventsToNewFormat() {
+  console.log('🔄 Migrando todos los eventos al nuevo formato...');
+  
+  const rows = [...draftScheduleRows.value];
+  let migratedCount = 0;
+  
+  for (let i = 0; i < rows.length; i++) {
+    const originalRow = rows[i];
+    const migratedRow = migrateEventsToFullDate(originalRow);
+    
+    if (JSON.stringify(originalRow.events) !== JSON.stringify(migratedRow.events)) {
+      rows[i] = migratedRow;
+      migratedCount++;
+    }
+  }
+  
+  if (migratedCount > 0) {
+    draftScheduleRows.value = rows;
+    markAsDirty();
+    console.log(`✅ Migrados ${migratedCount} instructores al nuevo formato`);
+  } else {
+    console.log('ℹ️ No se requirió migración');
+  }
+  
+  return migratedCount;
+}
+
+/**
+ * Limpia eventos del formato anterior después de una migración exitosa
+ */
+export function cleanupLegacyEvents() {
+  console.log('🧹 Limpiando eventos del formato anterior...');
+  
+  const rows = [...draftScheduleRows.value];
+  let cleanedCount = 0;
+  
+  for (let i = 0; i < rows.length; i++) {
+    const row = { ...rows[i], events: { ...rows[i].events } };
+    const originalEventsCount = Object.keys(row.events).length;
+    
+    // Mantener solo eventos con fechas completas (formato YYYY-MM-DD)
+    const cleanedEvents: { [key: string]: Event[] } = {};
+    
+    Object.entries(row.events).forEach(([key, events]) => {
+      if (key.includes('-') && key.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        // Mantener eventos con formato de fecha completa
+        cleanedEvents[key] = events;
+      } else {
+        console.log(`🗑️ Removiendo eventos del formato anterior: ${key}`);
+      }
+    });
+    
+    const cleanedEventsCount = Object.keys(cleanedEvents).length;
+    
+    if (cleanedEventsCount !== originalEventsCount) {
+      row.events = cleanedEvents;
+      rows[i] = row;
+      cleanedCount++;
+    }
+  }
+  
+  if (cleanedCount > 0) {
+    draftScheduleRows.value = rows;
+    markAsDirty();
+    console.log(`✅ Limpiados ${cleanedCount} instructores del formato anterior`);
+  } else {
+    console.log('ℹ️ No se requirió limpieza');
+  }
+  
+  return cleanedCount;
+}
+
+// --- FUNCIONES DE MANTENIMIENTO ---

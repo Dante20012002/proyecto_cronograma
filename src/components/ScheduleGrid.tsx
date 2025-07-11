@@ -86,10 +86,14 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
           throw new Error('Error al calcular fecha del día');
         }
 
+        // Formatear la fecha completa para usar como clave
+        const fullDate = currentDate.toISOString().split('T')[0]; // YYYY-MM-DD
+        
         days.push({
           date: currentDate,
           dayNumber: currentDate.getDate().toString(),
-          dayName: currentDate.toLocaleDateString('es-ES', { weekday: 'short' }).toUpperCase().replace('.', '')
+          dayName: currentDate.toLocaleDateString('es-ES', { weekday: 'short' }).toUpperCase().replace('.', ''),
+          fullDate: fullDate // Nueva propiedad para fecha completa
         });
       }
       
@@ -101,6 +105,42 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
   };
 
   const weekDays = getWeekDays();
+
+  // Función para filtrar eventos por fecha completa
+  const getEventsForDate = (row: any, dayNumber: string, fullDate: string) => {
+    // Primero, intentar obtener eventos por fecha completa (nuevo formato)
+    const eventsByFullDate = row.events[fullDate] || [];
+    
+    // Luego, obtener eventos por día del mes (formato anterior para compatibilidad)
+    const eventsByDay = row.events[dayNumber] || [];
+    
+    // Filtrar eventos del formato anterior que NO deben mostrarse en fechas incorrectas
+    // Solo mostrar eventos del formato anterior si estamos en el mes actual
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth();
+    const currentYear = currentDate.getFullYear();
+    
+    const targetDate = new Date(fullDate);
+    const targetMonth = targetDate.getMonth();
+    const targetYear = targetDate.getFullYear();
+    
+    // Solo mostrar eventos del formato anterior si estamos en el mes y año actuales
+    // o si es la primera semana del mes (para eventos que podrían ser del mes anterior)
+    const shouldShowLegacyEvents = (
+      (targetMonth === currentMonth && targetYear === currentYear) ||
+      (targetDate.getDate() <= 7) // Primera semana del mes
+    );
+    
+    const filteredLegacyEvents = shouldShowLegacyEvents ? eventsByDay : [];
+    
+    // Combinar y deduplicar eventos
+    const allEvents = [...eventsByFullDate, ...filteredLegacyEvents];
+    const uniqueEvents = allEvents.filter((event, index, self) => 
+      index === self.findIndex(e => e.id === event.id)
+    );
+    
+    return uniqueEvents;
+  };
 
   const handleEventClick = (event: ScheduleEvent, rowId: string, day: string) => {
     console.log('=== EVENTO CLICK DETECTADO ===');
@@ -502,9 +542,10 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
                       data-sortable="true"
                       data-row-id={row.id}
                       data-day={day.dayNumber}
+                      data-full-date={day.fullDate}
                       class="min-h-[100px] space-y-2 relative"
                     >
-                      {(row.events[day.dayNumber] || []).map(event => (
+                      {getEventsForDate(row, day.dayNumber, day.fullDate).map(event => (
                         <div
                           key={`${row.id}-${day.dayNumber}-${event.id}`}
                           data-event-id={event.id}
