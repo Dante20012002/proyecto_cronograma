@@ -108,36 +108,27 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
 
   // Función para filtrar eventos por fecha completa
   const getEventsForDate = (row: any, dayNumber: string, fullDate: string) => {
-    // Primero, intentar obtener eventos por fecha completa (nuevo formato)
+    // Intentar obtener eventos por fecha completa (nuevo formato)
     const eventsByFullDate = row.events[fullDate] || [];
     
-    // Luego, obtener eventos por día del mes (formato anterior para compatibilidad)
+    // Para compatibilidad, también obtener eventos por día del mes (formato anterior)
     const eventsByDay = row.events[dayNumber] || [];
     
-    // Filtrar eventos del formato anterior que NO deben mostrarse en fechas incorrectas
-    // Solo mostrar eventos del formato anterior si estamos en el mes actual
-    const currentDate = new Date();
-    const currentMonth = currentDate.getMonth();
-    const currentYear = currentDate.getFullYear();
-    
-    const targetDate = new Date(fullDate);
-    const targetMonth = targetDate.getMonth();
-    const targetYear = targetDate.getFullYear();
-    
-    // Solo mostrar eventos del formato anterior si estamos en el mes y año actuales
-    // o si es la primera semana del mes (para eventos que podrían ser del mes anterior)
-    const shouldShowLegacyEvents = (
-      (targetMonth === currentMonth && targetYear === currentYear) ||
-      (targetDate.getDate() <= 7) // Primera semana del mes
-    );
-    
-    const filteredLegacyEvents = shouldShowLegacyEvents ? eventsByDay : [];
-    
-    // Combinar y deduplicar eventos
-    const allEvents = [...eventsByFullDate, ...filteredLegacyEvents];
+    // Combinar ambos formatos y deduplicar por ID
+    const allEvents = [...eventsByFullDate, ...eventsByDay];
     const uniqueEvents = allEvents.filter((event, index, self) => 
       index === self.findIndex(e => e.id === event.id)
     );
+    
+    // Log para debugging (solo en modo admin)
+    if (isAdminProp && uniqueEvents.length > 0) {
+      console.log(`📅 Eventos para día ${dayNumber} (${fullDate}):`, {
+        fullDateEvents: eventsByFullDate.length,
+        dayEvents: eventsByDay.length,
+        totalUnique: uniqueEvents.length,
+        events: uniqueEvents.map(e => ({ id: e.id, title: e.title }))
+      });
+    }
     
     return uniqueEvents;
   };
@@ -568,7 +559,7 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
                           
                           <div class="font-semibold">{event.title}</div>
                           {Array.isArray(event.details) ? (
-                            event.details.map((detail, index) => (
+                            event.details.map((detail: string, index: number) => (
                               <div key={`${row.id}-${day.dayNumber}-${event.id}-detail-${index}`} class="text-sm">{detail}</div>
                             ))
                           ) : (

@@ -358,12 +358,34 @@ export async function publishChanges() {
     }
 
     // Tomar snapshot del estado actual (después de las correcciones)
-    const currentDraftInstructors = draftInstructors.value;
-    const currentDraftScheduleRows = draftScheduleRows.value;
+    let currentDraftInstructors = draftInstructors.value;
+    let currentDraftScheduleRows = [...draftScheduleRows.value];
     const currentDraftGlobalConfig = draftGlobalConfig.value;
 
+    // MIGRAR DATOS AL NUEVO FORMATO ANTES DE PUBLICAR
+    console.log('🔄 Migrando datos al nuevo formato antes de publicar...');
+    let migratedRows = currentDraftScheduleRows.map(row => {
+      const migratedRow = migrateEventsToFullDate(row);
+      return migratedRow;
+    });
+
+    // Verificar si hubo cambios en la migración
+    const migrationHadChanges = JSON.stringify(currentDraftScheduleRows) !== JSON.stringify(migratedRows);
+    if (migrationHadChanges) {
+      console.log('✅ Datos migrados al nuevo formato para publicación');
+      currentDraftScheduleRows = migratedRows;
+      
+      // Actualizar el estado draft con los datos migrados
+      draftScheduleRows.value = currentDraftScheduleRows;
+      markAsDirty();
+      
+      // Guardar los datos migrados en draft primero
+      console.log('💾 Guardando datos migrados en draft...');
+      await saveDraftChanges();
+    }
+
     console.log('📦 Publicando datos en Firebase...');
-    // Intentar publicar los cambios
+    // Intentar publicar los cambios (ahora con datos migrados)
     const saveSuccess = await publishData({
       instructors: currentDraftInstructors,
       scheduleRows: currentDraftScheduleRows,
@@ -391,7 +413,7 @@ export async function publishChanges() {
     hasUnpublishedChanges.value = false;
     canPublish.value = false; // Resetear después de publicar
 
-    console.log('✅ CAMBIOS PUBLICADOS EXITOSAMENTE');
+    console.log('✅ CAMBIOS PUBLICADOS EXITOSAMENTE (con migración automática)');
     return true;
   } catch (error) {
     console.error('❌ Error al publicar cambios:', error);
@@ -1363,26 +1385,61 @@ export function updateDraftEvent(rowId: string, day: string, eventId: string, up
 
 // Función para debug del estado de publicación
 export function debugPublishState() {
-  console.log('🔍 DEBUG: Estado de publicación:', {
-    hasUnpublishedChanges: hasUnpublishedChanges.value,
+  console.log('=== ESTADO DE PUBLICACIÓN ===');
+  
+  const draft = {
+    instructors: draftInstructors.value.length,
+    scheduleRows: draftScheduleRows.value.length,
+    globalConfig: draftGlobalConfig.value.title,
+    hasChanges: hasUnpublishedChanges.value,
     canPublish: canPublish.value,
     isSaving: isSaving.value,
     isPublishing: isPublishing.value,
     isProcessing: isProcessing.value
+  };
+  
+  const published = {
+    instructors: publishedInstructors.value.length,
+    scheduleRows: publishedScheduleRows.value.length,
+    globalConfig: publishedGlobalConfig.value.title
+  };
+  
+  console.log('📝 Estado Draft:', draft);
+  console.log('📤 Estado Published:', published);
+  
+  // Verificar formato de eventos en published
+  console.log('\n=== ANÁLISIS DE FORMATO DE EVENTOS PUBLISHED ===');
+  publishedScheduleRows.value.forEach(row => {
+    const eventKeys = Object.keys(row.events);
+    const hasNewFormat = eventKeys.some(key => key.includes('-'));
+    const hasOldFormat = eventKeys.some(key => !key.includes('-'));
+    const totalEvents = Object.values(row.events).flat().length;
+    
+    console.log(`Instructor: ${row.instructor}`);
+    console.log(`  - Formato nuevo (fechas completas): ${hasNewFormat ? '✅' : '❌'}`);
+    console.log(`  - Formato anterior (solo días): ${hasOldFormat ? '⚠️' : '✅'}`);
+    console.log(`  - Total eventos: ${totalEvents}`);
+    console.log(`  - Claves de eventos:`, eventKeys);
   });
+  
+  return { draft, published };
 }
 
 // Función para debug de la cola de operaciones
 export function debugOperationQueue() {
-  console.log('🚦 DEBUG: Cola de operaciones:', {
-    queueLength: operationQueue.length,
-    isProcessingQueue,
-    status: isProcessingQueue ? 'Procesando' : (operationQueue.length > 0 ? 'Pendiente' : 'Vacía')
-  });
+  console.log('=== ESTADO DE LA COLA DE OPERACIONES ===');
+  console.log('Cola en procesamiento:', isProcessingQueue);
+  console.log('Operaciones pendientes:', operationQueue.length);
+  console.log('Estado de guardado:', isSaving.value);
+  console.log('Estado de publicación:', isPublishing.value);
+  console.log('Estado de procesamiento:', isProcessing.value);
+  
   return {
-    queueLength: operationQueue.length,
     isProcessingQueue,
-    status: isProcessingQueue ? 'Procesando' : (operationQueue.length > 0 ? 'Pendiente' : 'Vacía')
+    pendingOperations: operationQueue.length,
+    isSaving: isSaving.value,
+    isPublishing: isPublishing.value,
+    isProcessing: isProcessing.value
   };
 }
 

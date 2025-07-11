@@ -51,23 +51,22 @@ export default function CronogramaWrapper(): JSX.Element {
     console.log('%c1. debugDataIntegrity()   - Verificar la integridad de los datos', 'color: #ffff00;');
     console.log('%c2. removeDuplicateEvents() - Limpiar eventos duplicados', 'color: #ffff00;');
     console.log('%c3. fixIncompleteEvents()   - Corregir eventos incompletos', 'color: #ffff00;');
-    console.log('%c4. debugPublishState()     - Ver estado de publicación', 'color: #ffff00;');
+    console.log('%c4. debugPublishState()     - Ver estado de publicación y formato de eventos', 'color: #ffff00;');
     console.log('%c5. debugOperationQueue()   - Ver estado de la cola de operaciones', 'color: #ffff00;');
     console.log('%c6. copyEventInSameCell()   - Copiar evento (eventId, rowId, day)', 'color: #ffff00;');
     console.log('%c7. migrateAllEventsToNewFormat() - Migrar eventos al nuevo formato de fechas', 'color: #ffff00;');
     console.log('%c8. cleanupLegacyEvents()   - Limpiar eventos del formato anterior', 'color: #ffff00;');
     console.log('%c9. clearAllDraftEvents()   - Borrar todos los eventos (⚠️ CUIDADO)', 'color: #ff6600;');
     console.log('%c', 'color: #ffffff;');
+    console.log('%cPara usuarios externos (verificar datos published):', 'color: #00bfff; font-weight: bold;');
+    console.log('%cdebugPublishState() // Ver si los datos están migrados correctamente', 'color: #ffff00;');
+    console.log('%c', 'color: #ffffff;');
     console.log('%cEjemplo de uso:', 'color: #00bfff; font-weight: bold;');
     console.log('%cdebugDataIntegrity() // Verificar problemas', 'color: #ffff00;');
     console.log('%cmigrateAllEventsToNewFormat() // Migrar eventos manualmente', 'color: #ffff00;');
     console.log('%ccleanupLegacyEvents() // Limpiar formato anterior', 'color: #ffff00;');
-    console.log('%cremoveDuplicateEvents() // Limpiar duplicados', 'color: #ffff00;');
-    console.log('%cdebugPublishState() // Ver estado de publicación', 'color: #ffff00;');
-    console.log('%cdebugOperationQueue() // Ver cola de operaciones', 'color: #ffff00;');
-    console.log('%ccopyEventInSameCell("evt-123", "row-456", "1") // Copiar evento', 'color: #ffff00;');
-    console.log('%cfixIncompleteEvents([{issue: "incomplete_event", ...}]) // Corregir específicos', 'color: #ffff00;');
-    console.log('%c==============================================', 'color: #00ff00; font-weight: bold;');
+    console.log('%c', 'color: #ffffff;');
+    console.log('%c💡 NOTA: Los eventos ahora se publican automáticamente con migración', 'color: #00ff88; font-weight: bold;');
 
     // Ejecutar verificación automática
     setTimeout(() => {
