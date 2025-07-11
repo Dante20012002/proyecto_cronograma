@@ -67,6 +67,7 @@ export const startTimes = [
   '11:00 a.m.',
   '11:30 a.m.',
   '12:00 p.m.',
+  '12:30 p.m.',
   '1:00 p.m.',
   '1:30 p.m.',
   '2:00 p.m.',
@@ -90,20 +91,35 @@ export const startTimes = [
 // Horarios predefinidos para fin de eventos
 export const endTimes = [
   '7:00 a.m.',
+  '7:30 a.m.',
   '8:00 a.m.',
+  '8:30 a.m.',
   '9:00 a.m.',
+  '9:30 a.m.',
   '10:00 a.m.',
+  '10:30 a.m.',
   '11:00 a.m.',
+  '11:30 a.m.',
   '12:00 p.m.',
+  '12:30 p.m.',
   '1:00 p.m.',
+  '1:30 p.m.',
   '2:00 p.m.',
+  '2:30 p.m.',
   '3:00 p.m.',
+  '3:30 p.m.',
   '4:00 p.m.',
+  '4:30 p.m.',
   '5:00 p.m.',
+  '5:30 p.m.',
   '6:00 p.m.',
+  '6:30 p.m.',
   '7:00 p.m.',
+  '7:30 p.m.',
   '8:00 p.m.',
+  '8:30 p.m.',
   '9:00 p.m.',
+  '9:30 p.m.',
   '10:00 p.m.'
 ];
 
@@ -368,6 +384,7 @@ export const selectedWeek = signal<{ startDate: string; endDate: string }>(getIn
 // --- INICIALIZACIÓN DE FIREBASE ---
 let unsubscribeDraft: (() => void) | null = null;
 let unsubscribePublished: (() => void) | null = null;
+let hasInitializedWeek = false; // Flag para controlar el reset automático
 
 export async function initializeFirebase() {
   try {
@@ -381,13 +398,16 @@ export async function initializeFirebase() {
       draftGlobalConfig.value = data.globalConfig;
       isConnected.value = true;
       
-      // Resetear a la semana actual para admins después de cargar datos
-      setTimeout(() => {
-        if (isAdmin.value && isWeekOutdated()) {
-          console.log('📅 Reseteando automáticamente a la semana actual para admin');
-          resetToCurrentWeek();
-        }
-      }, 1000);
+      // Resetear a la semana actual SOLO en la primera carga para admins
+      if (!hasInitializedWeek) {
+        setTimeout(() => {
+          if (isAdmin.value && isWeekOutdated()) {
+            console.log('📅 Reseteando automáticamente a la semana actual para admin (primera carga)');
+            resetToCurrentWeek();
+          }
+          hasInitializedWeek = true; // Marcar como inicializado
+        }, 1000);
+      }
     });
 
     unsubscribePublished = subscribeToFirestorePublished((data) => {
@@ -445,6 +465,8 @@ export function cleanupFirebase() {
     unsubscribePublished();
     unsubscribePublished = null;
   }
+  // Resetear el flag para permitir el reset automático en la próxima carga
+  hasInitializedWeek = false;
 }
 
 // --- LÓGICA DE PUBLICACIÓN ---

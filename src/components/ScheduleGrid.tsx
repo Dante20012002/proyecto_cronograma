@@ -58,6 +58,7 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
     rowId: string;
     day: string;
   } | null>(null);
+  const [isScrolled, setIsScrolled] = useState(false);
   const sortableRefs = useRef<{ [key: string]: Sortable | null }>({});
   
   // Seleccionar el store correcto basado en el rol
@@ -107,7 +108,50 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
 
   const weekDays = getWeekDays();
 
-  // Función para filtrar eventos por fecha completa
+  // Función para convertir hora a minutos para ordenamiento
+  const timeToMinutes = (timeStr: string): number => {
+    if (!timeStr) return 9999; // Eventos sin hora van al final
+    
+    try {
+      // Extraer la hora de inicio si es un rango "HH:MM a.m./p.m. a HH:MM a.m./p.m."
+      const startTime = timeStr.includes(' a ') ? timeStr.split(' a ')[0] : timeStr;
+      
+      // Limpiar y normalizar el formato
+      const normalizedTime = startTime.toLowerCase().replace(/\s+/g, ' ').trim();
+      const parts = normalizedTime.split(' ');
+      
+      if (parts.length < 2) {
+        console.warn(`⚠️ Formato de hora inválido: ${timeStr}`);
+        return 9999;
+      }
+      
+      const [time, period] = parts;
+      const timeParts = time.split(':');
+      
+      if (timeParts.length < 2) {
+        console.warn(`⚠️ No se pudo parsear la hora: ${timeStr}`);
+        return 9999;
+      }
+      
+      const hours = parseInt(timeParts[0]);
+      const minutes = parseInt(timeParts[1]) || 0;
+      
+      // Convertir a formato 24 horas
+      let totalMinutes = (hours % 12) * 60 + minutes;
+      if (period === 'p.m.' && hours !== 12) {
+        totalMinutes += 12 * 60;
+      } else if (period === 'a.m.' && hours === 12) {
+        totalMinutes = minutes;
+      }
+      
+      return totalMinutes;
+    } catch (error) {
+      console.warn(`⚠️ Error al convertir hora ${timeStr}:`, error);
+      return 9999;
+    }
+  };
+
+  // Función para filtrar y ordenar eventos por fecha completa
   const getEventsForDate = (row: any, dayNumber: string, fullDate: string) => {
     // Intentar obtener eventos por fecha completa (nuevo formato)
     const eventsByFullDate = row.events[fullDate] || [];
@@ -121,17 +165,36 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
       index === self.findIndex(e => e.id === event.id)
     );
     
+    // Ordenar eventos cronológicamente
+    const sortedEvents = uniqueEvents.sort((a, b) => {
+      const timeA = timeToMinutes(a.time || '');
+      const timeB = timeToMinutes(b.time || '');
+      
+      // Ordenar por hora (eventos sin hora van al final)
+      if (timeA !== timeB) {
+        return timeA - timeB;
+      }
+      
+      // Si tienen la misma hora, ordenar por título
+      return a.title.localeCompare(b.title);
+    });
+    
     // Log para debugging (solo en modo admin)
-    if (isAdminProp && uniqueEvents.length > 0) {
-      console.log(`📅 Eventos para día ${dayNumber} (${fullDate}):`, {
+    if (isAdminProp && sortedEvents.length > 0) {
+      console.log(`📅 Eventos ordenados para día ${dayNumber} (${fullDate}):`, {
         fullDateEvents: eventsByFullDate.length,
         dayEvents: eventsByDay.length,
         totalUnique: uniqueEvents.length,
-        events: uniqueEvents.map(e => ({ id: e.id, title: e.title }))
+        sortedEvents: sortedEvents.map(e => ({ 
+          id: e.id, 
+          title: e.title, 
+          time: e.time,
+          timeMinutes: timeToMinutes(e.time || '')
+        }))
       });
     }
     
-    return uniqueEvents;
+    return sortedEvents;
   };
 
   const handleEventClick = (event: ScheduleEvent, rowId: string, day: string) => {
@@ -494,33 +557,72 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
     }
   }, [moveNotification]);
 
+  // Detectar scroll para reducir tamaño de headers
+  useEffect(() => {
+    const handleScroll = (e: Event) => {
+      const target = e.target as HTMLElement;
+      const scrollTop = target.scrollTop;
+      
+      // Considerar "scrolled" cuando se ha desplazado más de 10px
+      const shouldBeScrolled = scrollTop > 10;
+      
+      if (shouldBeScrolled !== isScrolled) {
+        setIsScrolled(shouldBeScrolled);
+      }
+    };
+
+    // Agregar listener al contenedor de scroll
+    const scrollContainer = document.querySelector('.custom-scrollbar');
+    if (scrollContainer) {
+      scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+      
+      return () => {
+        scrollContainer.removeEventListener('scroll', handleScroll);
+      };
+    }
+  }, [isScrolled]);
+
   // Obtener el título específico de la semana actual
   const weekTitle = isAdminProp 
     ? getWeekTitle(currentWeek.startDate, currentWeek.endDate)
     : getPublishedWeekTitle();
 
   return (
-    <div id="schedule-grid" class="bg-slate-800 rounded-lg shadow-xl overflow-hidden text-white relative">
-      {/* Header con título dinámico por semana */}
-      <div class="bg-slate-900 text-white p-6">
-        <h1 class="text-3xl font-bold text-center tracking-tight">{weekTitle}</h1>
-        <p class="text-center text-slate-300 mt-2">
+    <div id="schedule-grid" class="bg-slate-800 rounded-lg shadow-xl text-white relative">
+      {/* Header con título dinámico por semana - STICKY */}
+      <div class={`bg-slate-900 text-white sticky top-0 z-50 shadow-lg transition-all duration-300 ${
+        isScrolled ? 'p-3' : 'p-6'
+      }`}>
+        <h1 class={`font-bold text-center tracking-tight transition-all duration-300 ${
+          isScrolled ? 'text-xl' : 'text-3xl'
+        }`}>{weekTitle}</h1>
+        <p class={`text-center text-slate-300 transition-all duration-300 ${
+          isScrolled ? 'mt-1 text-xs' : 'mt-2 text-sm'
+        }`}>
           {formatDateDisplay(currentWeek.startDate)} - {formatDateDisplay(currentWeek.endDate)}
         </p>
       </div>
 
-      {/* Tabla del cronograma */}
-      <div class="overflow-x-auto">
+      {/* Contenedor con scroll para la tabla */}
+      <div class="overflow-x-auto overflow-y-auto max-h-[calc(100vh-120px)] custom-scrollbar">
         <table class="w-full">
-          <thead class="bg-slate-700/50">
+          <thead class="bg-slate-700 sticky top-0 z-40 shadow-lg">
             <tr>
-              <th class="px-4 py-3 text-left text-sm font-semibold text-slate-300 border-r border-slate-700 min-w-[250px] align-top">
+              <th class={`text-left text-sm font-semibold text-slate-300 border-r border-slate-700 min-w-[250px] align-top bg-slate-700 transition-all duration-300 ${
+                isScrolled ? 'px-3 py-2' : 'px-4 py-3'
+              }`}>
                 Instructor / Ciudad / Regional
               </th>
               {weekDays.map(day => (
-                <th key={day.dayNumber} class="px-2 py-3 text-center border-r border-slate-700 min-w-[200px]">
-                  <div class="text-sm font-semibold text-slate-300">{day.dayName}</div>
-                  <div class="text-2xl font-bold text-white">{day.dayNumber}</div>
+                <th key={day.dayNumber} class={`text-center border-r border-slate-700 min-w-[200px] bg-slate-700 transition-all duration-300 ${
+                  isScrolled ? 'px-2 py-2' : 'px-2 py-3'
+                }`}>
+                  <div class={`font-semibold text-slate-300 transition-all duration-300 ${
+                    isScrolled ? 'text-xs' : 'text-sm'
+                  }`}>{day.dayName}</div>
+                  <div class={`font-bold text-white transition-all duration-300 ${
+                    isScrolled ? 'text-lg' : 'text-2xl'
+                  }`}>{day.dayNumber}</div>
                 </th>
               ))}
             </tr>
