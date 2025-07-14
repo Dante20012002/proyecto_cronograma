@@ -18,6 +18,7 @@ import GlobalConfig from './GlobalConfig';
 import InstructorManager from './InstructorManager';
 import { LoginForm } from './LoginForm';
 import ExcelUploader from './ExcelUploader';
+import FilterBar from './FilterBar';
 import type { JSX } from 'preact';
 
 /**
@@ -183,19 +184,20 @@ export default function AdminToolbar({ onClose }: AdminToolbarProps): JSX.Elemen
   }
 
   return (
-    <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 relative">
-      {/* Notificación flotante */}
-      {notificationMessage && (
-        <div class={`absolute top-2 right-2 z-50 px-4 py-2 rounded-lg shadow-lg text-sm max-w-xs ${
-          notificationType === 'success' ? 'bg-green-500 text-white' :
-          notificationType === 'error' ? 'bg-red-500 text-white' :
-          'bg-blue-500 text-white'
-        }`}>
-          {notificationMessage}
-        </div>
-      )}
-      
-      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0">
+    <div class="space-y-4">
+      <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 relative">
+        {/* Notificación flotante */}
+        {notificationMessage && (
+          <div class={`absolute top-2 right-2 z-50 px-4 py-2 rounded-lg shadow-lg text-sm max-w-xs ${
+            notificationType === 'success' ? 'bg-green-500 text-white' :
+            notificationType === 'error' ? 'bg-red-500 text-white' :
+            'bg-blue-500 text-white'
+          }`}>
+            {notificationMessage}
+          </div>
+        )}
+        
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0">
         <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
           <h2 class="text-lg font-bold text-gray-900">Panel de Administración</h2>
           <div class="text-sm text-gray-600">
@@ -274,11 +276,15 @@ export default function AdminToolbar({ onClose }: AdminToolbarProps): JSX.Elemen
           </button>
         </div>
       </div>
+        
+        {/* Modal de carga masiva de Excel */}
+        {showExcelUploader && (
+          <ExcelUploader onClose={() => setShowExcelUploader(false)} />
+        )}
+      </div>
       
-      {/* Modal de carga masiva de Excel */}
-      {showExcelUploader && (
-        <ExcelUploader onClose={() => setShowExcelUploader(false)} />
-      )}
+      {/* Filtros */}
+      <FilterBar isAdmin={true} />
     </div>
   );
 } 

@@ -6,6 +6,7 @@ export interface ScheduleEvent {
   location: string;
   color: string;
   instructor?: string;
+  modalidad?: string;
 }
 
 export interface ScheduleRow {

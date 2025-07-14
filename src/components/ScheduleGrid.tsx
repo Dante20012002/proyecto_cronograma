@@ -14,7 +14,8 @@ import {
   updateEvent,
   addEvent as addScheduleEvent,
   getWeekTitle,
-  getPublishedWeekTitle
+  getPublishedWeekTitle,
+  getFilteredRows
 } from '../stores/schedule';
 import EventCard from './EventCard';
 import AddEventCard from './AddEventCard';
@@ -61,8 +62,9 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
   const [isScrolled, setIsScrolled] = useState(false);
   const sortableRefs = useRef<{ [key: string]: Sortable | null }>({});
   
-  // Seleccionar el store correcto basado en el rol
-  const rows = isAdminProp ? draftScheduleRows.value : publishedScheduleRows.value;
+  // Seleccionar el store correcto basado en el rol y aplicar filtros
+  const allRows = isAdminProp ? draftScheduleRows.value : publishedScheduleRows.value;
+  const rows = getFilteredRows(allRows);
   const config = isAdminProp ? draftGlobalConfig.value : publishedGlobalConfig.value;
   const week = selectedWeek.value;
   const currentWeek = isAdminProp ? config.currentWeek : week;

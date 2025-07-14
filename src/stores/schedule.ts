@@ -50,6 +50,13 @@ export interface GlobalConfig {
   };
 }
 
+export interface FilterState {
+  instructors: string[];
+  regionales: string[];
+  ciudades: string[];
+  modalidades: string[];
+}
+
 // --- DATOS DE HORARIOS ---
 
 // Horarios predefinidos para inicio de eventos
@@ -380,6 +387,14 @@ function getInitialWeek(): { startDate: string; endDate: string } {
 
 // Estado para la semana seleccionada en la vista de usuario
 export const selectedWeek = signal<{ startDate: string; endDate: string }>(getInitialWeek());
+
+// --- ESTADO DE FILTROS ---
+export const activeFilters = signal<FilterState>({
+  instructors: [],
+  regionales: [],
+  ciudades: [],
+  modalidades: []
+});
 
 // --- INICIALIZACIÓN DE FIREBASE ---
 let unsubscribeDraft: (() => void) | null = null;
@@ -1683,3 +1698,130 @@ export function cleanupLegacyEvents() {
 }
 
 // --- FUNCIONES DE MANTENIMIENTO ---
+
+// --- FUNCIONES DE FILTROS ---
+
+/**
+ * Actualiza los filtros activos
+ */
+export function updateFilters(newFilters: Partial<FilterState>) {
+  activeFilters.value = {
+    ...activeFilters.value,
+    ...newFilters
+  };
+}
+
+/**
+ * Limpia todos los filtros
+ */
+export function clearFilters() {
+  activeFilters.value = {
+    instructors: [],
+    regionales: [],
+    ciudades: [],
+    modalidades: []
+  };
+}
+
+/**
+ * Obtiene todos los valores únicos para un campo específico
+ */
+export function getUniqueValues(field: 'instructors' | 'regionales' | 'ciudades' | 'modalidades', isAdmin: boolean): string[] {
+  const rows = isAdmin ? draftScheduleRows.value : publishedScheduleRows.value;
+  const values = new Set<string>();
+
+  rows.forEach(row => {
+    if (field === 'instructors') {
+      values.add(row.instructor);
+    } else if (field === 'regionales') {
+      values.add(row.regional);
+    } else if (field === 'ciudades') {
+      values.add(row.city);
+    } else if (field === 'modalidades') {
+      // Obtener modalidades de todos los eventos
+      Object.values(row.events).forEach(events => {
+        events.forEach(event => {
+          if (event.modalidad) {
+            values.add(event.modalidad);
+          }
+        });
+      });
+    }
+  });
+
+  return Array.from(values).sort();
+}
+
+/**
+ * Filtra las filas del cronograma según los filtros activos
+ * Para modalidades, filtra eventos individuales en lugar de filas completas
+ */
+export function getFilteredRows(rows: ScheduleRow[]): ScheduleRow[] {
+  const filters = activeFilters.value;
+  
+  // Si no hay filtros activos, devolver todas las filas
+  if (filters.instructors.length === 0 && 
+      filters.regionales.length === 0 && 
+      filters.ciudades.length === 0 && 
+      filters.modalidades.length === 0) {
+    return rows;
+  }
+
+  return rows
+    .filter(row => {
+      // Filtro por instructor
+      if (filters.instructors.length > 0 && !filters.instructors.includes(row.instructor)) {
+        return false;
+      }
+
+      // Filtro por regional
+      if (filters.regionales.length > 0 && !filters.regionales.includes(row.regional)) {
+        return false;
+      }
+
+      // Filtro por ciudad
+      if (filters.ciudades.length > 0 && !filters.ciudades.includes(row.city)) {
+        return false;
+      }
+
+      return true;
+    })
+    .map(row => {
+      // Si no hay filtros de modalidad, devolver la fila tal como está
+      if (filters.modalidades.length === 0) {
+        return row;
+      }
+
+      // Filtrar eventos por modalidad
+      const filteredEvents: { [day: string]: Event[] } = {};
+      
+      Object.entries(row.events).forEach(([day, events]) => {
+        const matchingEvents = events.filter(event => {
+          // Si el evento no tiene modalidad, no coincide con ningún filtro de modalidad
+          if (!event.modalidad) {
+            return false;
+          }
+          // Solo incluir eventos que tengan una modalidad que esté en los filtros activos
+          return filters.modalidades.includes(event.modalidad);
+        });
+        
+        // Solo agregar el día si tiene eventos que coinciden
+        if (matchingEvents.length > 0) {
+          filteredEvents[day] = matchingEvents;
+        }
+      });
+
+      // Devolver la fila con eventos filtrados
+      return {
+        ...row,
+        events: filteredEvents
+      };
+    })
+    .filter(row => {
+      // Si después del filtrado de modalidades no hay eventos, no mostrar la fila
+      if (filters.modalidades.length > 0) {
+        return Object.keys(row.events).length > 0;
+      }
+      return true;
+    });
+} 
