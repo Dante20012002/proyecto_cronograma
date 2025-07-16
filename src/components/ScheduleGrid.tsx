@@ -592,7 +592,7 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
   return (
     <div id="schedule-grid" class="bg-slate-800 rounded-lg shadow-xl text-white relative">
       {/* Header con título dinámico por semana - STICKY */}
-      <div class={`bg-slate-900 text-white sticky top-0 z-50 shadow-lg transition-all duration-300 ${
+      <div class={`bg-slate-900 text-white sticky top-0 z-20 shadow-lg transition-all duration-300 ${
         isScrolled ? 'p-3' : 'p-6'
       }`}>
         <h1 class={`font-bold text-center tracking-tight transition-all duration-300 ${
