@@ -1,8 +1,8 @@
 import { useState } from 'preact/hooks';
-import { draftInstructors, addInstructor, updateInstructor, deleteInstructor } from '../stores/schedule';
+import { draftInstructors, draftScheduleRows, addInstructor, updateInstructor, deleteInstructor } from '../stores/schedule';
 import { safeConfirm } from '../lib/utils';
 import type { JSX } from 'preact';
-import type { Instructor } from '../types/schedule';
+import type { Instructor, ScheduleEvent } from '../types/schedule';
 
 /**
  * Componente para gestionar instructores.
@@ -56,7 +56,60 @@ export default function InstructorManager(): JSX.Element {
   };
 
   const handleDelete = async (instructor: Instructor) => {
-    if (safeConfirm(`¿Estás seguro de que quieres eliminar a ${instructor.name}?`)) {
+    // Obtener información detallada antes de eliminar
+    const instructorRow = draftScheduleRows.value.find(r => r.id === instructor.id);
+    
+    if (!instructorRow) {
+      alert('Error: No se encontró la información del instructor.');
+      return;
+    }
+    
+         // Contar eventos históricos
+     const totalEvents = Object.values(instructorRow.events).reduce((total: number, dayEvents: ScheduleEvent[]) => {
+       return total + dayEvents.length;
+     }, 0);
+     
+     const eventDays = Object.keys(instructorRow.events).filter((day: string) => 
+       instructorRow.events[day].length > 0
+     ).length;
+    
+    // Crear mensaje de advertencia detallado
+    let warningMessage = `⚠️ ADVERTENCIA: Vas a eliminar permanentemente a:\n\n`;
+    warningMessage += `👤 Instructor: ${instructor.name}\n`;
+    warningMessage += `📍 Ubicación: ${instructor.city} - ${instructor.regional}\n\n`;
+    
+    if (totalEvents > 0) {
+      warningMessage += `📊 DATOS HISTÓRICOS QUE SE ELIMINARÁN:\n`;
+      warningMessage += `• ${totalEvents} eventos históricos\n`;
+      warningMessage += `• Datos de ${eventDays} días diferentes\n\n`;
+      
+             // Mostrar algunos detalles de eventos
+       const eventSamples: string[] = [];
+       for (const [day, events] of Object.entries(instructorRow.events)) {
+         if ((events as ScheduleEvent[]).length > 0 && eventSamples.length < 3) {
+           eventSamples.push(`${day}: ${(events as ScheduleEvent[]).length} evento(s)`);
+         }
+       }
+      
+      if (eventSamples.length > 0) {
+        warningMessage += `📅 Ejemplos de días con eventos:\n`;
+        eventSamples.forEach(sample => {
+          warningMessage += `• ${sample}\n`;
+        });
+        if (eventDays > eventSamples.length) {
+          warningMessage += `• ... y ${eventDays - eventSamples.length} días más\n`;
+        }
+        warningMessage += `\n`;
+      }
+      
+      warningMessage += `❗ ESTA ACCIÓN NO SE PUEDE DESHACER ❗\n\n`;
+      warningMessage += `¿Estás COMPLETAMENTE SEGURO de que quieres eliminar a ${instructor.name} y todos sus datos históricos?`;
+    } else {
+      warningMessage += `ℹ️ Este instructor no tiene eventos históricos.\n\n`;
+      warningMessage += `¿Estás seguro de que quieres eliminar a ${instructor.name}?`;
+    }
+    
+    if (safeConfirm(warningMessage)) {
       await deleteInstructor(instructor.id);
     }
   };

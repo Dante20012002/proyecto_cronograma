@@ -926,19 +926,83 @@ export function updateInstructor(id: string, name: string, city: string, regiona
   const rowIndex = rows.findIndex(r => r.id === id);
   
   if (instructorIndex !== -1 && rowIndex !== -1) {
+    const currentInstructor = instructors[instructorIndex];
+    const currentRow = rows[rowIndex];
+    
+    // Verificar si cambió la ubicación
+    const locationChanged = currentRow.city !== city || currentRow.regional !== regional;
+    
+    if (locationChanged) {
+      console.log(`📍 Actualizando ubicación de ${currentInstructor.name}:`);
+      console.log(`  📍 Anterior: ${currentRow.city} / ${currentRow.regional}`);
+      console.log(`  📍 Nueva: ${city} / ${regional}`);
+      console.log(`  ℹ️ NOTA: Esta actualización afecta la información principal del instructor.`);
+      console.log(`  ℹ️ Los eventos históricos mantienen sus ubicaciones originales por semana.`);
+      
+      // Verificar si tiene eventos en múltiples ubicaciones
+      const uniqueLocations = new Set<string>();
+      Object.values(currentRow.events).forEach(dayEvents => {
+        dayEvents.forEach(event => {
+          if (event.location) {
+            uniqueLocations.add(event.location);
+          }
+        });
+      });
+      
+      if (uniqueLocations.size > 1) {
+        console.log(`  📊 Este instructor tiene eventos históricos en ${uniqueLocations.size} ubicaciones diferentes:`);
+        uniqueLocations.forEach(location => {
+          console.log(`    - ${location}`);
+        });
+      }
+    }
+    
     instructors[instructorIndex] = { ...instructors[instructorIndex], name, city, regional };
     rows[rowIndex] = { ...rows[rowIndex], instructor: name, city, regional };
     
     draftInstructors.value = instructors;
     draftScheduleRows.value = rows;
     markAsDirty();
+    
+    console.log(`✅ Instructor actualizado: ${name} (${city} / ${regional})`);
   }
 }
 
 export function deleteInstructor(id: string) {
+  // Contar eventos históricos antes de eliminar
+  const instructorRow = draftScheduleRows.value.find(r => r.id === id);
+  const instructor = draftInstructors.value.find(i => i.id === id);
+  
+  if (!instructorRow || !instructor) {
+    console.warn('❌ Instructor no encontrado para eliminar');
+    return;
+  }
+  
+  // Contar total de eventos históricos
+  const totalEvents = Object.values(instructorRow.events).reduce((total, dayEvents) => {
+    return total + dayEvents.length;
+  }, 0);
+  
+  const eventDays = Object.keys(instructorRow.events).filter(day => 
+    instructorRow.events[day].length > 0
+  ).length;
+  
+  console.log(`🗑️ Eliminando instructor: ${instructor.name}`);
+  console.log(`📊 Eventos históricos que se eliminarán: ${totalEvents} eventos en ${eventDays} días`);
+  
+  // Mostrar detalles de eventos por día para referencia
+  Object.entries(instructorRow.events).forEach(([day, events]) => {
+    if (events.length > 0) {
+      console.log(`  📅 ${day}: ${events.length} eventos`);
+    }
+  });
+  
+  // Proceder con la eliminación
   draftInstructors.value = draftInstructors.value.filter(i => i.id !== id);
   draftScheduleRows.value = draftScheduleRows.value.filter(r => r.id !== id);
   markAsDirty();
+  
+  console.log(`✅ Instructor ${instructor.name} eliminado junto con ${totalEvents} eventos históricos`);
 }
 
 // --- OPERACIONES DE CONFIGURACIÓN ---

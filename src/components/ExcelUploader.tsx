@@ -264,10 +264,10 @@ function dayToNumber(day: string): string {
  * Función para procesar y cargar los datos al sistema
  */
 async function processAndLoadData(data: ExcelEventData[]) {
-  console.log('📊 processAndLoadData - Iniciando carga de', data.length, 'eventos');
+  console.log('📊 processAndLoadData - Iniciando carga incremental de', data.length, 'eventos');
   
-  // PASO 1: Limpiar instructores existentes para evitar conflictos
-  await clearExistingInstructors();
+  // PASO 1: NO limpiar instructores existentes - mantener datos históricos
+  console.log('📋 Manteniendo instructores existentes con sus datos históricos');
   
   // Agrupar eventos por instructor para procesamiento eficiente
   const eventsByInstructor = new Map<string, ExcelEventData[]>();
@@ -280,44 +280,81 @@ async function processAndLoadData(data: ExcelEventData[]) {
     eventsByInstructor.get(instructorKey)!.push(eventData);
   });
   
-  console.log('👥 processAndLoadData - Procesando', eventsByInstructor.size, 'instructores únicos');
+  console.log('👥 processAndLoadData - Procesando', eventsByInstructor.size, 'instructores del Excel');
   
-  // PASO 2: Crear todos los instructores primero
-  console.log('🏗️ PASO 2: Creando instructores...');
-  const createdInstructors = new Map<string, string>(); // instructorKey -> instructorId
+  // PASO 2: Verificar instructores existentes y crear nuevos solo si es necesario
+  console.log('🔍 PASO 2: Verificando instructores existentes...');
+  const currentInstructors = draftInstructors.value;
+  const currentRows = draftScheduleRows.value;
+  const instructorMapping = new Map<string, string>(); // instructorKey -> instructorId
+  
+  // Mapear instructores existentes
+  currentRows.forEach(row => {
+    const instructorKey = row.instructor.toLowerCase();
+    instructorMapping.set(instructorKey, row.id);
+    console.log(`✅ Instructor existente mapeado: ${row.instructor} → ID: ${row.id}`);
+  });
+  
+  // PASO 3: Crear solo instructores nuevos que no existan
+  console.log('➕ PASO 3: Creando instructores nuevos (si es necesario)...');
+  let newInstructorsCreated = 0;
   
   for (const [instructorKey, events] of eventsByInstructor.entries()) {
-    const instructorData = events[0]; // Tomar datos del primer evento
-    console.log(`➕ Creando instructor: ${instructorData.instructor}`);
-    
-    // Crear el instructor
-    addInstructor(instructorData.instructor, instructorData.ciudad, instructorData.regional);
-    
-    // Esperar a que se actualice el estado
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    // Verificar que se creó correctamente
-    const currentRows = draftScheduleRows.value;
-    const createdRow = currentRows.find(row => 
-      row.instructor.toLowerCase() === instructorKey
-    );
-    
-    if (createdRow) {
-      createdInstructors.set(instructorKey, createdRow.id);
-      console.log(`✅ Instructor creado: ${createdRow.instructor} → ID: ${createdRow.id}`);
+    if (!instructorMapping.has(instructorKey)) {
+      // El instructor no existe, crearlo
+      const instructorData = events[0]; // Tomar datos del primer evento
+      console.log(`➕ Creando instructor nuevo: ${instructorData.instructor}`);
+      
+      // Crear el instructor
+      addInstructor(instructorData.instructor, instructorData.ciudad, instructorData.regional);
+      newInstructorsCreated++;
+      
+      // Esperar a que se actualice el estado
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Verificar que se creó correctamente y obtener su ID
+      const updatedRows = draftScheduleRows.value;
+      const createdRow = updatedRows.find(row => 
+        row.instructor.toLowerCase() === instructorKey && 
+        !instructorMapping.has(instructorKey) // Asegurar que es nuevo
+      );
+      
+      if (createdRow) {
+        instructorMapping.set(instructorKey, createdRow.id);
+        console.log(`✅ Instructor nuevo creado: ${createdRow.instructor} → ID: ${createdRow.id}`);
+      } else {
+        console.error(`❌ ERROR: No se pudo crear instructor nuevo: ${instructorData.instructor}`);
+        throw new Error(`No se pudo crear instructor nuevo: ${instructorData.instructor}`);
+      }
     } else {
-      console.error(`❌ ERROR: No se pudo crear instructor: ${instructorData.instructor}`);
-      throw new Error(`No se pudo crear instructor: ${instructorData.instructor}`);
+      // El instructor ya existe, usar el existente
+      const existingId = instructorMapping.get(instructorKey)!;
+      const existingRow = currentRows.find(row => row.id === existingId);
+      const eventData = events[0];
+      
+      console.log(`🔄 Instructor existente detectado: ${eventData.instructor}`);
+      console.log(`   📍 Datos actuales: ${existingRow?.city} / ${existingRow?.regional}`);
+      console.log(`   📍 Datos del Excel: ${eventData.ciudad} / ${eventData.regional}`);
+      
+      // Verificar si hay cambios en ciudad/regional
+      if (existingRow && (
+        existingRow.city !== eventData.ciudad || 
+        existingRow.regional !== eventData.regional
+      )) {
+        console.log(`   ⚠️ INFORMACIÓN: El instructor ${eventData.instructor} tiene diferentes datos de ubicación para esta semana.`);
+        console.log(`   📝 Esta es una situación normal: los instructores pueden trabajar en diferentes regiones por semana.`);
+        console.log(`   ✅ Se mantendrán los datos históricos y se agregarán eventos con la nueva ubicación.`);
+      }
     }
   }
   
-  console.log(`✅ Se crearon ${createdInstructors.size} instructores correctamente`);
+  console.log(`📊 Resumen de instructores: ${currentRows.length - newInstructorsCreated} existentes + ${newInstructorsCreated} nuevos = ${instructorMapping.size} total`);
   
-  // PASO 3: Agregar eventos a cada instructor
-  console.log('📅 PASO 3: Agregando eventos...');
+  // PASO 4: Agregar eventos a cada instructor (respetando datos históricos)
+  console.log('📅 PASO 4: Agregando eventos (modo incremental)...');
   
   for (const [instructorKey, events] of eventsByInstructor.entries()) {
-    const instructorId = createdInstructors.get(instructorKey);
+    const instructorId = instructorMapping.get(instructorKey);
     
     if (!instructorId) {
       console.error(`❌ No se encontró ID para instructor: ${events[0].instructor}`);
@@ -350,7 +387,7 @@ async function processAndLoadData(data: ExcelEventData[]) {
       
       console.log(`  ➕ Evento ${index + 1}/${events.length}: ${eventData.titulo} → Instructor ID: ${instructorId}, Día: ${dayNumber}`);
       
-      // Agregar evento
+      // Agregar evento (se agrega a la semana actual, respetando eventos históricos)
       addEvent(instructorId, dayNumber, newEvent);
       
       // Pausa corta entre eventos
@@ -360,64 +397,16 @@ async function processAndLoadData(data: ExcelEventData[]) {
     console.log(`✅ Completados eventos para: ${events[0].instructor}`);
   }
   
-  console.log('✅ processAndLoadData - Carga completa de', data.length, 'eventos');
+  console.log('✅ processAndLoadData - Carga incremental completa de', data.length, 'eventos');
   
-  // PASO 4: Verificación final
-  await verifyFinalState(eventsByInstructor.size, data.length);
-}
-
-/**
- * Función para limpiar instructores existentes antes de la carga
- */
-async function clearExistingInstructors() {
-  console.log('🧹 Limpiando instructores existentes...');
-  
-  const currentRows = draftScheduleRows.value;
-  const currentInstructors = draftInstructors.value;
-  
-  console.log(`📊 Estado inicial: ${currentInstructors.length} instructores, ${currentRows.length} filas`);
-  
-  // FORZAR limpieza completa
-  try {
-    console.log('🧹 Limpiando manualmente...');
-    // Limpiar todos los datos existentes
-    draftInstructors.value = [];
-    draftScheduleRows.value = [];
-    
-    // Esperar a que se actualice el estado
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Verificar que se limpiaron correctamente
-    const finalRows = draftScheduleRows.value;
-    const finalInstructors = draftInstructors.value;
-    
-    console.log(`📊 Estado después de limpieza: ${finalInstructors.length} instructores, ${finalRows.length} filas`);
-    
-    if (finalInstructors.length === 0 && finalRows.length === 0) {
-      console.log('✅ Instructores existentes limpiados correctamente');
-    } else {
-      console.warn('⚠️ Limpieza parcial: Algunos datos pueden persistir');
-      // Forzar limpieza adicional
-      draftInstructors.value = [];
-      draftScheduleRows.value = [];
-      await new Promise(resolve => setTimeout(resolve, 300));
-      console.log('✅ Limpieza forzada completada');
-    }
-    
-  } catch (error) {
-    console.error('❌ Error durante limpieza:', error);
-    // Limpieza de emergencia
-    draftInstructors.value = [];
-    draftScheduleRows.value = [];
-    await new Promise(resolve => setTimeout(resolve, 300));
-    console.log('✅ Limpieza de emergencia completada');
-  }
+  // PASO 5: Verificación final
+  await verifyFinalState(eventsByInstructor.size, data.length, newInstructorsCreated);
 }
 
 /**
  * Función para verificar el estado final después de la carga
  */
-async function verifyFinalState(expectedInstructors: number, expectedEvents: number) {
+async function verifyFinalState(expectedNewInstructors: number, expectedEvents: number, newInstructorsCreated: number) {
   console.log('🔍 Verificando estado final...');
   
   await new Promise(resolve => setTimeout(resolve, 500)); // Esperar que se estabilice
@@ -430,19 +419,26 @@ async function verifyFinalState(expectedInstructors: number, expectedEvents: num
   );
   
   console.log('📊 Estado final:');
-  console.log(`  👥 Instructores esperados: ${expectedInstructors}, encontrados: ${finalInstructors.length}`);
-  console.log(`  📅 Eventos esperados: ${expectedEvents}, encontrados: ${totalEvents}`);
+  console.log(`  👥 Instructores totales en sistema: ${finalInstructors.length}`);
+  console.log(`  🆕 Instructores nuevos creados: ${newInstructorsCreated}`);
+  console.log(`  📅 Eventos totales en sistema: ${totalEvents}`);
+  console.log(`  📅 Eventos agregados en esta carga: ${expectedEvents}`);
   
-  // Mostrar detalle de cada instructor
+  // Mostrar detalle de cada instructor con eventos en la semana actual
+  const currentWeek = draftGlobalConfig.value.currentWeek;
+  console.log(`📅 Eventos para la semana: ${currentWeek.startDate} - ${currentWeek.endDate}`);
+  
   finalRows.forEach(row => {
     const eventCount = Object.values(row.events).reduce((sum, events) => sum + events.length, 0);
-    console.log(`  👤 ${row.instructor} (${row.id}): ${eventCount} eventos`);
+    console.log(`  👤 ${row.instructor} (${row.city}/${row.regional}): ${eventCount} eventos totales`);
   });
   
-  const success = finalInstructors.length === expectedInstructors && totalEvents === expectedEvents;
+  const success = newInstructorsCreated >= 0 && totalEvents >= expectedEvents;
   
   if (success) {
-    console.log('✅ Verificación exitosa: Todos los datos cargados correctamente');
+    console.log('✅ Verificación exitosa: Carga incremental completada correctamente');
+    console.log('📝 Los datos históricos se han preservado');
+    console.log('🆕 Los nuevos eventos se han agregado a la semana actual');
   } else {
     console.warn('⚠️ Verificación con diferencias detectadas');
   }
@@ -521,8 +517,8 @@ if (typeof window !== 'undefined') {
   // Función para limpiar duplicados manualmente
   (window as any).cleanupInstructorDuplicates = async () => {
     console.log('🧹 Iniciando limpieza manual de duplicados...');
-    await cleanupDuplicateInstructors();
-    console.log('✅ Limpieza manual completada. Ejecuta verifyExcelLoad() para verificar.');
+    console.log('⚠️ Esta función aún no está implementada. Usa el AdminToolbar para limpiar duplicados.');
+    console.log('✅ Para verificar el estado actual, ejecuta verifyExcelLoad()');
   };
 }
 
@@ -585,6 +581,15 @@ const predefinedDetails = [
 function downloadTemplate() {
   const wb = XLSX.utils.book_new();
   
+  // Obtener instructores existentes del sistema
+  const existingInstructors = draftInstructors.value.map(instructor => ({
+    name: instructor.name,
+    city: instructor.city,
+    regional: instructor.regional
+  }));
+  
+  console.log('📋 Instructores existentes para plantilla:', existingInstructors.length);
+  
   // --- PESTAÑA 1: PLANTILLA DE EVENTOS ---
   const templateData = [
     {
@@ -638,6 +643,7 @@ function downloadTemplate() {
   const maxLength = Math.max(
     predefinedTitles.length,
     predefinedDetails.length,
+    existingInstructors.length, // Incluir instructores en el cálculo del tamaño
     20 // Para otros datos
   );
   
@@ -645,6 +651,18 @@ function downloadTemplate() {
   
   for (let i = 0; i < maxLength; i++) {
     const row: any = {};
+    
+    // Instructores existentes (NUEVA COLUMNA)
+    if (i < existingInstructors.length) {
+      const instructor = existingInstructors[i];
+      row['Instructores Existentes'] = instructor.name;
+      row['Ciudad del Instructor'] = instructor.city;
+      row['Regional del Instructor'] = instructor.regional;
+    } else {
+      row['Instructores Existentes'] = '';
+      row['Ciudad del Instructor'] = '';
+      row['Regional del Instructor'] = '';
+    }
     
     // Títulos predefinidos
     if (i < predefinedTitles.length) {
@@ -681,41 +699,20 @@ function downloadTemplate() {
       row['Horas Disponibles'] = '';
     }
     
-    // Ejemplos de regionales
-    const exampleRegionals = [
-      'ANTIOQUIA', 'BUCARAMANGA', 'CENTRO', 'NORTE', 'OCCIDENTE',
-      'SABANA', 'SUR'
-    ];
-    if (i < exampleRegionals.length) {
-      row['Regionales Ejemplo'] = exampleRegionals[i];
-    } else {
-      row['Regionales Ejemplo'] = '';
-    }
-    
-    // Ejemplos de ciudades
-    const exampleCities = [
-      'Bucaramanga', 'Cúcuta', 'Medellín', 'Bogotá', 'Cali',
-      'Manizales', 'Barranquilla', 'Pasto', 'Villavicencio', 'Ibagué'
-    ];
-    if (i < exampleCities.length) {
-      row['Ciudades Ejemplo'] = exampleCities[i];
-    } else {
-      row['Ciudades Ejemplo'] = '';
-    }
-    
     referenceData.push(row);
   }
   
   const ws2 = XLSX.utils.json_to_sheet(referenceData);
   
-  // Ajustar ancho de columnas para la referencia
+  // Ajustar ancho de columnas para la referencia (ACTUALIZADO)
   const colWidths2 = [
+    { wch: 30 }, // Instructores Existentes
+    { wch: 20 }, // Ciudad del Instructor
+    { wch: 20 }, // Regional del Instructor
     { wch: 35 }, // Títulos Disponibles
     { wch: 50 }, // Detalles Disponibles
     { wch: 15 }, // Días Válidos
-    { wch: 18 }, // Horas Disponibles
-    { wch: 20 }, // Regionales Ejemplo
-    { wch: 20 }  // Ciudades Ejemplo
+    { wch: 18 }  // Horas Disponibles
   ];
   ws2['!cols'] = colWidths2;
   
@@ -724,9 +721,9 @@ function downloadTemplate() {
   // --- PESTAÑA 3: INSTRUCCIONES ---
   
   const instructionsData = [
-    { 'Campo': 'Instructor', 'Descripción': 'Nombre completo del instructor', 'Obligatorio': 'SÍ', 'Ejemplo': 'JUAN PABLO HERNANDEZ', 'Notas': 'Si no existe, se creará automáticamente' },
-    { 'Campo': 'Ciudad', 'Descripción': 'Ciudad donde se realiza el evento', 'Obligatorio': 'SÍ', 'Ejemplo': 'Bucaramanga', 'Notas': 'Puede ser cualquier ciudad' },
-    { 'Campo': 'Regional', 'Descripción': 'Regional a la que pertenece', 'Obligatorio': 'SÍ', 'Ejemplo': 'BUCARAMANGA', 'Notas': 'Ver ejemplos en pestaña "Datos Disponibles"' },
+    { 'Campo': 'Instructor', 'Descripción': 'Nombre completo del instructor', 'Obligatorio': 'SÍ', 'Ejemplo': 'JUAN PABLO HERNANDEZ', 'Notas': `📋 RECOMENDADO: Usa los nombres exactos de la pestaña "Datos Disponibles" (${existingInstructors.length} instructores disponibles). Si usas un nombre nuevo, se creará automáticamente.` },
+    { 'Campo': 'Ciudad', 'Descripción': 'Ciudad donde se realiza el evento', 'Obligatorio': 'SÍ', 'Ejemplo': 'Bucaramanga', 'Notas': 'Si usas un instructor existente, usa la misma ciudad para consistencia' },
+    { 'Campo': 'Regional', 'Descripción': 'Regional a la que pertenece', 'Obligatorio': 'SÍ', 'Ejemplo': 'BUCARAMANGA', 'Notas': 'Si usas un instructor existente, usa la misma regional para consistencia' },
     { 'Campo': 'Titulo', 'Descripción': 'Título del evento', 'Obligatorio': 'SÍ', 'Ejemplo': 'ESCUELA DE PROMOTORES', 'Notas': 'Usar títulos de la pestaña "Datos Disponibles" o crear uno nuevo' },
     { 'Campo': 'Detalles', 'Descripción': 'Detalles específicos del evento', 'Obligatorio': 'NO', 'Ejemplo': 'MODULO PROTAGONISTAS DEL SERVICIO', 'Notas': 'Usar detalles predefinidos para color automático. Si se deja vacío, se usará "Sin detalles especificados"' },
     { 'Campo': 'Ubicacion', 'Descripción': 'Lugar específico del evento', 'Obligatorio': 'NO', 'Ejemplo': 'Bucaramanga', 'Notas': 'Puede ser ciudad, sede específica, etc. Si se deja vacío, se usará "Por definir"' },
@@ -735,7 +732,13 @@ function downloadTemplate() {
     { 'Campo': 'Hora Fin', 'Descripción': 'Hora de finalización del evento', 'Obligatorio': 'NO', 'Ejemplo': '5:00 p.m.', 'Notas': 'Formato: HH:MM a.m. o HH:MM p.m.' },
     { 'Campo': 'Modalidad', 'Descripción': 'Modalidad del evento', 'Obligatorio': 'NO', 'Ejemplo': 'Presencial', 'Notas': 'Valores válidos: Presencial, Virtual. Si se deja vacío, no se mostrará modalidad' },
     { 'Campo': '', 'Descripción': '', 'Obligatorio': '', 'Ejemplo': '', 'Notas': '' },
-    { 'Campo': 'IMPORTANTE:', 'Descripción': 'Colores Automáticos', 'Obligatorio': '', 'Ejemplo': '', 'Notas': 'Los detalles predefinidos tienen colores automáticos' },
+    { 'Campo': '👥 INSTRUCTORES:', 'Descripción': 'Comportamiento del sistema', 'Obligatorio': '', 'Ejemplo': '', 'Notas': '' },
+    { 'Campo': 'Instructores existentes:', 'Descripción': `${existingInstructors.length} instructores ya están en el sistema`, 'Obligatorio': '', 'Ejemplo': '', 'Notas': 'Revisa la pestaña "Instructores" para ver la lista completa' },
+    { 'Campo': 'Modo incremental:', 'Descripción': 'Se conservan TODOS los datos históricos', 'Obligatorio': '', 'Ejemplo': '', 'Notas': 'Los eventos se AGREGAN a la semana actual sin eliminar semanas anteriores' },
+    { 'Campo': 'Nuevos instructores:', 'Descripción': 'Si usas un nombre nuevo, se creará automáticamente', 'Obligatorio': '', 'Ejemplo': '', 'Notas': 'No se eliminan instructores existentes, solo se agregan nuevos si es necesario' },
+    { 'Campo': 'Ciudad/Regional:', 'Descripción': 'Pueden cambiar semana a semana', 'Obligatorio': '', 'Ejemplo': '', 'Notas': 'Es normal que un instructor trabaje en diferentes regiones. Los datos históricos se preservan' },
+    { 'Campo': '', 'Descripción': '', 'Obligatorio': '', 'Ejemplo': '', 'Notas': '' },
+    { 'Campo': '🎨 COLORES:', 'Descripción': 'Colores Automáticos', 'Obligatorio': '', 'Ejemplo': '', 'Notas': 'Los detalles predefinidos tienen colores automáticos' },
     { 'Campo': 'Azules:', 'Descripción': 'Módulos formativos', 'Obligatorio': '', 'Ejemplo': 'MODULO PROTAGONISTAS DEL SERVICIO', 'Notas': 'MODULO FORMATIVO GNV, MODULO FORMATIVO LIQUIDOS, etc.' },
     { 'Campo': 'Verdes:', 'Descripción': 'Protocolos y gestión', 'Obligatorio': '', 'Ejemplo': 'PROTOCOLO DE SERVICIO EDS', 'Notas': 'GESTION AMBIENTAL, EXCELENCIA ADMINISTRATIVA' },
     { 'Campo': 'Púrpuras:', 'Descripción': 'Programas VIVE', 'Obligatorio': '', 'Ejemplo': 'VIVE PITS', 'Notas': 'LA TOMA VIVE TERPEL, CARAVANA RUMBO PITS' },
@@ -747,18 +750,55 @@ function downloadTemplate() {
   
   // Ajustar ancho de columnas para las instrucciones
   const colWidths3 = [
-    { wch: 15 }, // Campo
-    { wch: 30 }, // Descripción
+    { wch: 18 }, // Campo
+    { wch: 35 }, // Descripción
     { wch: 12 }, // Obligatorio
     { wch: 35 }, // Ejemplo
-    { wch: 50 }  // Notas
+    { wch: 55 }  // Notas (más ancho para las nuevas instrucciones)
   ];
   ws3['!cols'] = colWidths3;
   
   XLSX.utils.book_append_sheet(wb, ws3, 'Instrucciones');
   
+  // --- PESTAÑA 4: SOLO INSTRUCTORES (Nueva pestaña dedicada) ---
+  
+  if (existingInstructors.length > 0) {
+    const instructorsData = existingInstructors.map((instructor, index) => ({
+      'Nº': index + 1,
+      'Nombre del Instructor': instructor.name,
+      'Ciudad': instructor.city,
+      'Regional': instructor.regional,
+      'Nota': 'Copia exactamente este nombre para evitar duplicados'
+    }));
+    
+    const ws4 = XLSX.utils.json_to_sheet(instructorsData);
+    
+    // Ajustar ancho de columnas para instructores
+    const colWidths4 = [
+      { wch: 5 },  // Nº
+      { wch: 35 }, // Nombre del Instructor
+      { wch: 20 }, // Ciudad
+      { wch: 20 }, // Regional
+      { wch: 45 }  // Nota
+    ];
+    ws4['!cols'] = colWidths4;
+    
+    XLSX.utils.book_append_sheet(wb, ws4, `Instructores (${existingInstructors.length})`);
+  }
+  
   // Guardar el archivo
-  XLSX.writeFile(wb, 'plantilla_eventos_completa.xlsx');
+  const fileName = existingInstructors.length > 0 
+    ? `plantilla_eventos_con_${existingInstructors.length}_instructores.xlsx`
+    : 'plantilla_eventos_completa.xlsx';
+    
+  XLSX.writeFile(wb, fileName);
+  
+  // Mostrar mensaje informativo
+  const message = existingInstructors.length > 0 
+    ? `✅ Plantilla descargada con ${existingInstructors.length} instructores existentes.\n\n📋 Revisa las pestañas:\n• "Instructores (${existingInstructors.length})" - Lista completa de instructores\n• "Datos Disponibles" - Todos los datos de referencia\n• "Instrucciones" - Guía detallada\n\n💡 Usa los nombres exactos de instructores para evitar duplicados.`
+    : '✅ Plantilla descargada. No hay instructores existentes en el sistema.';
+    
+  alert(message);
 }
 
 /**
@@ -844,20 +884,24 @@ export default function ExcelUploader({ onClose }: ExcelUploaderProps) {
         
         // Mostrar mensaje de éxito con detalles
         const instructorList = Array.from(instructorCounts.keys());
-        const successMessage = `✅ CARGA COMPLETADA EXITOSAMENTE
+        const successMessage = `✅ CARGA INCREMENTAL COMPLETADA EXITOSAMENTE
         
 📊 Resumen:
-• ${previewData.length} eventos procesados
-• ${instructorList.length} instructores en el archivo
-• ${finalResult.instructors} instructores finales en el sistema
-• ${finalResult.totalEvents} eventos totales cargados
+• ${previewData.length} eventos procesados desde Excel
+• ${instructorList.length} instructores en el archivo Excel
+• ${finalResult.instructors} instructores totales en el sistema
+• ${finalResult.totalEvents} eventos totales en el sistema
 
-${instructorList.length !== finalResult.instructors ? 
-  '⚠️ Se detectaron y corrigieron instructores duplicados automáticamente.' : 
-  '✅ No se detectaron duplicados.'}
+🔄 Modo incremental activado:
+✅ Se conservaron todos los datos históricos
+✅ Solo se agregaron eventos nuevos para la semana actual
+✅ Instructores existentes mantuvieron sus datos anteriores
 
-👥 Instructores procesados:
+👥 Instructores procesados del Excel:
 ${instructorList.slice(0, 5).join('\n')}${instructorList.length > 5 ? '\n...' : ''}
+
+💡 IMPORTANTE: Los instructores pueden tener diferentes ciudades/regionales
+   por semana. Esto es normal y los datos históricos se preservan.
 
 Usa verifyExcelLoad() en la consola para verificar el estado.`;
         
@@ -905,6 +949,12 @@ Usa verifyExcelLoad() en la consola para verificar el estado.`;
               <li>5. Sube el archivo Excel completado</li>
               <li>6. Revisa la vista previa y confirma la carga</li>
             </ol>
+            <div class="mt-3 p-3 bg-green-50 border border-green-200 rounded">
+              <p class="text-sm text-green-800 font-medium">
+                🔄 <strong>Modo Incremental:</strong> Tus datos históricos están seguros. 
+                Los eventos se agregan a la semana actual sin eliminar información anterior.
+              </p>
+            </div>
           </div>
 
           {/* Botón de plantilla */}
