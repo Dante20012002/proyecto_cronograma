@@ -608,7 +608,7 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
       {/* Contenedor con scroll para la tabla */}
       <div class="overflow-x-auto overflow-y-auto max-h-[calc(100vh-120px)] custom-scrollbar">
         <table class="w-full">
-          <thead class="bg-slate-700 sticky top-0 z-40 shadow-lg">
+          <thead class="bg-slate-700 sticky top-0 z-30 shadow-lg">
             <tr>
               <th class={`text-left text-sm font-semibold text-slate-300 border-r border-slate-700 min-w-[250px] align-top bg-slate-700 transition-all duration-300 ${
                 isScrolled ? 'px-3 py-2' : 'px-4 py-3'

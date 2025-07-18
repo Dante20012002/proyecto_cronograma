@@ -1,15 +1,12 @@
 import { useState, useEffect } from 'preact/hooks';
 import { isConnected, initializeFirebase, cleanupFirebase, debugDataIntegrity, removeDuplicateEvents, clearAllDraftEvents, fixIncompleteEvents, debugPublishState, copyEventInSameCell, debugOperationQueue, migrateAllEventsToNewFormat, cleanupLegacyEvents, resetToCurrentWeek, updateWeekTitle, getWeekTitle, getCurrentWeekTitle } from '../stores/schedule';
-import { isAdmin, currentUser, hasPermission, exposeDebugTools } from '../lib/auth';
+import { isAdmin, currentUser, exposeDebugTools } from '../lib/auth';
 import type { JSX } from 'preact';
 import AdminToolbar from './AdminToolbar';
 import UserToolbar from './UserToolbar';
 import ScheduleGrid from './ScheduleGrid';
 import { LoginForm } from './LoginForm';
-import GlobalConfig from './GlobalConfig';
-import InstructorManager from './InstructorManager';
-import AdminDebugPanel from './AdminDebugPanel';
-import AdminManager from './AdminManager';
+import FloatingAdminPanel from './FloatingAdminPanel';
 
 /**
  * Componente principal que envuelve toda la funcionalidad del cronograma.
@@ -25,10 +22,6 @@ import AdminManager from './AdminManager';
  */
 export default function CronogramaWrapper(): JSX.Element {
   const [error, setError] = useState<string | null>(null);
-  const [showConfig, setShowConfig] = useState(false);
-  const [showInstructors, setShowInstructors] = useState(false);
-  const [showAdminManager, setShowAdminManager] = useState(false);
-  const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
@@ -119,57 +112,53 @@ export default function CronogramaWrapper(): JSX.Element {
       
       console.log('%cUsa debugTools.help() para ver todas las herramientas disponibles', 'color: #00ff00;');
       console.log('%cEjemplo: debugTools.checkIntegrity()', 'color: #ffff00;');
-    } else {
-      // En producción, solo mostrar información básica
-      console.log('%c🔒 Modo Producción - Herramientas de debugging no disponibles', 'color: #888888;');
     }
 
-    // Limpiar funciones al desmontar
+    // Limpiar recursos al desmontar
     return () => {
-      if (typeof window !== 'undefined' && import.meta.env.DEV) {
-        delete (window as any).debugTools;
-      }
+      cleanupFirebase();
     };
   }, []);
 
-  // Mostrar error si hay problemas de conexión
   if (error) {
     return (
-      <div class="min-h-screen bg-red-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
-          <div class="flex items-center space-x-3 mb-4">
-            <span class="text-red-600 text-2xl">⚠️</span>
-            <h2 class="text-lg font-semibold text-red-800">Error de Conexión</h2>
+      <div class="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+        <div class="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md w-full">
+          <div class="flex items-center space-x-3">
+            <div class="flex-shrink-0">
+              <span class="text-red-600 text-2xl">❌</span>
+            </div>
+            <div>
+              <h3 class="text-lg font-medium text-red-800">Error de Conexión</h3>
+              <p class="text-red-600 text-sm mt-1">{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                class="mt-3 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm"
+              >
+                Recargar Página
+              </button>
+            </div>
           </div>
-          <p class="text-red-700 mb-4">{error}</p>
-          <button
-            onClick={() => {
-              if (typeof window !== 'undefined') {
-                window.location.reload();
-              }
-            }}
-            class="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors"
-          >
-            Recargar Página
-          </button>
         </div>
       </div>
     );
   }
 
-  // Mostrar formulario de login si no está autenticado y se solicita
-  if (showLogin) {
+  if (!isConnected.value) {
     return (
-      <div class="min-h-screen bg-gray-100 p-4">
-        <div class="max-w-md mx-auto">
-          <LoginForm 
-            onCancel={() => setShowLogin(false)} 
-            onSuccess={() => setShowLogin(false)}
-          />
+      <div class="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-md p-6 max-w-md w-full text-center">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <h3 class="text-lg font-medium text-gray-900">Conectando con Firebase...</h3>
+          <p class="text-gray-600 text-sm mt-1">Por favor espera mientras establecemos la conexión.</p>
         </div>
       </div>
     );
   }
+
+  const handleLoginSuccess = () => {
+    setShowLogin(false);
+  };
 
   return (
     <div class="min-h-screen bg-gray-100 p-2 sm:p-4">
@@ -177,73 +166,6 @@ export default function CronogramaWrapper(): JSX.Element {
         {isAdmin.value ? (
           <>
             <AdminToolbar />
-            <div class="bg-white rounded-lg shadow-md p-3 sm:p-4">
-              <div class="flex flex-col space-y-2">
-                {/* Primera fila de botones principales */}
-                <div class="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2">
-                  <button
-                    onClick={() => setShowConfig(!showConfig)}
-                    class="w-full sm:w-auto px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors"
-                  >
-                    {showConfig ? 'Ocultar Configuración' : '⚙️ Configuración Global'}
-                  </button>
-                  <button
-                    onClick={() => setShowInstructors(!showInstructors)}
-                    class="w-full sm:w-auto px-3 py-1.5 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 transition-colors"
-                  >
-                    {showInstructors ? 'Ocultar Instructores' : '👨‍🏫 Gestionar Instructores'}
-                  </button>
-                </div>
-
-                {/* Segunda fila de botones administrativos */}
-                <div class="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2">
-                  {hasPermission('canManageAdmins') && (
-                    <button
-                      onClick={() => setShowAdminManager(!showAdminManager)}
-                      class="w-full sm:w-auto px-3 py-1.5 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition-colors"
-                    >
-                      {showAdminManager ? 'Ocultar Gestión Admin' : '👥 Gestionar Administradores'}
-                    </button>
-                  )}
-                  
-                  {hasPermission('canAccessDebugPanel') && (
-                    <button
-                      onClick={() => setShowDebugPanel(!showDebugPanel)}
-                      class="w-full sm:w-auto px-3 py-1.5 bg-yellow-600 text-white text-sm rounded-md hover:bg-yellow-700 transition-colors"
-                    >
-                      {showDebugPanel ? 'Ocultar Debug Panel' : '🛠️ Panel de Debugging'}
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Paneles administrativos */}
-              {showConfig && (
-                <div class="mt-4 border-t border-gray-200 pt-4">
-                  <h3 class="text-lg font-semibold text-gray-900 mb-3">⚙️ Configuración Global</h3>
-                  <GlobalConfig />
-                </div>
-              )}
-              
-              {showInstructors && (
-                <div class="mt-4 border-t border-gray-200 pt-4">
-                  <h3 class="text-lg font-semibold text-gray-900 mb-3">👨‍🏫 Gestión de Instructores</h3>
-                  <InstructorManager />
-                </div>
-              )}
-              
-              {showAdminManager && hasPermission('canManageAdmins') && (
-                <div class="mt-4 border-t border-gray-200 pt-4">
-                  <AdminManager />
-                </div>
-              )}
-              
-              {showDebugPanel && hasPermission('canAccessDebugPanel') && (
-                <div class="mt-4 border-t border-gray-200 pt-4">
-                  <AdminDebugPanel />
-                </div>
-              )}
-            </div>
           </>
         ) : (
           <div class="flex flex-col sm:flex-row justify-between items-center bg-white rounded-lg shadow-md p-3 sm:p-4 space-y-2 sm:space-y-0">
@@ -260,6 +182,31 @@ export default function CronogramaWrapper(): JSX.Element {
         )}
         
         <ScheduleGrid isAdmin={isAdmin.value} />
+        
+        {/* Panel flotante de administración - solo para admins */}
+        {isAdmin.value && <FloatingAdminPanel />}
+        
+        {/* Modal de login */}
+        {showLogin && (
+          <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-lg max-w-md w-full">
+              <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                  <h2 class="text-lg font-semibold text-gray-900">🔐 Acceso Administrador</h2>
+                  <button
+                    onClick={() => setShowLogin(false)}
+                    class="text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                  </button>
+                </div>
+                <LoginForm onSuccess={handleLoginSuccess} />
+              </div>
+            </div>
+          </div>
+        )}
         
         {/* Información de desarrollo - solo mostrar en cliente */}
         {isClient && import.meta.env.DEV && (

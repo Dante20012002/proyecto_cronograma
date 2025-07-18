@@ -87,7 +87,11 @@ export default function AdminDebugPanel(): JSX.Element {
         },
         {
           name: "Corregir Eventos Incompletos",
-          action: () => executeOperation("fixIncompleteEvents", fixIncompleteEvents),
+          action: () => executeOperation("fixIncompleteEvents", () => {
+            const integrityResult = debugDataIntegrity();
+            const problematicEvents = integrityResult.problematicEvents || [];
+            return fixIncompleteEvents(problematicEvents);
+          }),
           description: "Repara eventos con datos faltantes",
           isDestructive: false
         },

@@ -124,7 +124,7 @@ export default function InstructorManager(): JSX.Element {
   };
 
   return (
-    <div class="bg-white rounded-lg shadow-md p-6">
+    <div class="space-y-6">
       <div class="flex justify-between items-center mb-6">
         <h2 class="text-xl font-bold text-gray-900">Gestión de Instructores</h2>
         <button
@@ -203,7 +203,7 @@ export default function InstructorManager(): JSX.Element {
                   />
                 </div>
               </div>
-              <div class="mt-6 flex justify-end space-x-3">
+              <div class="flex justify-end space-x-3 mt-6">
                 <button
                   type="button"
                   onClick={() => {

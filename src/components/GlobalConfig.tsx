@@ -74,84 +74,78 @@ export default function GlobalConfig(): JSX.Element {
   };
 
   return (
-    <div class="space-y-4">      
-      <form onSubmit={handleSubmit}>
-        <div class="grid grid-cols-1 gap-4">
+    <div class="space-y-6">
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <h3 class="text-lg font-semibold text-blue-900 mb-2">⚙️ Configuración Global</h3>
+        <p class="text-blue-700 text-sm">
+          Configura el título y periodo de visualización del cronograma.
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Título de esta semana
+          </label>
+          <input
+            type="text"
+            value={formData.title}
+            onInput={(e) => handleInputChange('title', (e.target as HTMLInputElement).value)}
+            placeholder="Ej: Cronograma Escuelas Colombia - Semana 1"
+            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          />
+          <p class="text-xs text-gray-500 mt-1">
+            Este título se mostrará en la parte superior del cronograma para esta semana específica.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
-              Título de la Semana Actual
+              Fecha de inicio (Lunes)
             </label>
             <input
-              type="text"
-              value={formData.title}
-              onInput={(e) => handleInputChange('title', (e.target as HTMLInputElement).value)}
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Ej: Cronograma Semana 1 - Enero 2025"
+              type="date"
+              value={formData.startDate}
+              onInput={(e) => handleInputChange('startDate', (e.target as HTMLInputElement).value)}
+              class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             />
-            <p class="text-xs text-gray-500 mt-1">
-              Semana: {formatDateDisplay(formData.startDate)} - {formatDateDisplay(formData.endDate)}
-            </p>
           </div>
-          
+
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Navegación de Semana</label>
-            <div class="flex flex-col space-y-3">
-              <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
-                <div class="text-sm font-medium text-gray-700 w-full sm:w-auto">
-                  {formatDateDisplay(formData.startDate)} - {formatDateDisplay(formData.endDate)}
-                </div>
-                <div class="flex items-center space-x-2 w-full sm:w-auto">
-                  <button
-                    type="button"
-                    onClick={() => handleNavigate('prev')}
-                    class="flex-1 sm:flex-none flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                  >
-                    <span class="mr-1">←</span> Anterior
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleNavigate('next')}
-                    class="flex-1 sm:flex-none flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                  >
-                    Siguiente <span class="ml-1">→</span>
-                  </button>
-                </div>
-              </div>
-            </div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Fecha de fin (Viernes)
+            </label>
+            <input
+              type="date"
+              value={formData.endDate}
+              onInput={(e) => handleInputChange('endDate', (e.target as HTMLInputElement).value)}
+              class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            />
           </div>
-          
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Fechas Específicas</label>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de Inicio</label>
-                <input
-                  type="date"
-                  value={formData.startDate}
-                  onInput={(e) => handleInputChange('startDate', (e.target as HTMLInputElement).value)}
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de Fin</label>
-                <input
-                  type="date"
-                  value={formData.endDate}
-                  onInput={(e) => handleInputChange('endDate', (e.target as HTMLInputElement).value)}
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-          </div>
-          
-          <div>
-            <button
-              type="submit"
-              class="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium"
-            >
-              Guardar Título y Fechas de la Semana
-            </button>
-          </div>
+        </div>
+
+        <div class="flex justify-end space-x-3 pt-4">
+          <button
+            type="button"
+            onClick={() => navigateWeek('prev')}
+            class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            ← Semana Anterior
+          </button>
+          <button
+            type="button"
+            onClick={() => navigateWeek('next')}
+            class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            Semana Siguiente →
+          </button>
+          <button
+            type="submit"
+            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            Guardar Cambios
+          </button>
         </div>
       </form>
     </div>
