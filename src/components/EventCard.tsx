@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'preact/hooks';
 import { updateEvent, deleteEvent, checkTimeConflict, startTimes, endTimes } from '../stores/schedule';
+import { safeConfirm } from '../lib/utils';
 import type { Event } from '../stores/schedule';
 
 /**
@@ -143,347 +144,337 @@ const getColorForDetail = (detail: string): string | null => {
  * ```
  */
 export default function EventCard({ event, rowId, day, onClose }: EventCardProps) {
-  console.log('EventCard recibido:', { event, rowId, day });
-  
   const [formData, setFormData] = useState({
     title: event.title,
     details: Array.isArray(event.details) ? event.details.join('\n') : event.details,
-    startTime: '',
-    endTime: '',
+    time: event.time || '',
     location: event.location,
-    color: event.color,
-    modalidad: event.modalidad || ''
+    color: event.color
   });
 
-  const [hasConflict, setHasConflict] = useState(false);
-  const [conflictingEvent, setConflictingEvent] = useState<Event | undefined>(undefined);
-  const [useCustomDetails, setUseCustomDetails] = useState(true);
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
+  const [selectedDetails, setSelectedDetails] = useState('');
+  const [customDetails, setCustomDetails] = useState('');
+  const [detailsMode, setDetailsMode] = useState<'predefined' | 'custom'>('predefined');
+  const [hasTimeConflict, setHasTimeConflict] = useState(false);
 
-  // Validar que los campos requeridos estén completados
-  const isValid = formData.title.trim() !== '' && formData.location.trim() !== '';
-
-  // Parsear el tiempo existente al cargar
-  useEffect(() => {
-    if (event.time) {
-      const timeParts = event.time.split(' a ');
-      if (timeParts.length === 2) {
-        setFormData(prev => ({ ...prev, startTime: timeParts[0], endTime: timeParts[1] }));
-      } else {
-        setFormData(prev => ({ ...prev, startTime: event.time || '' }));
-      }
+  // Función para extraer horarios del string de tiempo
+  const parseTimeString = (timeStr: string) => {
+    if (!timeStr) return { start: '', end: '' };
+    
+    const timeRegex = /(\d{1,2}:\d{2}\s?[ap]\.?m\.?)/gi;
+    const matches = timeStr.match(timeRegex);
+    
+    if (matches && matches.length >= 2) {
+      return { start: matches[0], end: matches[1] };
+    } else if (matches && matches.length === 1) {
+      return { start: matches[0], end: '' };
     }
-
-    // Determinar si los detalles son personalizados o predefinidos
-    if (typeof event.details === 'string' && predefinedDescriptions.includes(event.details)) {
-      setUseCustomDetails(false);
-    } else {
-      setUseCustomDetails(true);
-    }
-  }, [event.time, event.details]);
-
-  useEffect(() => {
-    // Construir el string de tiempo combinado para la validación
-    let timeString = '';
-    if (formData.startTime && formData.endTime) {
-      timeString = `${formData.startTime} a ${formData.endTime}`;
-    } else if (formData.startTime) {
-      timeString = formData.startTime;
-    } else if (formData.endTime) {
-      timeString = formData.endTime;
-    }
-
-    // Verificar conflictos solo si tenemos startTime y endTime
-    if (formData.startTime && formData.endTime) {
-      const conflict = checkTimeConflict(rowId, day, formData.startTime, formData.endTime, event.id);
-    setHasConflict(conflict.hasConflict);
-    setConflictingEvent(conflict.conflictingEvent);
-    } else {
-      setHasConflict(false);
-      setConflictingEvent(undefined);
-    }
-  }, [formData.startTime, formData.endTime, event.id, rowId, day]);
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    
+    return { start: '', end: '' };
   };
 
-  const handleDetailsSelect = (details: string) => {
-    if (details === 'custom') {
-      setUseCustomDetails(true);
-      setFormData(prev => ({ ...prev, details: '' }));
+  // Inicializar campos al cargar el componente
+  useEffect(() => {
+    const { start, end } = parseTimeString(formData.time);
+    setStartTime(start);
+    setEndTime(end);
+
+    // Verificar si los detalles coinciden con alguna opción predefinida
+    const detailsText = Array.isArray(event.details) ? event.details.join('\n') : event.details;
+    if (predefinedDescriptions.includes(detailsText.trim())) {
+      setSelectedDetails(detailsText.trim());
+      setDetailsMode('predefined');
     } else {
-      setUseCustomDetails(false);
-      // Asignar color automáticamente basado en el detalle seleccionado
-      const autoColor = getColorForDetail(details);
-      setFormData(prev => ({ 
-        ...prev, 
-        details,
-        color: autoColor || prev.color // Mantener color actual si no hay mapeo
-      }));
+      setCustomDetails(detailsText);
+      setDetailsMode('custom');
     }
-  };
+  }, [event, formData.time]);
+
+  useEffect(() => {
+    // Verificar conflictos cuando cambian los horarios
+    if (startTime && endTime) {
+      const { hasConflict } = checkTimeConflict(rowId, day, startTime, endTime, event.id);
+      setHasTimeConflict(hasConflict);
+    } else {
+      setHasTimeConflict(false);
+    }
+  }, [startTime, endTime, rowId, day, event.id]);
 
   const handleSave = () => {
-    if (hasConflict) {
-      alert('No se puede guardar: hay un conflicto de horarios.');
+    // Verificar campos requeridos
+    if (!formData.title.trim()) {
+      alert('El título es requerido.');
       return;
     }
 
-    // Construir el string de tiempo combinado
-    let timeString = '';
-    if (formData.startTime && formData.endTime) {
-      timeString = `${formData.startTime} a ${formData.endTime}`;
-    } else if (formData.startTime) {
-      timeString = formData.startTime;
-    } else if (formData.endTime) {
-      timeString = formData.endTime;
+    const finalDetails = detailsMode === 'predefined' ? selectedDetails : customDetails;
+    
+    if (!finalDetails.trim()) {
+      alert('Los detalles son requeridos.');
+      return;
     }
 
-    const updatedEventData: Event = {
+    // Construir string de tiempo si ambos horarios están presentes
+    let timeString = formData.time;
+    if (startTime && endTime) {
+      timeString = `${startTime} - ${endTime}`;
+    } else if (startTime) {
+      timeString = startTime;
+    }
+
+    // Determinar color automático si se seleccionó un detalle predefinido
+    let finalColor = formData.color;
+    if (detailsMode === 'predefined' && selectedDetails) {
+      const autoColor = getColorForDetail(selectedDetails);
+      if (autoColor) {
+        finalColor = autoColor;
+      }
+    }
+
+    const updatedEvent: Event = {
       ...event,
-      title: formData.title,
-      details: formData.details.includes('\n') ? formData.details.split('\n') : formData.details,
-      time: timeString || undefined,
-      location: formData.location,
-      color: formData.color,
-      modalidad: formData.modalidad || undefined
+      title: formData.title.trim(),
+      details: finalDetails.trim(),
+      time: timeString,
+      location: formData.location.trim(),
+      color: finalColor
     };
-    
-    updateEvent(rowId, day, updatedEventData);
+
+    updateEvent(rowId, day, updatedEvent);
     onClose();
   };
 
   const handleDelete = () => {
-    if (confirm('¿Estás seguro de que quieres eliminar este evento del borrador?')) {
-      console.log('🗑️ EventCard - Eliminando evento:', {
-        eventId: event.id,
-        rowId,
-        day,
-        eventTitle: event.title
-      });
+    if (safeConfirm('¿Estás seguro de que quieres eliminar este evento del borrador?')) {
       deleteEvent(rowId, day, event.id);
       onClose();
     }
   };
 
   const handleKeyDown = (e: KeyboardEvent) => {
-    if ((e.key === 'Delete' || e.key === 'Backspace') && (e.ctrlKey || e.metaKey)) {
+    // Permitir eliminar con Ctrl+Delete o Cmd+Backspace
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'Delete' || e.key === 'Backspace')) {
       e.preventDefault();
       handleDelete();
     }
   };
 
   useEffect(() => {
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    // Agregar listener para atajos de teclado
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Debug: Verificar valores
-  console.log('EventCard - Valores iniciales:', {
-    event,
-    formData,
-    useCustomDetails,
-    isValid
-  });
+  // Array de colores disponibles
+  const colorOptions = [
+    'bg-red-600', 'bg-red-700', 'bg-red-800',
+    'bg-blue-600', 'bg-blue-700', 'bg-blue-800',
+    'bg-green-600', 'bg-green-700', 'bg-green-800',
+    'bg-yellow-600', 'bg-yellow-700', 'bg-yellow-800',
+    'bg-purple-600', 'bg-purple-700', 'bg-purple-800',
+    'bg-pink-600', 'bg-pink-700', 'bg-pink-800',
+    'bg-indigo-600', 'bg-indigo-700', 'bg-indigo-800',
+    'bg-orange-600', 'bg-orange-700', 'bg-orange-800',
+    'bg-teal-600', 'bg-teal-700', 'bg-teal-800',
+    'bg-amber-600', 'bg-amber-700', 'bg-amber-800',
+    'bg-emerald-600', 'bg-emerald-700', 'bg-emerald-800',
+    'bg-rose-600', 'bg-rose-700', 'bg-rose-800'
+  ];
 
   return (
-    <div class={`bg-white rounded-lg shadow-md p-3 sm:p-4 ${hasConflict ? 'border-2 border-red-500' : ''}`}>
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-semibold text-gray-800">Editar Evento</h3>
-        <button
-          onClick={onClose}
-          class="text-gray-500 hover:text-gray-700 text-2xl leading-none"
-        >
-          ×
-        </button>
-      </div>
-      <div class="space-y-3">
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white text-gray-900 rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-bold text-gray-900">Editar Evento</h2>
+          <button
+            onClick={onClose}
+            class="text-gray-500 hover:text-gray-700 text-2xl"
+          >
+            ×
+          </button>
+        </div>
+
+        <div class="space-y-4">
+          {/* Título */}
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Título del Evento</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              Título *
+            </label>
             <input
               type="text"
               value={formData.title}
-              onInput={(e) => handleInputChange('title', (e.target as HTMLInputElement).value)}
-              class={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white ${
-                hasConflict ? 'border-red-500 bg-red-50' : 'border-gray-300'
-              }`}
+              onInput={(e) => setFormData(prev => ({ ...prev, title: (e.target as HTMLInputElement).value }))}
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
               placeholder="Título del evento"
             />
           </div>
+
+          {/* Detalles */}
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Ubicación</label>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Detalles *
+            </label>
+            
+            {/* Selector de modo */}
+            <div class="flex space-x-4 mb-3">
+              <label class="flex items-center text-gray-700">
+                <input
+                  type="radio"
+                  name="detailsMode"
+                  checked={detailsMode === 'predefined'}
+                  onChange={() => setDetailsMode('predefined')}
+                  class="mr-2"
+                />
+                Seleccionar predefinido
+              </label>
+              <label class="flex items-center text-gray-700">
+                <input
+                  type="radio"
+                  name="detailsMode"
+                  checked={detailsMode === 'custom'}
+                  onChange={() => setDetailsMode('custom')}
+                  class="mr-2"
+                />
+                Escribir personalizado
+              </label>
+            </div>
+
+            {detailsMode === 'predefined' ? (
+              <select
+                value={selectedDetails}
+                onChange={(e) => {
+                  setSelectedDetails((e.target as HTMLSelectElement).value);
+                  // Auto-asignar color si está disponible
+                  const autoColor = getColorForDetail((e.target as HTMLSelectElement).value);
+                  if (autoColor) {
+                    setFormData(prev => ({ ...prev, color: autoColor }));
+                  }
+                }}
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
+              >
+                <option value="">Selecciona una descripción...</option>
+                {predefinedDescriptions.map(desc => (
+                  <option key={desc} value={desc}>{desc}</option>
+                ))}
+              </select>
+            ) : (
+              <textarea
+                value={customDetails}
+                onInput={(e) => setCustomDetails((e.target as HTMLTextAreaElement).value)}
+                rows={3}
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
+                placeholder="Descripción personalizada del evento..."
+              />
+            )}
+          </div>
+
+          {/* Horarios */}
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Horario
+            </label>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs text-gray-600 mb-1">Hora de inicio</label>
+                <select
+                  value={startTime}
+                  onChange={(e) => setStartTime((e.target as HTMLSelectElement).value)}
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
+                >
+                  <option value="">Sin hora específica</option>
+                  {startTimes.map(time => (
+                    <option key={time} value={time}>{time}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs text-gray-600 mb-1">Hora de fin</label>
+                <select
+                  value={endTime}
+                  onChange={(e) => setEndTime((e.target as HTMLSelectElement).value)}
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
+                >
+                  <option value="">Sin hora específica</option>
+                  {endTimes.map(time => (
+                    <option key={time} value={time}>{time}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            {hasTimeConflict && (
+              <p class="text-red-600 text-sm mt-1">
+                ⚠️ Hay un conflicto de horario con otro evento en este día
+              </p>
+            )}
+          </div>
+
+          {/* Ubicación */}
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              Ubicación
+            </label>
             <input
               type="text"
               value={formData.location}
-              onInput={(e) => handleInputChange('location', (e.target as HTMLInputElement).value)}
-              class={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white ${
-                hasConflict ? 'border-red-500 bg-red-50' : 'border-gray-300'
-              }`}
+              onInput={(e) => setFormData(prev => ({ ...prev, location: (e.target as HTMLInputElement).value }))}
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
               placeholder="Ubicación del evento"
             />
           </div>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Hora de Inicio</label>
-            <select
-              value={formData.startTime}
-              onInput={(e) => handleInputChange('startTime', (e.target as HTMLSelectElement).value)}
-              class={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white ${
-                hasConflict ? 'border-red-500 bg-red-50' : 'border-gray-300'
-              }`}
-            >
-              <option value="">Seleccionar hora...</option>
-              {startTimes.map((time) => (
-                <option key={time} value={time}>
-                  {time}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Hora de Fin</label>
-            <select
-              value={formData.endTime}
-              onInput={(e) => handleInputChange('endTime', (e.target as HTMLSelectElement).value)}
-              class={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white ${
-                hasConflict ? 'border-red-500 bg-red-50' : 'border-gray-300'
-              }`}
-            >
-              <option value="">Seleccionar hora...</option>
-              {endTimes.map((time) => (
-                <option key={time} value={time}>
-                  {time}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-        
-        {/* Modalidad */}
-        <div class="grid grid-cols-1 gap-3">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Modalidad</label>
-            <select
-              value={formData.modalidad}
-              onInput={(e) => handleInputChange('modalidad', (e.target as HTMLSelectElement).value)}
-              class={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white ${
-                hasConflict ? 'border-red-500 bg-red-50' : 'border-gray-300'
-              }`}
-            >
-              <option value="">Seleccionar modalidad...</option>
-              <option value="Presencial">Presencial</option>
-              <option value="Virtual">Virtual</option>
-            </select>
-          </div>
-        </div>
-        
-        <div class="grid grid-cols-1 gap-3">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Detalles</label>
-            <select
-              value={useCustomDetails ? 'custom' : formData.details}
-              onInput={(e) => handleDetailsSelect((e.target as HTMLSelectElement).value)}
-              class={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white ${
-                hasConflict ? 'border-red-500 bg-red-50' : 'border-gray-300'
-              }`}
-            >
-              <option value="">Seleccionar detalles predefinidos...</option>
-              {predefinedDescriptions.map((desc) => (
-                <option key={desc} value={desc} class="text-gray-900 bg-white">
-                  {desc}
-                </option>
-              ))}
-              <option value="custom" class="text-gray-900 bg-white font-semibold">
-                ✏️ Personalizar detalles...
-              </option>
-            </select>
-          </div>
-          {useCustomDetails && (
-            <div>
-              <textarea
-                value={formData.details}
-                onInput={(e) => handleInputChange('details', (e.target as HTMLTextAreaElement).value)}
-                rows={4}
-                class={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white ${
-                  hasConflict ? 'border-red-500 bg-red-50' : 'border-gray-300'
-                }`}
-                placeholder="Ingresa los detalles del evento (separa con líneas para múltiples detalles)"
-              />
-            </div>
-          )}
-        </div>
 
-        {/* Mostrar información del color automático */}
-        {formData.details && !useCustomDetails && (
-          <div class="bg-blue-50 border border-blue-200 rounded-md p-3">
-            <div class="flex items-center space-x-2">
-              <div class={`w-4 h-4 rounded-full ${formData.color}`}></div>
-              <span class="text-sm text-blue-800">
-                Color asignado automáticamente para este detalle
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* Color Picker - Solo mostrar para detalles personalizados */}
-        {useCustomDetails && (
+          {/* Color */}
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Color del Evento</label>
-            <div class="flex flex-wrap gap-2">
-              {['bg-blue-600', 'bg-green-600', 'bg-purple-600', 'bg-orange-600', 'bg-pink-600', 'bg-indigo-600', 'bg-teal-600', 'bg-amber-600', 'bg-red-600', 'bg-rose-600', 'bg-emerald-600', 'bg-cyan-500'].map((color) => (
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Color del evento
+            </label>
+            <div class="grid grid-cols-12 gap-2">
+              {colorOptions.map(color => (
                 <button
                   key={color}
-                  onClick={() => handleInputChange('color', color)}
-                  class={`w-8 h-8 rounded-full border-2 ${formData.color === color ? 'border-gray-800 ring-2 ring-offset-1 ring-gray-800' : 'border-gray-300'} ${color}`}
-                  title={`Seleccionar color ${color}`}
+                  onClick={() => setFormData(prev => ({ ...prev, color }))}
+                  class={`w-8 h-8 rounded ${color} ${
+                    formData.color === color ? 'ring-2 ring-gray-400 ring-offset-1' : ''
+                  }`}
                 />
               ))}
             </div>
+            <p class="text-xs text-gray-500 mt-2">
+              Seleccionado: <span class={`inline-block w-4 h-4 rounded ${formData.color}`}></span>
+            </p>
           </div>
-        )}
+        </div>
 
-        {/* Conflictos */}
-        {hasConflict && conflictingEvent && (
-          <div class="bg-red-50 border border-red-200 rounded-md p-3">
-            <div class="flex items-center space-x-2">
-              <div class="w-4 h-4 bg-red-600 rounded-full"></div>
-              <span class="text-sm text-red-800">
-                Conflicto con: <strong>{conflictingEvent.title}</strong>
-                {conflictingEvent.time && ` (${conflictingEvent.time})`}
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* Botones */}
-        <div class="flex flex-col sm:flex-row gap-2 mt-4">
+        {/* Botones de acción */}
+        <div class="flex justify-between mt-6">
           <button
             onClick={handleDelete}
-            class="w-full sm:w-auto flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+            class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
           >
-            🗑️ Eliminar
+            Eliminar Evento
           </button>
-          <div class="flex-1"></div>
-          <button
-            onClick={onClose}
-            class="w-full sm:w-auto flex items-center justify-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={!isValid || hasConflict}
-            class={`w-full sm:w-auto flex items-center justify-center px-4 py-2 rounded-md transition-colors ${
-              !isValid || hasConflict
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-blue-600 text-white hover:bg-blue-500'
-            }`}
-          >
-            💾 Guardar
-          </button>
+          <div class="space-x-3">
+            <button
+              onClick={onClose}
+              class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={hasTimeConflict}
+              class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Guardar Cambios
+            </button>
+          </div>
         </div>
+
+        {/* Nota de atajos */}
+        <p class="text-xs text-gray-500 mt-4 text-center">
+          💡 Tip: Usa Ctrl+Delete (o Cmd+Backspace en Mac) para eliminar rápidamente
+        </p>
       </div>
     </div>
   );

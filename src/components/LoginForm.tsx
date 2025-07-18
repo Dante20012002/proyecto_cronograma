@@ -5,9 +5,10 @@ import type { JSX } from 'preact';
 
 interface LoginFormProps {
   onCancel?: () => void;
+  onSuccess?: () => void;
 }
 
-export const LoginForm = ({ onCancel }: LoginFormProps): JSX.Element => {
+export const LoginForm = ({ onCancel, onSuccess }: LoginFormProps): JSX.Element => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -21,7 +22,10 @@ export const LoginForm = ({ onCancel }: LoginFormProps): JSX.Element => {
     try {
       const result = await login(email, password);
       if (!result.success) {
-        setError(result.error);
+        setError(result.error || 'Error al iniciar sesión');
+      } else {
+        // Login exitoso - llamar función de éxito si existe
+        onSuccess?.();
       }
     } catch (err) {
       setError('Error al iniciar sesión');

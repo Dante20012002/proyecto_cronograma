@@ -14,6 +14,7 @@ import {
   canPublish
 } from '../stores/schedule';
 import { isAdmin, currentUser, logout } from '../lib/auth';
+import { safeConfirm } from '../lib/utils';
 import GlobalConfig from './GlobalConfig';
 import InstructorManager from './InstructorManager';
 import { LoginForm } from './LoginForm';
@@ -79,7 +80,7 @@ export default function AdminToolbar({ onClose }: AdminToolbarProps): JSX.Elemen
       return;
     }
 
-    if (confirm('¿Estás seguro de que quieres publicar todos los cambios? Esta acción no se puede deshacer.')) {
+    if (safeConfirm('¿Estás seguro de que quieres publicar todos los cambios? Esta acción no se puede deshacer.')) {
       try {
         setNotificationMessage('📦 Publicando cambios...');
         setNotificationType('info');
@@ -99,11 +100,11 @@ export default function AdminToolbar({ onClose }: AdminToolbarProps): JSX.Elemen
         setNotificationType('error');
       }
       
-      setTimeout(() => setNotificationMessage(null), 5000);
+      setTimeout(() => setNotificationMessage(null), 3000);
     }
   };
 
-  const handleSaveDraft = async () => {
+  const handleSave = async () => {
     if (processing.value) {
       setNotificationMessage('⚠️ Ya hay una operación en curso. Por favor espera.');
       setNotificationType('info');
@@ -114,68 +115,93 @@ export default function AdminToolbar({ onClose }: AdminToolbarProps): JSX.Elemen
     try {
       setNotificationMessage('💾 Guardando borrador...');
       setNotificationType('info');
-      
+
       const success = await saveDraftChanges();
       
       if (success) {
-        setNotificationMessage('✅ Borrador guardado. Ahora puedes publicar los cambios cuando quieras.');
+        setNotificationMessage('✅ ¡Borrador guardado exitosamente!');
         setNotificationType('success');
       } else {
         setNotificationMessage('❌ Error al guardar. Revisa la consola para más detalles.');
         setNotificationType('error');
       }
     } catch (error) {
-      console.error('Error en handleSaveDraft:', error);
+      console.error('Error en handleSave:', error);
       setNotificationMessage('❌ Error inesperado al guardar.');
       setNotificationType('error');
     }
     
-    setTimeout(() => setNotificationMessage(null), 5000);
+    setTimeout(() => setNotificationMessage(null), 3000);
   };
 
-  const handleClearEvents = () => {
-    if (confirm('¿Estás seguro de que quieres eliminar TODAS las actividades del borrador? Los instructores no se verán afectados. Esta acción no se puede deshacer.')) {
-      clearAllDraftEvents();
-      alert('Todas las actividades del borrador han sido eliminadas. Guarda el borrador para persistir esta eliminación y luego publica los cambios.');
-    }
-  };
-
-  const handleFixDuplicates = () => {
-    console.log('🔍 Verificando integridad de datos...');
-    const result = debugDataIntegrity();
-    
-    if (!result.isValid && result.problematicEvents.length > 0) {
-      const duplicateEvents = result.problematicEvents.filter(p => p.issue === 'duplicate_id');
-      if (duplicateEvents.length > 0) {
-        if (confirm(`Se encontraron ${duplicateEvents.length} eventos duplicados. ¿Quieres eliminar automáticamente los duplicados?`)) {
-          const removed = removeDuplicateEvents();
-          if (removed > 0) {
-            setNotificationMessage(`✅ Se eliminaron ${removed} eventos duplicados. Los cambios se guardarán automáticamente.`);
-            setNotificationType('success');
-          } else {
-            setNotificationMessage('ℹ️ No se encontraron eventos duplicados para eliminar.');
-            setNotificationType('info');
-          }
-        }
-      } else {
-        setNotificationMessage('ℹ️ Se encontraron otros problemas de integridad, pero no eventos duplicados. Revisa la consola para más detalles.');
+  const handleClearAll = async () => {
+    if (safeConfirm('¿Estás seguro de que quieres eliminar TODAS las actividades del borrador? Los instructores no se verán afectados. Esta acción no se puede deshacer.')) {
+      try {
+        setNotificationMessage('🗑️ Eliminando eventos...');
         setNotificationType('info');
+
+        await clearAllDraftEvents();
+        
+        setNotificationMessage('✅ ¡Todos los eventos han sido eliminados!');
+        setNotificationType('success');
+      } catch (error) {
+        console.error('Error eliminando eventos:', error);
+        setNotificationMessage('❌ Error al eliminar eventos.');
+        setNotificationType('error');
       }
-    } else {
-      setNotificationMessage('✅ No se encontraron problemas de integridad en los datos.');
+      
+      setTimeout(() => setNotificationMessage(null), 3000);
+    }
+  };
+
+  const handleRemoveDuplicates = async () => {
+    if (safeConfirm(`Se encontraron eventos duplicados. ¿Quieres eliminar automáticamente los duplicados?`)) {
+      try {
+        setNotificationMessage('🔄 Eliminando eventos duplicados...');
+        setNotificationType('info');
+
+        const result = await removeDuplicateEvents();
+        
+        setNotificationMessage(`✅ Duplicados eliminados exitosamente: ${result}`);
+        setNotificationType('success');
+      } catch (error) {
+        console.error('Error eliminando duplicados:', error);
+        setNotificationMessage('❌ Error al eliminar duplicados.');
+        setNotificationType('error');
+      }
+      
+      setTimeout(() => setNotificationMessage(null), 3000);
+    }
+  };
+
+  const handleDataIntegrity = async () => {
+    try {
+      setNotificationMessage('🔍 Verificando integridad de datos...');
+      setNotificationType('info');
+
+      await debugDataIntegrity();
+      
+      setNotificationMessage('✅ Verificación completada. Revisa la consola para detalles.');
       setNotificationType('success');
+    } catch (error) {
+      console.error('Error en verificación:', error);
+      setNotificationMessage('❌ Error en verificación de integridad.');
+      setNotificationType('error');
     }
     
-    // Auto-hide notification after 5 seconds
-    setTimeout(() => {
-      setNotificationMessage(null);
-    }, 5000);
+    setTimeout(() => setNotificationMessage(null), 3000);
   };
 
   const handleLogout = async () => {
-    if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
-      await logout();
-      if (onClose) onClose();
+    if (safeConfirm('¿Estás seguro de que quieres cerrar sesión?')) {
+      try {
+        await logout();
+      } catch (error) {
+        console.error('Error al cerrar sesión:', error);
+        setNotificationMessage('❌ Error al cerrar sesión');
+        setNotificationType('error');
+        setTimeout(() => setNotificationMessage(null), 3000);
+      }
     }
   };
 
@@ -184,107 +210,105 @@ export default function AdminToolbar({ onClose }: AdminToolbarProps): JSX.Elemen
   }
 
   return (
-    <div class="space-y-4">
-      <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 relative">
-        {/* Notificación flotante */}
-        {notificationMessage && (
-          <div class={`absolute top-2 right-2 z-50 px-4 py-2 rounded-lg shadow-lg text-sm max-w-xs ${
-            notificationType === 'success' ? 'bg-green-500 text-white' :
-            notificationType === 'error' ? 'bg-red-500 text-white' :
-            'bg-blue-500 text-white'
-          }`}>
-            {notificationMessage}
-          </div>
-        )}
-        
-        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0">
-        <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
-          <h2 class="text-lg font-bold text-gray-900">Panel de Administración</h2>
-          <div class="text-sm text-gray-600">
-            {user.value?.email}
-          </div>
+    <div class="bg-white rounded-lg shadow-md p-3 sm:p-4">
+      {/* Header con información del usuario */}
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 space-y-2 sm:space-y-0">
+        <div class="text-gray-700">
+          <h3 class="font-semibold text-sm">🛠️ Panel de Administración</h3>
+          <p class="text-xs">
+            👤 {user.value?.email} | 
+            📊 {dirty.value ? 'Cambios sin publicar' : 'Todo publicado'}
+          </p>
         </div>
-        <div class="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
+        <button
+          onClick={handleLogout}
+          class="text-gray-500 hover:text-gray-700 text-sm transition-colors"
+        >
+          🚪 Cerrar Sesión
+        </button>
+      </div>
+
+      {/* Notificaciones */}
+      {notificationMessage && (
+        <div class={`mb-4 p-3 rounded-md text-sm ${
+          notificationType === 'success' ? 'bg-green-50 text-green-800 border border-green-200' :
+          notificationType === 'error' ? 'bg-red-50 text-red-800 border border-red-200' :
+          'bg-blue-50 text-blue-800 border border-blue-200'
+        }`}>
+          {notificationMessage}
+        </div>
+      )}
+
+      {/* Filtros */}
+      <div class="mb-4">
+        <FilterBar isAdmin={true} />
+      </div>
+
+      {/* Botones principales */}
+      <div class="space-y-3">
+        {/* Primera fila: Guardar y Publicar */}
+        <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
           <button
-            onClick={handleSaveDraft}
-            disabled={!dirty.value || processing.value}
-            class={`flex-1 sm:flex-none flex items-center justify-center px-4 py-2 rounded-md transition-colors ${
-              dirty.value && !processing.value
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            }`}
+            onClick={handleSave}
+            disabled={processing.value}
+            class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {saving.value ? '💾 Guardando...' : 'Guardar'}
+            {saving.value ? '⏳ Guardando...' : '💾 Guardar Borrador'}
           </button>
+          
           <button
             onClick={handlePublish}
             disabled={!allowPublish.value || processing.value}
-            class={`flex-1 sm:flex-none flex items-center justify-center px-4 py-2 rounded-md transition-colors ${
-              allowPublish.value && !processing.value
-                ? 'bg-green-600 text-white hover:bg-green-700'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            }`}
-            title={!allowPublish.value ? 'Guarda primero y espera 2 segundos' : 'Publicar cambios'}
+            class="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {publishing.value ? '📦 Publicando...' : 'Publicar'}
+            {publishing.value ? '⏳ Publicando...' : '📦 Publicar'}
           </button>
+        </div>
+
+        {/* Segunda fila: Herramientas */}
+        <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
           <button
             onClick={() => setShowExcelUploader(true)}
             disabled={processing.value}
-            class={`flex-1 sm:flex-none flex items-center justify-center px-3 py-2 rounded-md transition-colors text-sm ${
-              processing.value
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-indigo-600 text-white hover:bg-indigo-700'
-            }`}
-            title="Cargar eventos desde Excel"
+            class="flex-1 px-3 py-2 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             📊 Excel
           </button>
+          
           <button
-            onClick={handleFixDuplicates}
+            onClick={handleDataIntegrity}
             disabled={processing.value}
-            class={`flex-1 sm:flex-none flex items-center justify-center px-3 py-2 rounded-md transition-colors text-sm ${
-              processing.value
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-yellow-600 text-white hover:bg-yellow-700'
-            }`}
-            title="Reparar eventos duplicados"
+            class="flex-1 px-3 py-2 bg-yellow-600 text-white text-sm rounded-md hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            🔧 Reparar
+            🔍 Verificar
           </button>
+          
           <button
-            onClick={handleClearEvents}
+            onClick={handleRemoveDuplicates}
             disabled={processing.value}
-            class={`flex-1 sm:flex-none flex items-center justify-center px-4 py-2 rounded-md transition-colors ${
-              processing.value
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-red-600 text-white hover:bg-red-700'
-            }`}
+            class="flex-1 px-3 py-2 bg-orange-600 text-white text-sm rounded-md hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            Limpiar
+            🔄 Duplicados
           </button>
+          
           <button
-            onClick={handleLogout}
+            onClick={handleClearAll}
             disabled={processing.value}
-            class={`flex-1 sm:flex-none flex items-center justify-center px-4 py-2 rounded-md transition-colors ${
-              processing.value
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-gray-600 text-white hover:bg-gray-700'
-            }`}
+            class="flex-1 px-3 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            Cerrar Sesión
+            🗑️ Limpiar
           </button>
         </div>
       </div>
-        
-        {/* Modal de carga masiva de Excel */}
-        {showExcelUploader && (
-          <ExcelUploader onClose={() => setShowExcelUploader(false)} />
-        )}
-      </div>
-      
-      {/* Filtros */}
-      <FilterBar isAdmin={true} />
+
+      {/* Modal del Excel Uploader */}
+      {showExcelUploader && (
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div class="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <ExcelUploader onClose={() => setShowExcelUploader(false)} />
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

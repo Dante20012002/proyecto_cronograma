@@ -6,7 +6,8 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "init-admin": "node scripts/init-super-admin.js"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.4",

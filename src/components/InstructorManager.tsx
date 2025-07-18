@@ -1,5 +1,6 @@
 import { useState } from 'preact/hooks';
 import { draftInstructors, addInstructor, updateInstructor, deleteInstructor } from '../stores/schedule';
+import { safeConfirm } from '../lib/utils';
 import type { JSX } from 'preact';
 import type { Instructor } from '../types/schedule';
 
@@ -55,7 +56,7 @@ export default function InstructorManager(): JSX.Element {
   };
 
   const handleDelete = async (instructor: Instructor) => {
-    if (confirm(`¿Estás seguro de que quieres eliminar a ${instructor.name}?`)) {
+    if (safeConfirm(`¿Estás seguro de que quieres eliminar a ${instructor.name}?`)) {
       await deleteInstructor(instructor.id);
     }
   };
