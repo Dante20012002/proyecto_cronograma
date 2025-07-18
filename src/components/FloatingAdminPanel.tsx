@@ -25,7 +25,7 @@ function Tooltip({ text, children }: TooltipProps): JSX.Element {
     >
       {children}
       {show && (
-        <div class="absolute right-full mr-3 top-1/2 transform -translate-y-1/2 bg-gray-900 text-white px-3 py-2 rounded-lg text-sm whitespace-nowrap z-60 shadow-lg">
+        <div class="absolute right-full mr-3 top-1/2 transform -translate-y-1/2 bg-gray-900 text-white px-3 py-2 rounded-lg text-sm whitespace-nowrap z-50 shadow-lg">
           {text}
           <div class="absolute left-full top-1/2 transform -translate-y-1/2 w-0 h-0 border-l-[6px] border-l-gray-900 border-t-[6px] border-b-[6px] border-t-transparent border-b-transparent"></div>
         </div>
@@ -72,7 +72,7 @@ function Modal({ isOpen, onClose, title, children, maxWidth = "max-w-4xl" }: Mod
   if (!isOpen) return <></>;
 
   return (
-    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-80 p-4">
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div class={`bg-white rounded-lg ${maxWidth} w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl`}>
         {/* Header del modal */}
         <div class="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
@@ -114,7 +114,7 @@ export default function FloatingAdminPanel(): JSX.Element {
   // Detectar si hay otros modales abiertos en la página
   const hasOtherModalsOpen = () => {
     // Buscar elementos con z-index alto que indiquen modales activos
-    const existingModals = document.querySelectorAll('[class*="z-50"], [class*="z-40"]');
+    const existingModals = document.querySelectorAll('[class*="z-80"], [class*="z-50"]');
     return existingModals.length > 0;
   };
 
