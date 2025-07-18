@@ -2,6 +2,7 @@ import { useState, useEffect } from 'preact/hooks';
 import { updateEvent, deleteEvent, checkTimeConflict, startTimes, endTimes } from '../stores/schedule';
 import { safeConfirm } from '../lib/utils';
 import type { Event } from '../stores/schedule';
+import { EVENT_COLORS, getColorForDetail, getRandomEventColor, hexToStyle, getContrastTextColor } from '../lib/colors';
 
 /**
  * Props para el componente EventCard
@@ -57,73 +58,16 @@ const predefinedDescriptions = [
   'TALLER EDS CONFIABLE'
 ];
 
-/**
- * Mapeo de detalles predefinidos a colores específicos.
- * Cada detalle tiene un color único asociado para facilitar la identificación visual.
- */
-const detailColorMap: { [key: string]: string } = {
-  // Módulos formativos - Tonos azules
-  'MODULO PROTAGONISTAS DEL SERVICIO': 'bg-blue-600',
-  'MODULO FORMATIVO GNV': 'bg-blue-700',
-  'MODULO FORMATIVO LIQUIDOS': 'bg-blue-800',
-  'MODULO FORMATIVO LUBRICANTES': 'bg-blue-500',
-  'MODULO ESCUELA DE INDUSTRIA': 'bg-blue-900',
-  
-  // Protocolos y gestión - Tonos verdes
-  'PROTOCOLO DE SERVICIO EDS': 'bg-green-600',
-  'GESTION AMBIENTAL, SEGURIDAD Y SALUD EN EL TRABAJO': 'bg-green-700',
-  'EXCELENCIA ADMINISTRATIVA': 'bg-green-800',
-  
-  // Programas VIVE - Tonos púrpuras
-  'VIVE PITS': 'bg-purple-600',
-  'LA TOMA VIVE TERPEL & VIVE PITS': 'bg-purple-700',
-  'CARAVANA RUMBO PITS': 'bg-purple-800',
-  
-  // Formación TERPEL POS - Tonos naranjas
-  'FORMACION INICIAL TERPEL POS OPERATIVO': 'bg-orange-600',
-  'FORMACION INICIAL TERPEL POS ADMINISTRATIVO': 'bg-orange-700',
-  'ENTRENAMIENTO TERPEL POS OPERATIVO': 'bg-orange-800',
-  'ENTRENAMIENTO TERPEL POS ADMINISTRATIVO': 'bg-orange-500',
-  
-  // Facturación - Tonos rosados
-  'FACTURACION ELECTRONICA OPERATIVA': 'bg-pink-600',
-  'FACTURACION ELECTRONICA ADMINISTRATIVA': 'bg-pink-700',
-  
-  // Productos específicos - Tonos índigo
-  'CANASTILLA': 'bg-indigo-600',
-  'CLIENTES PROPIOS': 'bg-indigo-700',
-  'APP TERPEL': 'bg-indigo-800',
-  
-  // MASTERLUB - Tonos teal
-  'MASTERLUB OPERATIVO': 'bg-teal-600',
-  'MASTERLUB ADMINISTRATIVO': 'bg-teal-700',
-  
-  // EDS - Tonos amber
-  'EDS CONFIABLE': 'bg-amber-600',
-  'TALLER EDS CONFIABLE': 'bg-amber-700',
-  
-  // Campos y entrenamientos - Tonos emerald
-  'CAMPO DE ENTRENAMIENTO DE INDUSTRIA LIMPIA': 'bg-emerald-600',
-  'CONSTRUYENDO EQUIPOS ALTAMENTE EFECTIVOS': 'bg-emerald-700',
-  
-  // Módulos de comida - Tonos cálidos
-  'MODULO ROLLOS': 'bg-red-600',
-  'MODULO HISTORIA Y MASA': 'bg-red-700',
-  'MODULO STROMBOLIS': 'bg-red-800',
-  'MODULO PERROS Y MAS PERROS': 'bg-red-500',
-  'MODULO SANDUCHES': 'bg-red-900',
-  'MODULO SBARRO': 'bg-rose-600',
-  'MODULO BEBIDAS CALIENTES': 'bg-rose-700'
-};
-
-/**
- * Función para obtener el color asociado a un detalle específico.
- * @param detail - El detalle del evento
- * @returns El color asociado al detalle o null si no está mapeado
- */
-const getColorForDetail = (detail: string): string | null => {
-  return detailColorMap[detail] || null;
-};
+const predefinedTitles = [
+  'ESCUELA DE PROMOTORES',
+  'INDUSTRIA LIMPIA',
+  'ESCUELA DE ADMINISTRADORES',
+  'LEALTAD',
+  'RED VIRTUAL',
+  'EDS CONFIABLE',
+  'RUMBO',
+  'ESCUELA DE TIENDAS'
+];
 
 /**
  * Componente modal para editar eventos existentes en el cronograma.
@@ -210,11 +154,6 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
     }
 
     const finalDetails = detailsMode === 'predefined' ? selectedDetails : customDetails;
-    
-    if (!finalDetails.trim()) {
-      alert('Los detalles son requeridos.');
-      return;
-    }
 
     // Construir string de tiempo si ambos horarios están presentes
     let timeString = formData.time;
@@ -236,9 +175,9 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
     const updatedEvent: Event = {
       ...event,
       title: formData.title.trim(),
-      details: finalDetails.trim(),
+      details: finalDetails.trim() || 'Sin detalles especificados',
       time: timeString,
-      location: formData.location.trim(),
+      location: formData.location.trim() || 'Sin ubicación',
       color: finalColor
     };
 
@@ -268,20 +207,7 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
   }, []);
 
   // Array de colores disponibles
-  const colorOptions = [
-    'bg-red-600', 'bg-red-700', 'bg-red-800',
-    'bg-blue-600', 'bg-blue-700', 'bg-blue-800',
-    'bg-green-600', 'bg-green-700', 'bg-green-800',
-    'bg-yellow-600', 'bg-yellow-700', 'bg-yellow-800',
-    'bg-purple-600', 'bg-purple-700', 'bg-purple-800',
-    'bg-pink-600', 'bg-pink-700', 'bg-pink-800',
-    'bg-indigo-600', 'bg-indigo-700', 'bg-indigo-800',
-    'bg-orange-600', 'bg-orange-700', 'bg-orange-800',
-    'bg-teal-600', 'bg-teal-700', 'bg-teal-800',
-    'bg-amber-600', 'bg-amber-700', 'bg-amber-800',
-    'bg-emerald-600', 'bg-emerald-700', 'bg-emerald-800',
-    'bg-rose-600', 'bg-rose-700', 'bg-rose-800'
-  ];
+  const colorOptions = EVENT_COLORS;
 
   return (
     <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -300,7 +226,7 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
           {/* Título */}
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">
-              Título *
+              Programa *
             </label>
             <input
               type="text"
@@ -314,7 +240,7 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
           {/* Detalles */}
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
-              Detalles *
+              Módulo
             </label>
             
             {/* Selector de modo */}
@@ -429,19 +355,20 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
             <label class="block text-sm font-medium text-gray-700 mb-2">
               Color del evento
             </label>
-            <div class="grid grid-cols-12 gap-2">
+            <div class="grid grid-cols-12 gap-2 max-h-32 overflow-y-auto">
               {colorOptions.map(color => (
                 <button
                   key={color}
                   onClick={() => setFormData(prev => ({ ...prev, color }))}
-                  class={`w-8 h-8 rounded ${color} ${
-                    formData.color === color ? 'ring-2 ring-gray-400 ring-offset-1' : ''
+                  class={`w-8 h-8 rounded border-2 hover:scale-110 transition-transform ${
+                    formData.color === color ? 'ring-2 ring-gray-400 ring-offset-1' : 'border-gray-300'
                   }`}
+                  style={hexToStyle(color)}
                 />
               ))}
             </div>
             <p class="text-xs text-gray-500 mt-2">
-              Seleccionado: <span class={`inline-block w-4 h-4 rounded ${formData.color}`}></span>
+              Seleccionado: <span class="inline-block w-4 h-4 rounded border border-gray-300" style={hexToStyle(formData.color)}></span>
             </p>
           </div>
         </div>

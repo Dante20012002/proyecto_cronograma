@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'preact/hooks';
 import type { Event } from '../stores/schedule';
 import { draftScheduleRows } from '../stores/schedule';
+import { EVENT_COLORS, hexToStyle, getContrastTextColor } from '../lib/colors';
 
 interface EventEditorProps {
   event: Event;
@@ -76,14 +77,11 @@ export default function EventEditor({ event, rowId, day, isOpen, onClose }: Even
 
   if (!isOpen) return null;
 
-  const colorOptions = [
-    { value: 'bg-red-600', label: 'Rojo', class: 'bg-red-600' },
-    { value: 'bg-rose-500', label: 'Rosa', class: 'bg-rose-500' },
-    { value: 'bg-blue-600', label: 'Azul', class: 'bg-blue-600' },
-    { value: 'bg-green-600', label: 'Verde', class: 'bg-green-600' },
-    { value: 'bg-purple-600', label: 'Púrpura', class: 'bg-purple-600' },
-    { value: 'bg-orange-600', label: 'Naranja', class: 'bg-orange-600' },
-  ];
+  const colorOptions = EVENT_COLORS.slice(0, 18).map((color, index) => ({
+    value: color,
+    label: `Color ${index + 1}`,
+    color: color
+  }));
 
   return (
     <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -102,7 +100,7 @@ export default function EventEditor({ event, rowId, day, isOpen, onClose }: Even
           {/* Título */}
           <div>
             <label class="block text-sm font-medium text-slate-300 mb-2">
-              Título del Evento
+              Programa del Evento
             </label>
             <input
               type="text"
@@ -117,7 +115,7 @@ export default function EventEditor({ event, rowId, day, isOpen, onClose }: Even
           {/* Detalles */}
           <div>
             <label class="block text-sm font-medium text-slate-300 mb-2">
-              Detalles
+              Módulo
             </label>
             <textarea
               value={formData.details}
@@ -191,7 +189,13 @@ export default function EventEditor({ event, rowId, day, isOpen, onClose }: Even
                       : 'border-slate-600 hover:border-slate-400'
                   }`}
                 >
-                  <div class={`${color.class} w-full h-8 rounded flex items-center justify-center text-white font-medium`}>
+                  <div 
+                    class="w-full h-8 rounded flex items-center justify-center font-medium"
+                    style={{
+                      backgroundColor: color.color,
+                      color: getContrastTextColor(color.color)
+                    }}
+                  >
                     {color.label}
                   </div>
                 </button>
@@ -204,7 +208,13 @@ export default function EventEditor({ event, rowId, day, isOpen, onClose }: Even
             <label class="block text-sm font-medium text-slate-300 mb-2">
               Vista Previa
             </label>
-            <div class={`${formData.color} rounded-lg p-4 text-white`}>
+            <div 
+              class="rounded-lg p-4"
+              style={{
+                backgroundColor: formData.color,
+                color: getContrastTextColor(formData.color)
+              }}
+            >
               <p class="font-bold text-lg">{formData.title || 'Título del evento'}</p>
               <div class="text-sm mt-2 space-y-1">
                 {formData.details.split('\n').map((line, index) => (

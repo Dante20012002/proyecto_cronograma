@@ -2,64 +2,9 @@ import { useState, useRef } from 'preact/hooks';
 import * as XLSX from 'xlsx';
 import { addEvent, draftScheduleRows, draftInstructors, addInstructor, draftGlobalConfig } from '../stores/schedule';
 import type { Event, Instructor } from '../stores/schedule';
+import { EVENT_COLORS, getColorForDetail, getRandomEventColor, hexToStyle, getContrastTextColor } from '../lib/colors';
 
-/**
- * Mapeo de detalles predefinidos a colores específicos.
- */
-const detailColorMap: { [key: string]: string } = {
-  // Módulos formativos - Tonos azules
-  'MODULO PROTAGONISTAS DEL SERVICIO': 'bg-blue-600',
-  'MODULO FORMATIVO GNV': 'bg-blue-700',
-  'MODULO FORMATIVO LIQUIDOS': 'bg-blue-800',
-  'MODULO FORMATIVO LUBRICANTES': 'bg-blue-500',
-  'MODULO ESCUELA DE INDUSTRIA': 'bg-blue-900',
-  
-  // Protocolos y gestión - Tonos verdes
-  'PROTOCOLO DE SERVICIO EDS': 'bg-green-600',
-  'GESTION AMBIENTAL, SEGURIDAD Y SALUD EN EL TRABAJO': 'bg-green-700',
-  'EXCELENCIA ADMINISTRATIVA': 'bg-green-800',
-  
-  // Programas VIVE - Tonos púrpuras
-  'VIVE PITS': 'bg-purple-600',
-  'LA TOMA VIVE TERPEL & VIVE PITS': 'bg-purple-700',
-  'CARAVANA RUMBO PITS': 'bg-purple-800',
-  
-  // Formación TERPEL POS - Tonos naranjas
-  'FORMACION INICIAL TERPEL POS OPERATIVO': 'bg-orange-600',
-  'FORMACION INICIAL TERPEL POS ADMINISTRATIVO': 'bg-orange-700',
-  'ENTRENAMIENTO TERPEL POS OPERATIVO': 'bg-orange-800',
-  'ENTRENAMIENTO TERPEL POS ADMINISTRATIVO': 'bg-orange-500',
-  
-  // Facturación - Tonos rosados
-  'FACTURACION ELECTRONICA OPERATIVA': 'bg-pink-600',
-  'FACTURACION ELECTRONICA ADMINISTRATIVA': 'bg-pink-700',
-  
-  // Productos específicos - Tonos índigo
-  'CANASTILLA': 'bg-indigo-600',
-  'CLIENTES PROPIOS': 'bg-indigo-700',
-  'APP TERPEL': 'bg-indigo-800',
-  
-  // MASTERLUB - Tonos teal
-  'MASTERLUB OPERATIVO': 'bg-teal-600',
-  'MASTERLUB ADMINISTRATIVO': 'bg-teal-700',
-  
-  // EDS - Tonos amber
-  'EDS CONFIABLE': 'bg-amber-600',
-  'TALLER EDS CONFIABLE': 'bg-amber-700',
-  
-  // Campos y entrenamientos - Tonos emerald
-  'CAMPO DE ENTRENAMIENTO DE INDUSTRIA LIMPIA': 'bg-emerald-600',
-  'CONSTRUYENDO EQUIPOS ALTAMENTE EFECTIVOS': 'bg-emerald-700',
-  
-  // Módulos de comida - Tonos cálidos
-  'MODULO ROLLOS': 'bg-red-600',
-  'MODULO HISTORIA Y MASA': 'bg-red-700',
-  'MODULO STROMBOLIS': 'bg-red-800',
-  'MODULO PERROS Y MAS PERROS': 'bg-red-500',
-  'MODULO SANDUCHES': 'bg-red-900',
-  'MODULO SBARRO': 'bg-rose-600',
-  'MODULO BEBIDAS CALIENTES': 'bg-rose-700'
-};
+
 
 /**
  * Interface para los datos del Excel parseados
@@ -95,12 +40,7 @@ interface ExcelUploaderProps {
   onClose: () => void;
 }
 
-/**
- * Función para obtener el color automático basado en el detalle
- */
-function getColorForDetail(detail: string): string {
-  return detailColorMap[detail] || 'bg-blue-600';
-}
+
 
 /**
  * Función para validar los datos del Excel
@@ -191,7 +131,7 @@ function validateExcelData(data: any[]): { isValid: boolean; errors: ValidationE
         horaInicio: normalizedRow.horainicio || normalizedRow['hora inicio'] || '',
         horaFin: normalizedRow.horafin || normalizedRow['hora fin'] || '',
         modalidad: normalizedRow.modalidad || '', // Modalidad opcional
-        color: detalles ? getColorForDetail(detalles) : 'bg-blue-600' // Color por defecto si no hay detalles
+        color: detalles ? getColorForDetail(detalles) : EVENT_COLORS[0] // Color por defecto si no hay detalles
       });
     }
   });
@@ -302,27 +242,27 @@ async function processAndLoadData(data: ExcelEventData[]) {
   for (const [instructorKey, events] of eventsByInstructor.entries()) {
     if (!instructorMapping.has(instructorKey)) {
       // El instructor no existe, crearlo
-      const instructorData = events[0]; // Tomar datos del primer evento
+    const instructorData = events[0]; // Tomar datos del primer evento
       console.log(`➕ Creando instructor nuevo: ${instructorData.instructor}`);
-      
-      // Crear el instructor
-      addInstructor(instructorData.instructor, instructorData.ciudad, instructorData.regional);
+    
+    // Crear el instructor
+    addInstructor(instructorData.instructor, instructorData.ciudad, instructorData.regional);
       newInstructorsCreated++;
-      
-      // Esperar a que se actualice el estado
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
+    
+    // Esperar a que se actualice el estado
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
       // Verificar que se creó correctamente y obtener su ID
       const updatedRows = draftScheduleRows.value;
       const createdRow = updatedRows.find(row => 
         row.instructor.toLowerCase() === instructorKey && 
         !instructorMapping.has(instructorKey) // Asegurar que es nuevo
-      );
-      
-      if (createdRow) {
+    );
+    
+    if (createdRow) {
         instructorMapping.set(instructorKey, createdRow.id);
         console.log(`✅ Instructor nuevo creado: ${createdRow.instructor} → ID: ${createdRow.id}`);
-      } else {
+    } else {
         console.error(`❌ ERROR: No se pudo crear instructor nuevo: ${instructorData.instructor}`);
         throw new Error(`No se pudo crear instructor nuevo: ${instructorData.instructor}`);
       }
@@ -379,7 +319,7 @@ async function processAndLoadData(data: ExcelEventData[]) {
         details: eventData.detalles || 'Sin detalles especificados',
         time: timeString,
         location: eventData.ubicacion || 'Por definir',
-        color: eventData.color || 'bg-blue-600',
+        color: eventData.color || EVENT_COLORS[0],
         modalidad: eventData.modalidad
       };
       

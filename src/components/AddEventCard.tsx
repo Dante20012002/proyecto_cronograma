@@ -1,6 +1,7 @@
 import { useState } from 'preact/hooks';
 import { addEvent, startTimes, endTimes, checkTimeConflict } from '../stores/schedule';
 import type { Event } from '../stores/schedule';
+import { EVENT_COLORS, getColorForDetail, getRandomEventColor, hexToStyle, getContrastTextColor } from '../lib/colors';
 
 /**
  * Lista de títulos predefinidos para eventos.
@@ -56,74 +57,6 @@ const predefinedDescriptions = [
 ];
 
 /**
- * Mapeo de detalles predefinidos a colores específicos.
- * Cada detalle tiene un color único asociado para facilitar la identificación visual.
- */
-const detailColorMap: { [key: string]: string } = {
-  // Módulos formativos - Tonos azules
-  'MODULO PROTAGONISTAS DEL SERVICIO': 'bg-blue-600',
-  'MODULO FORMATIVO GNV': 'bg-blue-700',
-  'MODULO FORMATIVO LIQUIDOS': 'bg-blue-800',
-  'MODULO FORMATIVO LUBRICANTES': 'bg-blue-500',
-  'MODULO ESCUELA DE INDUSTRIA': 'bg-blue-900',
-  
-  // Protocolos y gestión - Tonos verdes
-  'PROTOCOLO DE SERVICIO EDS': 'bg-green-600',
-  'GESTION AMBIENTAL, SEGURIDAD Y SALUD EN EL TRABAJO': 'bg-green-700',
-  'EXCELENCIA ADMINISTRATIVA': 'bg-green-800',
-  
-  // Programas VIVE - Tonos púrpuras
-  'VIVE PITS': 'bg-purple-600',
-  'LA TOMA VIVE TERPEL & VIVE PITS': 'bg-purple-700',
-  'CARAVANA RUMBO PITS': 'bg-purple-800',
-  
-  // Formación TERPEL POS - Tonos naranjas
-  'FORMACION INICIAL TERPEL POS OPERATIVO': 'bg-orange-600',
-  'FORMACION INICIAL TERPEL POS ADMINISTRATIVO': 'bg-orange-700',
-  'ENTRENAMIENTO TERPEL POS OPERATIVO': 'bg-orange-800',
-  'ENTRENAMIENTO TERPEL POS ADMINISTRATIVO': 'bg-orange-500',
-  
-  // Facturación - Tonos rosados
-  'FACTURACION ELECTRONICA OPERATIVA': 'bg-pink-600',
-  'FACTURACION ELECTRONICA ADMINISTRATIVA': 'bg-pink-700',
-  
-  // Productos específicos - Tonos índigo
-  'CANASTILLA': 'bg-indigo-600',
-  'CLIENTES PROPIOS': 'bg-indigo-700',
-  'APP TERPEL': 'bg-indigo-800',
-  
-  // MASTERLUB - Tonos teal
-  'MASTERLUB OPERATIVO': 'bg-teal-600',
-  'MASTERLUB ADMINISTRATIVO': 'bg-teal-700',
-  
-  // EDS - Tonos amber
-  'EDS CONFIABLE': 'bg-amber-600',
-  'TALLER EDS CONFIABLE': 'bg-amber-700',
-  
-  // Campos y entrenamientos - Tonos emerald
-  'CAMPO DE ENTRENAMIENTO DE INDUSTRIA LIMPIA': 'bg-emerald-600',
-  'CONSTRUYENDO EQUIPOS ALTAMENTE EFECTIVOS': 'bg-emerald-700',
-  
-  // Módulos de comida - Tonos cálidos
-  'MODULO ROLLOS': 'bg-red-600',
-  'MODULO HISTORIA Y MASA': 'bg-red-700',
-  'MODULO STROMBOLIS': 'bg-red-800',
-  'MODULO PERROS Y MAS PERROS': 'bg-red-500',
-  'MODULO SANDUCHES': 'bg-red-900',
-  'MODULO SBARRO': 'bg-rose-600',
-  'MODULO BEBIDAS CALIENTES': 'bg-rose-700'
-};
-
-/**
- * Función para obtener el color asociado a un detalle específico.
- * @param detail - El detalle del evento
- * @returns El color asociado al detalle o null si no está mapeado
- */
-const getColorForDetail = (detail: string): string | null => {
-  return detailColorMap[detail] || null;
-};
-
-/**
  * Props para el componente AddEventCard
  * @interface AddEventCardProps
  */
@@ -159,7 +92,7 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
     startTime: '',
     endTime: '',
     location: '',
-    color: 'bg-blue-600',
+    color: EVENT_COLORS[0], // Usar el primer color de la nueva paleta
     modalidad: ''
   });
   const [useCustomTitle, setUseCustomTitle] = useState(false);
@@ -248,7 +181,7 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
     const newEvent: Event = {
       id: `evt-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       title: formData.title,
-      details: formData.details.includes('\n') ? formData.details.split('\n') : formData.details,
+      details: formData.details ? (formData.details.includes('\n') ? formData.details.split('\n') : formData.details) : 'Sin detalles especificados',
       time: timeString || undefined,
       location: formData.location || 'Sin ubicación',
       color: formData.color,
@@ -273,7 +206,7 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
           <div class="space-y-4">
             {/* Title */}
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Título *</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Programa *</label>
               
               {/* Selector de títulos predefinidos */}
               {!useCustomTitle && (
@@ -282,7 +215,7 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
                   onInput={(e) => handleTitleSelect((e.target as HTMLSelectElement).value)}
                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white mb-2"
                 >
-                  <option value="">Selecciona un título...</option>
+                  <option value="">Selecciona un Programa...</option>
                   {predefinedTitles.map((title) => (
                     <option key={title} value={title} class="text-gray-900 bg-white">
                       {title}
@@ -322,7 +255,7 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
 
             {/* Details */}
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Detalles</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Módulo</label>
               
               {/* Selector de descripciones predefinidas */}
               {!useCustomDetails && (
@@ -331,7 +264,7 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
                   onInput={(e) => handleDetailsSelect((e.target as HTMLSelectElement).value)}
                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white mb-2"
                 >
-                  <option value="">Selecciona una descripción...</option>
+                  <option value="">Selecciona un módulo...</option>
                   {predefinedDescriptions.map((description) => (
                     <option key={description} value={description} class="text-gray-900 bg-white">
                       {description}
@@ -373,7 +306,7 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
             {formData.details && !useCustomDetails && (
               <div class="bg-blue-50 border border-blue-200 rounded-md p-3">
                 <div class="flex items-center space-x-2">
-                  <div class={`w-4 h-4 rounded-full ${formData.color}`}></div>
+                  <div class="w-4 h-4 rounded-full border border-gray-300" style={hexToStyle(formData.color)}></div>
                   <span class="text-sm text-blue-800">
                     Color asignado automáticamente para este detalle
                   </span>
@@ -385,12 +318,13 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
             {useCustomDetails && (
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Color del Evento</label>
-                <div class="flex flex-wrap gap-2">
-                  {['bg-blue-600', 'bg-green-600', 'bg-purple-600', 'bg-orange-600', 'bg-pink-600', 'bg-indigo-600', 'bg-teal-600', 'bg-amber-600', 'bg-red-600', 'bg-rose-600', 'bg-emerald-600', 'bg-cyan-500'].map((color) => (
+                <div class="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                  {EVENT_COLORS.map((color) => (
                     <button
                       key={color}
                       onClick={() => handleInputChange('color', color)}
-                      class={`w-8 h-8 rounded-full border-2 ${formData.color === color ? 'border-gray-800 ring-2 ring-offset-1 ring-gray-800' : 'border-gray-300'} ${color}`}
+                      class={`w-8 h-8 rounded-full border-2 hover:scale-110 transition-transform ${formData.color === color ? 'border-gray-800 ring-2 ring-offset-1 ring-gray-800' : 'border-gray-300'}`}
+                      style={hexToStyle(color)}
                       title={`Seleccionar color ${color}`}
                     />
                   ))}

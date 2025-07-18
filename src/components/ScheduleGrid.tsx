@@ -21,6 +21,7 @@ import EventCard from './EventCard';
 import AddEventCard from './AddEventCard';
 import type { JSX } from 'preact';
 import type { ScheduleEvent, ScheduleRow } from '../types/schedule';
+import { hexToStyle, getContrastTextColor } from '../lib/colors';
 
 /**
  * Props para el componente ScheduleGrid
@@ -658,7 +659,11 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
                               e.preventDefault();
                             }
                           }}
-                          class={`${event.color} p-2 rounded shadow cursor-grab hover:opacity-90 transition-all duration-200 hover:scale-[1.02] relative group select-none`}
+                          class="p-2 rounded shadow cursor-grab hover:opacity-90 transition-all duration-200 hover:scale-[1.02] relative group select-none"
+                          style={{
+                            backgroundColor: event.color,
+                            color: getContrastTextColor(event.color)
+                          }}
                         >
                           {/* Handle de drag visible al hacer hover */}
                           <div class="absolute top-1 right-1 drag-handle pointer-events-none">
