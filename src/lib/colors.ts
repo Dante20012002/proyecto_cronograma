@@ -37,57 +37,64 @@ export const isValidEventColor = (color: string): boolean => {
  */
 export const detailColorMap: { [key: string]: string } = {
   // Módulos formativos - Tonos azules de la nueva paleta
-  'MODULO PROTAGONISTAS DEL SERVICIO': '#23a6c4',
-  'MODULO FORMATIVO GNV': '#34a4dc',
-  'MODULO FORMATIVO LIQUIDOS': '#1783b0',
-  'MODULO FORMATIVO LUBRICANTES': '#1c449c',
-  'MODULO ESCUELA DE INDUSTRIA': '#3c6cb4',
+  'Módulo Protagonistas del Servicio': '#b01a4e',
+  'Módulo Formativo GNV': '#9bcb48',
+  'Módulo Formativo Líquidos': '#f7f06d',
+  'Módulo Formativo Lubricantes': '#1ac0f2',
+  'Módulo Escuela de Industria': '#e96f24',
   
   // Protocolos y gestión - Tonos verdes de la nueva paleta
-  'PROTOCOLO DE SERVICIO EDS': '#34b45c',
-  'GESTION AMBIENTAL, SEGURIDAD Y SALUD EN EL TRABAJO': '#6cb444',
-  'EXCELENCIA ADMINISTRATIVA': '#7cc444',
+  'Protocolo de Servicio EDS': '#FF0818',
+  'Gestión Ambiental, Seguridad y Salud en el Trabajo': '#e96f24',
+  'Acompañamiento': '#EDF9F9',
   
   // Programas VIVE - Tonos púrpuras de la nueva paleta
-  'VIVE PITS': '#44449c',
-  'LA TOMA VIVE TERPEL & VIVE PITS': '#945ca4',
-  'CARAVANA RUMBO PITS': '#906cac',
+  'La Toma Vive Terpel & Vive PITS': '#1f4299',
+  'Caravana Rumbo PITS': '#bda42f',
   
   // Formación TERPEL POS - Tonos naranjas de la nueva paleta
-  'FORMACION INICIAL TERPEL POS OPERATIVO': '#f8945c',
-  'FORMACION INICIAL TERPEL POS ADMINISTRATIVO': '#f16f2e',
-  'ENTRENAMIENTO TERPEL POS OPERATIVO': '#cc6424',
-  'ENTRENAMIENTO TERPEL POS ADMINISTRATIVO': '#d69833',
+  'Formación Inicial Terpel POS Operativo': '#68b645',
+  'Formación Inicial Terpel POS Administrativo': '#68b645',
+  'Entrenamiento Terpel POS Operativo': '#68b645',
+  'Entrenamiento Terpel POS Administrativo': '#68b645',
   
   // Facturación - Tonos rosados/rojos de la nueva paleta
-  'FACTURACION ELECTRONICA OPERATIVA': '#ec449c',
-  'FACTURACION ELECTRONICA ADMINISTRATIVA': '#f464a4',
+  'Facturación Electrónica Operativa': '#68b645',
+  'Facturación Electrónica Administrativa': '#68b645',
   
   // Productos específicos - Tonos diversos de la nueva paleta
-  'CANASTILLA': '#5e56a6',
-  'CLIENTES PROPIOS': '#485ba7',
-  'APP TERPEL': '#3454a4',
+  'Canastilla': '#68b645',
+  'Clientes Propios': '#68b645',
+  'App Terpel': '#68b645',
   
   // MASTERLUB - Tonos verdes-azules de la nueva paleta
-  'MASTERLUB OPERATIVO': '#14b493',
-  'MASTERLUB ADMINISTRATIVO': '#63c6bb',
+  'Masterlub Operativo': '#68b645',
+  'Masterlub Administrativo': '#68b645',
   
   // EDS - Tonos amarillos de la nueva paleta
-  'EDS CONFIABLE': '#f4ec47',
-  'TALLER EDS CONFIABLE': '#dccc34',
+  'EDS Confiable': '#12b19f',
+  'Taller EDS Confiable': '#12b19f',
   
   // Campos y entrenamientos - Tonos verdes de la nueva paleta
-  'CAMPO DE ENTRENAMIENTO DE INDUSTRIA LIMPIA': '#5fbc6b',
-  'CONSTRUYENDO EQUIPOS ALTAMENTE EFECTIVOS': '#44bc64',
+  'Campo de Entrenamiento de Industria Limpia': '#e96f24',
+  'Excelencia Administrativa': '#638287',
+  'Construyendo Equipos Altamente Efectivos': '#638287',
   
   // Módulos de comida - Tonos rojos de la nueva paleta
-  'MODULO ROLLOS': '#d42639',
-  'MODULO HISTORIA Y MASA': '#b41c4c',
-  'MODULO STROMBOLIS': '#ec342c',
-  'MODULO PERROS Y MAS PERROS': '#b41c5c',
-  'MODULO SANDUCHES': '#ec4c3b',
-  'MODULO SBARRO': '#ec2473',
-  'MODULO BEBIDAS CALIENTES': '#f46780'
+  'Módulo Rollos': '#dcc934',
+  'Módulo Historia y Masa': '#dcc934',
+  'Módulo Strombolis': '#dcc934',
+  'Módulo Perros y Más Perros': '#dcc934',
+  'Módulo Sánduches': '#dcc934',
+  'Módulo Sbarro': '#dcc934',
+  'Módulo Bebidas Calientes': '#dcc934',
+
+  // Otras categorías
+  'Festivo': '#46646B',
+  'Gestión Administrativa': '#46646B',
+  'Actualización de Contenidos': '#46646B',
+  'Vacaciones': '#46646B',
+  'Traslado': '#46646B',
 };
 
 /**

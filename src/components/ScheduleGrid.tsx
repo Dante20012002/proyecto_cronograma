@@ -596,14 +596,25 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
       <div class={`bg-slate-900 text-white sticky top-0 z-20 shadow-lg transition-all duration-300 ${
         isScrolled ? 'p-3' : 'p-6'
       }`}>
-        <h1 class={`font-bold text-center tracking-tight transition-all duration-300 ${
-          isScrolled ? 'text-xl' : 'text-3xl'
-        }`}>{weekTitle}</h1>
-        <p class={`text-center text-slate-300 transition-all duration-300 ${
-          isScrolled ? 'mt-1 text-xs' : 'mt-2 text-sm'
-        }`}>
-          {formatDateDisplay(currentWeek.startDate)} - {formatDateDisplay(currentWeek.endDate)}
-        </p>
+        <div class="flex items-center justify-center space-x-4">
+          <img 
+            src="/Imagen1.png" 
+            alt="Logo Terpel" 
+            class={`transition-all duration-300 ${
+              isScrolled ? 'h-16' : 'h-20'
+            }`}
+          />
+          <div>
+            <h1 class={`font-bold tracking-tight transition-all duration-300 text-center ${
+              isScrolled ? 'text-xl' : 'text-3xl'
+            }`}>{weekTitle}</h1>
+            <p class={`text-slate-300 transition-all duration-300 text-center ${
+              isScrolled ? 'mt-1 text-xs' : 'mt-2 text-sm'
+            }`}>
+              {formatDateDisplay(currentWeek.startDate)} - {formatDateDisplay(currentWeek.endDate)}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Contenedor con scroll para la tabla */}
@@ -633,10 +644,10 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
           <tbody>
             {rows.map(row => (
               <tr key={row.id} class="border-t border-slate-700">
-                <td class="px-4 py-3 border-r border-slate-700">
-                  <div class="font-semibold text-white">{row.instructor}</div>
+                <td class="px-4 py-3 border-r border-slate-700 text-center">
+                  <div class="text-xl text-white font-bold">{row.regional}</div>
+                  <div class="font-semibold text-black rounded-full bg-white p-2">{row.instructor}</div>
                   <div class="text-sm text-slate-300">{row.city}</div>
-                  <div class="text-xs text-slate-400">{row.regional}</div>
                 </td>
                 {weekDays.map(day => (
                   <td key={`${row.id}-${day.dayNumber}`} class="p-2 border-r border-slate-700">
@@ -659,7 +670,7 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
                               e.preventDefault();
                             }
                           }}
-                          class="p-2 rounded shadow cursor-grab hover:opacity-90 transition-all duration-200 hover:scale-[1.02] relative group select-none"
+                          class="p-2 rounded shadow cursor-grab hover:opacity-90 transition-all duration-200 hover:scale-[1.02] relative group select-none text-center"
                           style={{
                             backgroundColor: event.color,
                             color: getContrastTextColor(event.color)
@@ -682,7 +693,7 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
                           )}
                           {event.time && <div class="text-sm mt-1">{event.time}</div>}
                           {event.modalidad && <div class="text-xs mt-1 font-medium opacity-80">📍 {event.modalidad}</div>}
-                          {event.location && <div class="text-xs mt-1">{event.location}</div>}
+                          {event.location && <div class="text-xs mt-1 font-bold">{event.location}</div>}
                         </div>
                       ))}
                       {isAdminProp && (
