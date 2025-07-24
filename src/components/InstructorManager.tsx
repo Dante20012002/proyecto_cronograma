@@ -21,7 +21,6 @@ export default function InstructorManager(): JSX.Element {
   const [showAddForm, setShowAddForm] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
-    city: '',
     regional: ''
   });
 
@@ -33,26 +32,26 @@ export default function InstructorManager(): JSX.Element {
 
   const handleAddSubmit = async (e: Event) => {
     e.preventDefault();
-    if (!formData.name || !formData.city || !formData.regional) {
+    if (!formData.name || !formData.regional) {
       alert('Por favor completa todos los campos.');
       return;
     }
 
-    await addInstructor(formData.name, formData.city, formData.regional);
-    setFormData({ name: '', city: '', regional: '' });
+    await addInstructor(formData.name, formData.regional);
+    setFormData({ name: '', regional: '' });
     setShowAddForm(false);
   };
 
   const handleEditSubmit = async (e: Event) => {
     e.preventDefault();
-    if (!editingInstructor || !formData.name || !formData.city || !formData.regional) {
+    if (!editingInstructor || !formData.name || !formData.regional) {
       alert('Por favor completa todos los campos.');
       return;
     }
 
-    await updateInstructor(editingInstructor.id, formData.name, formData.city, formData.regional);
+    await updateInstructor(editingInstructor.id, formData.name, formData.regional);
     setEditingInstructor(null);
-    setFormData({ name: '', city: '', regional: '' });
+    setFormData({ name: '', regional: '' });
   };
 
   const handleDelete = async (instructor: Instructor) => {
@@ -64,32 +63,32 @@ export default function InstructorManager(): JSX.Element {
       return;
     }
     
-         // Contar eventos históricos
-     const totalEvents = Object.values(instructorRow.events).reduce((total: number, dayEvents: ScheduleEvent[]) => {
-       return total + dayEvents.length;
-     }, 0);
-     
-     const eventDays = Object.keys(instructorRow.events).filter((day: string) => 
-       instructorRow.events[day].length > 0
-     ).length;
+    // Contar eventos históricos
+    const totalEvents = Object.values(instructorRow.events).reduce((total: number, dayEvents: ScheduleEvent[]) => {
+      return total + dayEvents.length;
+    }, 0);
+    
+    const eventDays = Object.keys(instructorRow.events).filter((day: string) => 
+      instructorRow.events[day].length > 0
+    ).length;
     
     // Crear mensaje de advertencia detallado
     let warningMessage = `⚠️ ADVERTENCIA: Vas a eliminar permanentemente a:\n\n`;
     warningMessage += `👤 Instructor: ${instructor.name}\n`;
-    warningMessage += `📍 Ubicación: ${instructor.city} - ${instructor.regional}\n\n`;
+    warningMessage += `📍 Regional: ${instructor.regional}\n\n`;
     
     if (totalEvents > 0) {
       warningMessage += `📊 DATOS HISTÓRICOS QUE SE ELIMINARÁN:\n`;
       warningMessage += `• ${totalEvents} eventos históricos\n`;
       warningMessage += `• Datos de ${eventDays} días diferentes\n\n`;
       
-             // Mostrar algunos detalles de eventos
-       const eventSamples: string[] = [];
-       for (const [day, events] of Object.entries(instructorRow.events)) {
-         if ((events as ScheduleEvent[]).length > 0 && eventSamples.length < 3) {
-           eventSamples.push(`${day}: ${(events as ScheduleEvent[]).length} evento(s)`);
-         }
-       }
+      // Mostrar algunos detalles de eventos
+      const eventSamples: string[] = [];
+      for (const [day, events] of Object.entries(instructorRow.events)) {
+        if ((events as ScheduleEvent[]).length > 0 && eventSamples.length < 3) {
+          eventSamples.push(`${day}: ${(events as ScheduleEvent[]).length} evento(s)`);
+        }
+      }
       
       if (eventSamples.length > 0) {
         warningMessage += `📅 Ejemplos de días con eventos:\n`;
@@ -118,7 +117,6 @@ export default function InstructorManager(): JSX.Element {
     setEditingInstructor(instructor);
     setFormData({
       name: instructor.name,
-      city: instructor.city,
       regional: instructor.regional
     });
   };
@@ -145,7 +143,7 @@ export default function InstructorManager(): JSX.Element {
             <div>
               <h3 class="font-semibold text-gray-900">{instructor.name}</h3>
               <p class="text-sm text-gray-600">
-                {instructor.city} - {instructor.regional}
+                {instructor.regional}
               </p>
             </div>
             <div class="flex space-x-2">
@@ -185,15 +183,6 @@ export default function InstructorManager(): JSX.Element {
                   />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Ciudad</label>
-                  <input
-                    type="text"
-                    value={formData.city}
-                    onInput={(e) => handleInputChange('city', (e.target as HTMLInputElement).value)}
-                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
                   <label class="block text-sm font-medium text-gray-700">Regional</label>
                   <input
                     type="text"
@@ -209,7 +198,7 @@ export default function InstructorManager(): JSX.Element {
                   onClick={() => {
                     setShowAddForm(false);
                     setEditingInstructor(null);
-                    setFormData({ name: '', city: '', regional: '' });
+                    setFormData({ name: '', regional: '' });
                   }}
                   class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
                 >

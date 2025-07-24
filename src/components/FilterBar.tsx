@@ -14,23 +14,13 @@ interface FilterBarProps {
 
 /**
  * Componente de filtros reutilizable para el cronograma.
- * Proporciona filtros por instructor, regional, ciudad y modalidad.
- * 
- * @component
- * @param {FilterBarProps} props - Props del componente
- * @returns {JSX.Element} Componente FilterBar
- * 
- * @example
- * ```tsx
- * <FilterBar isAdmin={false} onFilterChange={(filters) => console.log(filters)} />
- * ```
+ * Proporciona filtros por instructor, regional y modalidad.
  */
 export default function FilterBar({ isAdmin, onFilterChange }: FilterBarProps): JSX.Element {
   const [isExpanded, setIsExpanded] = useState(false);
   const [availableOptions, setAvailableOptions] = useState({
     instructors: [] as string[],
     regionales: [] as string[],
-    ciudades: [] as string[],
     modalidades: [] as string[]
   });
 
@@ -41,7 +31,6 @@ export default function FilterBar({ isAdmin, onFilterChange }: FilterBarProps): 
     setAvailableOptions({
       instructors: getUniqueValues('instructors', isAdmin),
       regionales: getUniqueValues('regionales', isAdmin),
-      ciudades: getUniqueValues('ciudades', isAdmin),
       modalidades: getUniqueValues('modalidades', isAdmin)
     });
   }, [isAdmin]);
@@ -56,11 +45,11 @@ export default function FilterBar({ isAdmin, onFilterChange }: FilterBarProps): 
       newValues = currentValues.filter(v => v !== value);
     }
 
-    const newFilters = { [field]: newValues };
+    const newFilters = { ...filters, [field]: newValues };
     updateFilters(newFilters);
 
     if (onFilterChange) {
-      onFilterChange({ ...filters, ...newFilters });
+      onFilterChange(newFilters);
     }
   };
 
@@ -70,7 +59,6 @@ export default function FilterBar({ isAdmin, onFilterChange }: FilterBarProps): 
       onFilterChange({
         instructors: [],
         regionales: [],
-        ciudades: [],
         modalidades: []
       });
     }
@@ -78,12 +66,10 @@ export default function FilterBar({ isAdmin, onFilterChange }: FilterBarProps): 
 
   const hasActiveFilters = filters.instructors.length > 0 || 
                           filters.regionales.length > 0 || 
-                          filters.ciudades.length > 0 || 
                           filters.modalidades.length > 0;
 
   const totalActiveFilters = filters.instructors.length + 
                             filters.regionales.length + 
-                            filters.ciudades.length + 
                             filters.modalidades.length;
 
   return (
@@ -124,7 +110,7 @@ export default function FilterBar({ isAdmin, onFilterChange }: FilterBarProps): 
       {/* Panel de filtros expandido */}
       {isExpanded && (
         <div class="border-t border-gray-200 p-3">
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             
             {/* Filtro de Instructores */}
             <div>
@@ -167,6 +153,7 @@ export default function FilterBar({ isAdmin, onFilterChange }: FilterBarProps): 
                 )}
               </div>
             </div>
+
             {/* Filtro de Modalidades */}
             <div>
               <h4 class="font-medium text-gray-700 mb-2">Modalidades</h4>
@@ -216,19 +203,6 @@ export default function FilterBar({ isAdmin, onFilterChange }: FilterBarProps): 
                     <button
                       onClick={() => handleFilterChange('regionales', regional, false)}
                       class="ml-1 text-green-600 hover:text-green-800"
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-
-                {filters.ciudades.map(ciudad => (
-                  <span key={`ciudad-${ciudad}`} class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800">
-                    <span class="mr-1">🌆</span>
-                    {ciudad}
-                    <button
-                      onClick={() => handleFilterChange('ciudades', ciudad, false)}
-                      class="ml-1 text-yellow-600 hover:text-yellow-800"
                     >
                       ×
                     </button>

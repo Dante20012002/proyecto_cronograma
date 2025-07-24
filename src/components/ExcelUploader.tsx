@@ -11,7 +11,6 @@ import { EVENT_COLORS, getColorForDetail, getRandomEventColor, hexToStyle, getCo
  */
 interface ExcelEventData {
   instructor: string;
-  ciudad: string;
   regional: string;
   titulo: string;
   detalles: string;
@@ -50,7 +49,7 @@ function validateExcelData(data: any[]): { isValid: boolean; errors: ValidationE
   const validData: ExcelEventData[] = [];
 
   // Campos requeridos (detalles y ubicacion ahora son opcionales)
-  const requiredFields = ['instructor', 'ciudad', 'regional', 'titulo', 'dia'];
+  const requiredFields = ['instructor', 'regional', 'titulo', 'dia'];
   
   // Días válidos (lunes a viernes)
   const validDays = ['lunes', 'martes', 'miercoles', 'miércoles', 'jueves', 'viernes'];
@@ -122,7 +121,6 @@ function validateExcelData(data: any[]): { isValid: boolean; errors: ValidationE
       
       validData.push({
         instructor: String(normalizedRow.instructor).trim(),
-        ciudad: String(normalizedRow.ciudad).trim(),
         regional: String(normalizedRow.regional).trim(),
         titulo: String(normalizedRow.titulo).trim(),
         detalles: detalles,
@@ -246,7 +244,7 @@ async function processAndLoadData(data: ExcelEventData[]) {
       console.log(`➕ Creando instructor nuevo: ${instructorData.instructor}`);
     
     // Crear el instructor
-    addInstructor(instructorData.instructor, instructorData.ciudad, instructorData.regional);
+    addInstructor(instructorData.instructor, instructorData.regional);
       newInstructorsCreated++;
     
     // Esperar a que se actualice el estado
@@ -273,12 +271,11 @@ async function processAndLoadData(data: ExcelEventData[]) {
       const eventData = events[0];
       
       console.log(`🔄 Instructor existente detectado: ${eventData.instructor}`);
-      console.log(`   📍 Datos actuales: ${existingRow?.city} / ${existingRow?.regional}`);
-      console.log(`   📍 Datos del Excel: ${eventData.ciudad} / ${eventData.regional}`);
+      console.log(`   📍 Datos actuales: ${existingRow?.regional}`);
+      console.log(`   📍 Datos del Excel: ${eventData.regional}`);
       
-      // Verificar si hay cambios en ciudad/regional
+      // Verificar si hay cambios en regional
       if (existingRow && (
-        existingRow.city !== eventData.ciudad || 
         existingRow.regional !== eventData.regional
       )) {
         console.log(`   ⚠️ INFORMACIÓN: El instructor ${eventData.instructor} tiene diferentes datos de ubicación para esta semana.`);
@@ -370,7 +367,7 @@ async function verifyFinalState(expectedNewInstructors: number, expectedEvents: 
   
   finalRows.forEach(row => {
     const eventCount = Object.values(row.events).reduce((sum, events) => sum + events.length, 0);
-    console.log(`  👤 ${row.instructor} (${row.city}/${row.regional}): ${eventCount} eventos totales`);
+    console.log(`  👤 ${row.instructor} (${row.regional}): ${eventCount} eventos totales`);
   });
   
   const success = newInstructorsCreated >= 0 && totalEvents >= expectedEvents;
@@ -400,7 +397,7 @@ function debugExcelUpload() {
   // Mostrar cada instructor con sus eventos
   currentRows.forEach(row => {
     const totalEvents = Object.values(row.events).reduce((sum, events) => sum + events.length, 0);
-    console.log(`\n👤 ${row.instructor} (${row.city}, ${row.regional})`);
+    console.log(`\n👤 ${row.instructor} (${row.regional})`);
     console.log(`  📅 Total eventos: ${totalEvents}`);
     
     // Mostrar eventos por día
@@ -530,7 +527,6 @@ function downloadTemplate() {
   // Obtener instructores existentes del sistema
   const existingInstructors = draftInstructors.value.map(instructor => ({
     name: instructor.name,
-    city: instructor.city,
     regional: instructor.regional
   }));
   
@@ -540,7 +536,6 @@ function downloadTemplate() {
   const templateData = [
     {
       'Instructor': 'JUAN PABLO HERNANDEZ',
-      'Ciudad': 'Bucaramanga',
       'Regional': 'BUCARAMANGA',
       'Titulo': 'ESCUELA DE PROMOTORES',
       'Detalles': 'MODULO PROTAGONISTAS DEL SERVICIO',
@@ -552,7 +547,6 @@ function downloadTemplate() {
     },
     {
       'Instructor': 'ZULAY VERA',
-      'Ciudad': 'Cúcuta',
       'Regional': 'NORTE',
       'Titulo': 'INDUSTRIA LIMPIA',
       'Detalles': 'MODULO FORMATIVO LIQUIDOS',
@@ -569,7 +563,6 @@ function downloadTemplate() {
   // Ajustar ancho de columnas para la plantilla
   const colWidths1 = [
     { wch: 25 }, // Instructor
-    { wch: 15 }, // Ciudad
     { wch: 15 }, // Regional
     { wch: 30 }, // Titulo
     { wch: 45 }, // Detalles
@@ -598,15 +591,13 @@ function downloadTemplate() {
   for (let i = 0; i < maxLength; i++) {
     const row: any = {};
     
-    // Instructores existentes (NUEVA COLUMNA)
+    // Instructores existentes
     if (i < existingInstructors.length) {
       const instructor = existingInstructors[i];
       row['Instructores Existentes'] = instructor.name;
-      row['Ciudad del Instructor'] = instructor.city;
       row['Regional del Instructor'] = instructor.regional;
     } else {
       row['Instructores Existentes'] = '';
-      row['Ciudad del Instructor'] = '';
       row['Regional del Instructor'] = '';
     }
     
@@ -655,7 +646,6 @@ function downloadTemplate() {
   // Ajustar ancho de columnas para la referencia (ACTUALIZADO)
   const colWidths2 = [
     { wch: 30 }, // Instructores Existentes
-    { wch: 20 }, // Ciudad del Instructor
     { wch: 20 }, // Regional del Instructor
     { wch: 35 }, // Títulos Disponibles
     { wch: 50 }, // Detalles Disponibles
@@ -670,11 +660,10 @@ function downloadTemplate() {
   
   const instructionsData = [
     { 'Campo': 'Instructor', 'Descripción': 'Nombre completo del instructor', 'Obligatorio': 'SÍ', 'Ejemplo': 'JUAN PABLO HERNANDEZ', 'Notas': `📋 RECOMENDADO: Usa los nombres exactos de la pestaña "Datos Disponibles" (${existingInstructors.length} instructores disponibles). Si usas un nombre nuevo, se creará automáticamente.` },
-    { 'Campo': 'Ciudad', 'Descripción': 'Ciudad donde se realiza el evento', 'Obligatorio': 'SÍ', 'Ejemplo': 'Bucaramanga', 'Notas': 'Si usas un instructor existente, usa la misma ciudad para consistencia' },
     { 'Campo': 'Regional', 'Descripción': 'Regional a la que pertenece', 'Obligatorio': 'SÍ', 'Ejemplo': 'BUCARAMANGA', 'Notas': 'Si usas un instructor existente, usa la misma regional para consistencia' },
     { 'Campo': 'Titulo', 'Descripción': 'Título del evento', 'Obligatorio': 'SÍ', 'Ejemplo': 'ESCUELA DE PROMOTORES', 'Notas': 'Usar títulos de la pestaña "Datos Disponibles" o crear uno nuevo' },
     { 'Campo': 'Detalles', 'Descripción': 'Detalles específicos del evento', 'Obligatorio': 'NO', 'Ejemplo': 'MODULO PROTAGONISTAS DEL SERVICIO', 'Notas': 'Usar detalles predefinidos para color automático. Si se deja vacío, se usará "Sin detalles especificados"' },
-    { 'Campo': 'Ubicacion', 'Descripción': 'Lugar específico del evento', 'Obligatorio': 'NO', 'Ejemplo': 'Bucaramanga', 'Notas': 'Puede ser ciudad, sede específica, etc. Si se deja vacío, se usará "Por definir"' },
+    { 'Campo': 'Ubicacion', 'Descripción': 'Lugar específico del evento', 'Obligatorio': 'NO', 'Ejemplo': 'Bucaramanga', 'Notas': 'Puede ser sede específica, ubicación, etc. Si se deja vacío, se usará "Por definir"' },
     { 'Campo': 'Dia', 'Descripción': 'Día de la semana', 'Obligatorio': 'SÍ', 'Ejemplo': 'lunes', 'Notas': 'Solo: lunes, martes, miércoles, jueves, viernes (minúsculas)' },
     { 'Campo': 'Hora Inicio', 'Descripción': 'Hora de inicio del evento', 'Obligatorio': 'NO', 'Ejemplo': '8:00 a.m.', 'Notas': 'Formato: HH:MM a.m. o HH:MM p.m.' },
     { 'Campo': 'Hora Fin', 'Descripción': 'Hora de finalización del evento', 'Obligatorio': 'NO', 'Ejemplo': '5:00 p.m.', 'Notas': 'Formato: HH:MM a.m. o HH:MM p.m.' },
@@ -684,7 +673,7 @@ function downloadTemplate() {
     { 'Campo': 'Instructores existentes:', 'Descripción': `${existingInstructors.length} instructores ya están en el sistema`, 'Obligatorio': '', 'Ejemplo': '', 'Notas': 'Revisa la pestaña "Instructores" para ver la lista completa' },
     { 'Campo': 'Modo incremental:', 'Descripción': 'Se conservan TODOS los datos históricos', 'Obligatorio': '', 'Ejemplo': '', 'Notas': 'Los eventos se AGREGAN a la semana actual sin eliminar semanas anteriores' },
     { 'Campo': 'Nuevos instructores:', 'Descripción': 'Si usas un nombre nuevo, se creará automáticamente', 'Obligatorio': '', 'Ejemplo': '', 'Notas': 'No se eliminan instructores existentes, solo se agregan nuevos si es necesario' },
-    { 'Campo': 'Ciudad/Regional:', 'Descripción': 'Pueden cambiar semana a semana', 'Obligatorio': '', 'Ejemplo': '', 'Notas': 'Es normal que un instructor trabaje en diferentes regiones. Los datos históricos se preservan' },
+    { 'Campo': 'Regional:', 'Descripción': 'Pueden cambiar semana a semana', 'Obligatorio': '', 'Ejemplo': '', 'Notas': 'Es normal que un instructor trabaje en diferentes regiones. Los datos históricos se preservan' },
     { 'Campo': '', 'Descripción': '', 'Obligatorio': '', 'Ejemplo': '', 'Notas': '' },
     { 'Campo': '🎨 COLORES:', 'Descripción': 'Colores Automáticos', 'Obligatorio': '', 'Ejemplo': '', 'Notas': 'Los detalles predefinidos tienen colores automáticos' },
     { 'Campo': 'Azules:', 'Descripción': 'Módulos formativos', 'Obligatorio': '', 'Ejemplo': 'MODULO PROTAGONISTAS DEL SERVICIO', 'Notas': 'MODULO FORMATIVO GNV, MODULO FORMATIVO LIQUIDOS, etc.' },
@@ -714,7 +703,6 @@ function downloadTemplate() {
     const instructorsData = existingInstructors.map((instructor, index) => ({
       'Nº': index + 1,
       'Nombre del Instructor': instructor.name,
-      'Ciudad': instructor.city,
       'Regional': instructor.regional,
       'Nota': 'Copia exactamente este nombre para evitar duplicados'
     }));
@@ -725,7 +713,6 @@ function downloadTemplate() {
     const colWidths4 = [
       { wch: 5 },  // Nº
       { wch: 35 }, // Nombre del Instructor
-      { wch: 20 }, // Ciudad
       { wch: 20 }, // Regional
       { wch: 45 }  // Nota
     ];
@@ -848,7 +835,7 @@ export default function ExcelUploader({ onClose }: ExcelUploaderProps) {
 👥 Instructores procesados del Excel:
 ${instructorList.slice(0, 5).join('\n')}${instructorList.length > 5 ? '\n...' : ''}
 
-💡 IMPORTANTE: Los instructores pueden tener diferentes ciudades/regionales
+💡 IMPORTANTE: Los instructores pueden tener diferentes regionales
    por semana. Esto es normal y los datos históricos se preservan.
 
 Usa verifyExcelLoad() en la consola para verificar el estado.`;
@@ -892,7 +879,7 @@ Usa verifyExcelLoad() en la consola para verificar el estado.`;
             <ol class="text-sm text-blue-800 space-y-1">
               <li>1. Descarga la plantilla de Excel haciendo clic en el botón de abajo</li>
               <li>2. Llena la plantilla con tus datos (una fila por evento)</li>
-              <li>3. <strong>Campos obligatorios:</strong> Instructor, Ciudad, Regional, Título, Día</li>
+              <li>3. <strong>Campos obligatorios:</strong> Instructor, Regional, Título, Día</li>
               <li>4. <strong>Campos opcionales:</strong> Detalles, Ubicación, Horas</li>
               <li>5. Sube el archivo Excel completado</li>
               <li>6. Revisa la vista previa y confirma la carga</li>

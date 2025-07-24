@@ -12,9 +12,10 @@ export interface ScheduleEvent {
 export interface ScheduleRow {
   id: string;
   instructor: string;
-  city: string;
   regional: string;
-  events: { [day: string]: ScheduleEvent[] };
+  events: {
+    [day: string]: Event[];
+  };
 }
 
 export interface GlobalConfig {
@@ -31,6 +32,5 @@ export interface GlobalConfig {
 export interface Instructor {
   id: string;
   name: string;
-  city: string;
   regional: string;
 } 

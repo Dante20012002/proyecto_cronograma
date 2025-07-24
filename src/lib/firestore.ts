@@ -226,14 +226,13 @@ function getCurrentWeek(): { startDate: string; endDate: string } {
 // Datos iniciales
 const initialData: FirestoreSchedule = {
   instructors: [
-    { id: 'instructor-1', name: 'JUAN PABLO HERNANDEZ', city: 'Bucaramanga', regional: 'BUCARAMANGA' },
-    { id: 'instructor-2', name: 'ZULAY VERA', city: 'Cúcuta', regional: 'NORTE' },
+    { id: 'instructor-1', name: 'JUAN PABLO HERNANDEZ', regional: 'BUCARAMANGA' },
+    { id: 'instructor-2', name: 'ZULAY VERA', regional: 'NORTE' },
   ],
   scheduleRows: [
     {
       id: 'instructor-1',
       instructor: 'JUAN PABLO HERNANDEZ',
-      city: 'Bucaramanga',
       regional: 'BUCARAMANGA',
       events: {
         '25': [{ id: 'evt-1', title: 'ESCUELA DE PROMOTORES', details: 'Módulo Formativo Líquidos', time: 'Presencial - 8:00 a.m. a 5:00 p.m.', location: 'Bucaramanga', color: 'bg-red-600' }],
@@ -244,7 +243,6 @@ const initialData: FirestoreSchedule = {
     {
       id: 'instructor-2',
       instructor: 'ZULAY VERA',
-      city: 'Cúcuta',
       regional: 'NORTE',
       events: {
         '26': [{ id: 'evt-4', title: 'NUEVO PROTOCOLO DE SERVICIO TERPEL', details: ['Sesión Virtual 1 - 8:00 a.m. a 9:30 a.m.', 'Sesión Virtual 2 - 10:30 a.m. a 12:00 p.m.', 'Sesión Virtual 3 - 2:30 p.m. a 4:00 p.m.'], location: 'Todas las Regionales', color: 'bg-rose-500' }],

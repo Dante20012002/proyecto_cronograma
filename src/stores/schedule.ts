@@ -25,14 +25,12 @@ export interface Event {
 export interface Instructor {
   id: string;
   name: string;
-  city: string;
   regional: string;
 }
 
 export interface ScheduleRow {
   id: string;
   instructor: string;
-  city: string;
   regional: string;
   events: {
     [day: string]: Event[];
@@ -53,7 +51,6 @@ export interface GlobalConfig {
 export interface FilterState {
   instructors: string[];
   regionales: string[];
-  ciudades: string[];
   modalidades: string[];
 }
 
@@ -245,15 +242,14 @@ export function checkTimeConflict(
 
 // --- DATOS INICIALES ---
 const initialInstructors: Instructor[] = [
-  { id: 'instructor-1', name: 'JUAN PABLO HERNANDEZ', city: 'Bucaramanga', regional: 'BUCARAMANGA' },
-  { id: 'instructor-2', name: 'ZULAY VERA', city: 'Cúcuta', regional: 'NORTE' },
+  { id: 'instructor-1', name: 'JUAN PABLO HERNANDEZ', regional: 'BUCARAMANGA' },
+  { id: 'instructor-2', name: 'ZULAY VERA', regional: 'NORTE' },
 ];
 
 const initialScheduleRows: ScheduleRow[] = [
   {
     id: 'instructor-1',
     instructor: 'JUAN PABLO HERNANDEZ',
-    city: 'Bucaramanga',
     regional: 'BUCARAMANGA',
     events: {
       '25': [{ id: 'evt-1', title: 'ESCUELA DE PROMOTORES', details: 'Módulo Formativo Líquidos', time: 'Presencial - 8:00 a.m. a 5:00 p.m.', location: 'Bucaramanga', color: 'bg-red-600' }],
@@ -264,7 +260,6 @@ const initialScheduleRows: ScheduleRow[] = [
   {
     id: 'instructor-2',
     instructor: 'ZULAY VERA',
-    city: 'Cúcuta',
     regional: 'NORTE',
     events: {
       '26': [{ id: 'evt-4', title: 'NUEVO PROTOCOLO DE SERVICIO TERPEL', details: ['Sesión Virtual 1 - 8:00 a.m. a 9:30 a.m.', 'Sesión Virtual 2 - 10:30 a.m. a 12:00 p.m.', 'Sesión Virtual 3 - 2:30 p.m. a 4:00 p.m.'], location: 'Todas las Regionales', color: 'bg-rose-500' }],
@@ -392,7 +387,6 @@ export const selectedWeek = signal<{ startDate: string; endDate: string }>(getIn
 export const activeFilters = signal<FilterState>({
   instructors: [],
   regionales: [],
-  ciudades: [],
   modalidades: []
 });
 
@@ -883,7 +877,7 @@ export function addEvent(rowId: string, day: string, newEvent: Event) {
 }
 
 // --- OPERACIONES DE INSTRUCTORES ---
-export function addInstructor(name: string, city: string, regional: string) {
+export function addInstructor(name: string, regional: string) {
   // Generar ID único con timestamp, random y counter para evitar duplicados
   const timestamp = Date.now();
   const randomId = Math.random().toString(36).substr(2, 9);
@@ -892,14 +886,12 @@ export function addInstructor(name: string, city: string, regional: string) {
   const newInstructor: Instructor = {
     id: `instructor-${timestamp}-${randomId}-${counter}`,
     name,
-    city,
     regional
   };
 
   const newRow: ScheduleRow = {
     id: newInstructor.id,
     instructor: name,
-    city,
     regional,
     events: {}
   };
@@ -907,7 +899,6 @@ export function addInstructor(name: string, city: string, regional: string) {
   console.log('➕ addInstructor - Creando instructor:', {
     id: newInstructor.id,
     name: name,
-    city: city,
     regional: regional
   });
 
@@ -918,7 +909,7 @@ export function addInstructor(name: string, city: string, regional: string) {
   console.log('✅ addInstructor - Instructor creado correctamente');
 }
 
-export function updateInstructor(id: string, name: string, city: string, regional: string) {
+export function updateInstructor(id: string, name: string, regional: string) {
   const instructors = [...draftInstructors.value];
   const rows = [...draftScheduleRows.value];
   
@@ -930,12 +921,12 @@ export function updateInstructor(id: string, name: string, city: string, regiona
     const currentRow = rows[rowIndex];
     
     // Verificar si cambió la ubicación
-    const locationChanged = currentRow.city !== city || currentRow.regional !== regional;
+    const locationChanged = currentRow.regional !== regional;
     
     if (locationChanged) {
       console.log(`📍 Actualizando ubicación de ${currentInstructor.name}:`);
-      console.log(`  📍 Anterior: ${currentRow.city} / ${currentRow.regional}`);
-      console.log(`  📍 Nueva: ${city} / ${regional}`);
+      console.log(`  📍 Anterior: ${currentRow.regional}`);
+      console.log(`  📍 Nueva: ${regional}`);
       console.log(`  ℹ️ NOTA: Esta actualización afecta la información principal del instructor.`);
       console.log(`  ℹ️ Los eventos históricos mantienen sus ubicaciones originales por semana.`);
       
@@ -957,14 +948,14 @@ export function updateInstructor(id: string, name: string, city: string, regiona
       }
     }
     
-    instructors[instructorIndex] = { ...instructors[instructorIndex], name, city, regional };
-    rows[rowIndex] = { ...rows[rowIndex], instructor: name, city, regional };
+    instructors[instructorIndex] = { ...instructors[instructorIndex], name, regional };
+    rows[rowIndex] = { ...rows[rowIndex], instructor: name, regional };
     
     draftInstructors.value = instructors;
     draftScheduleRows.value = rows;
     markAsDirty();
     
-    console.log(`✅ Instructor actualizado: ${name} (${city} / ${regional})`);
+    console.log(`✅ Instructor actualizado: ${name} (${regional})`);
   }
 }
 
@@ -1782,7 +1773,6 @@ export function clearFilters() {
   activeFilters.value = {
     instructors: [],
     regionales: [],
-    ciudades: [],
     modalidades: []
   };
 }
@@ -1790,7 +1780,7 @@ export function clearFilters() {
 /**
  * Obtiene todos los valores únicos para un campo específico
  */
-export function getUniqueValues(field: 'instructors' | 'regionales' | 'ciudades' | 'modalidades', isAdmin: boolean): string[] {
+export function getUniqueValues(field: 'instructors' | 'regionales' | 'modalidades', isAdmin: boolean): string[] {
   const rows = isAdmin ? draftScheduleRows.value : publishedScheduleRows.value;
   const values = new Set<string>();
 
@@ -1799,8 +1789,6 @@ export function getUniqueValues(field: 'instructors' | 'regionales' | 'ciudades'
       values.add(row.instructor);
     } else if (field === 'regionales') {
       values.add(row.regional);
-    } else if (field === 'ciudades') {
-      values.add(row.city);
     } else if (field === 'modalidades') {
       // Obtener modalidades de todos los eventos
       Object.values(row.events).forEach(events => {
@@ -1826,7 +1814,6 @@ export function getFilteredRows(rows: ScheduleRow[]): ScheduleRow[] {
   // Si no hay filtros activos, devolver todas las filas
   if (filters.instructors.length === 0 && 
       filters.regionales.length === 0 && 
-      filters.ciudades.length === 0 && 
       filters.modalidades.length === 0) {
     return rows;
   }
@@ -1840,11 +1827,6 @@ export function getFilteredRows(rows: ScheduleRow[]): ScheduleRow[] {
 
       // Filtro por regional
       if (filters.regionales.length > 0 && !filters.regionales.includes(row.regional)) {
-        return false;
-      }
-
-      // Filtro por ciudad
-      if (filters.ciudades.length > 0 && !filters.ciudades.includes(row.city)) {
         return false;
       }
 

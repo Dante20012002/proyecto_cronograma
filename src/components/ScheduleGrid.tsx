@@ -622,10 +622,10 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
         <table class="w-full">
           <thead class="bg-slate-700 sticky top-0 z-20 shadow-lg">
             <tr>
-              <th class={`text-left text-sm font-semibold text-slate-300 border-r border-slate-700 min-w-[250px] align-top bg-slate-700 transition-all duration-300 ${
+              <th class={`text-center text-sm font-semibold text-slate-300 border-r border-slate-700 min-w-[250px] align-top bg-slate-700 transition-all duration-300 ${
                 isScrolled ? 'px-3 py-2' : 'px-4 py-3'
               }`}>
-                Instructor / Ciudad / Regional
+                Regional / Instructor
               </th>
               {weekDays.map(day => (
                 <th key={day.dayNumber} class={`text-center border-r border-slate-700 min-w-[200px] bg-slate-700 transition-all duration-300 ${
@@ -645,9 +645,8 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
             {rows.map(row => (
               <tr key={row.id} class="border-t border-slate-700">
                 <td class="px-4 py-3 border-r border-slate-700 text-center">
-                  <div class="text-xl text-white font-bold">{row.regional}</div>
+                  <div class="text-xl text-white font-bold pb-2">{row.regional}</div>
                   <div class="font-semibold text-black rounded-full bg-white p-2">{row.instructor}</div>
-                  <div class="text-sm text-slate-300">{row.city}</div>
                 </td>
                 {weekDays.map(day => (
                   <td key={`${row.id}-${day.dayNumber}`} class="p-2 border-r border-slate-700">
