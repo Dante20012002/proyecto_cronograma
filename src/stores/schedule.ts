@@ -653,13 +653,45 @@ export async function saveDraftChanges() {
   }
 }
 
-export function clearAllDraftEvents() {
-  const updatedRows = draftScheduleRows.value.map(row => ({
-    ...row,
-    events: {}
-  }));
+export function clearAllDraftEvents(currentWeekOnly: boolean = false) {
+  if (currentWeekOnly) {
+    // Si es solo semana actual, mantener los eventos de otras semanas
+    const currentWeek = draftGlobalConfig.value.currentWeek;
+    
+    const updatedRows = draftScheduleRows.value.map(row => {
+      const eventsToKeep = { ...row.events };
+      
+      // Eliminar solo los eventos de la semana actual
+      Object.keys(eventsToKeep).forEach(dateStr => {
+        // Las fechas están en formato YYYY-MM-DD, así que podemos compararlas directamente
+        if (dateStr >= currentWeek.startDate && dateStr <= currentWeek.endDate) {
+          console.log(`🗑️ Eliminando eventos del día ${dateStr} (dentro de la semana actual)`);
+          delete eventsToKeep[dateStr];
+        } else {
+          console.log(`✅ Manteniendo eventos del día ${dateStr} (fuera de la semana actual)`);
+        }
+      });
+      
+      return {
+        ...row,
+        events: eventsToKeep
+      };
+    });
+    
+    console.log('📅 Resumen de limpieza:');
+    console.log(`  Semana actual: ${currentWeek.startDate} a ${currentWeek.endDate}`);
+    
+    draftScheduleRows.value = updatedRows;
+  } else {
+    // Si es borrado total, limpiar todos los eventos
+    const updatedRows = draftScheduleRows.value.map(row => ({
+      ...row,
+      events: {}
+    }));
+    
+    draftScheduleRows.value = updatedRows;
+  }
   
-  draftScheduleRows.value = updatedRows;
   hasUnpublishedChanges.value = true;
 }
 

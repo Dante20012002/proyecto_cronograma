@@ -135,14 +135,14 @@ export default function AdminToolbar({ onClose }: AdminToolbarProps): JSX.Elemen
   };
 
   const handleClearAll = async () => {
-    if (safeConfirm('¿Estás seguro de que quieres eliminar TODAS las actividades del borrador? Los instructores no se verán afectados. Esta acción no se puede deshacer.')) {
+    if (safeConfirm('¿Estás seguro de que quieres eliminar todas las actividades de la semana actual? Los instructores y eventos de otras semanas no se verán afectados. Esta acción no se puede deshacer.')) {
       try {
-        setNotificationMessage('🗑️ Eliminando eventos...');
+        setNotificationMessage('🗑️ Eliminando eventos de la semana actual...');
         setNotificationType('info');
 
-        await clearAllDraftEvents();
+        await clearAllDraftEvents(true); // true indica que solo limpie la semana actual
         
-        setNotificationMessage('✅ ¡Todos los eventos han sido eliminados!');
+        setNotificationMessage('✅ ¡Los eventos de la semana actual han sido eliminados!');
         setNotificationType('success');
       } catch (error) {
         console.error('Error eliminando eventos:', error);
