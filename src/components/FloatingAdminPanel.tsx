@@ -122,10 +122,10 @@ export default function FloatingAdminPanel(): JSX.Element {
     {
       id: 'config',
       icon: '⚙️',
-      tooltip: 'Configuración Global',
+      tooltip: 'Filtros de Fecha y Titulo Semanal',
       color: 'bg-indigo-600 hover:bg-indigo-700',
       permission: 'canEditGlobalConfig',
-      title: '⚙️ Configuración Global'
+      title: '⚙️ Filtros de Fecha y Titulo Semanal'
     },
     {
       id: 'instructors',
@@ -183,7 +183,7 @@ export default function FloatingAdminPanel(): JSX.Element {
       <Modal
         isOpen={activePanel === 'config'}
         onClose={closePanel}
-        title="⚙️ Configuración Global"
+        title="⚙️ Filtros de Fecha y Titulo Semanal"
         maxWidth="max-w-2xl"
       >
         <GlobalConfig />
