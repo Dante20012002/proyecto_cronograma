@@ -646,7 +646,7 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
               <tr key={row.id} class="border-t border-slate-700">
                 <td class="px-4 py-3 border-r border-slate-700 text-center">
                   <div class="text-xl text-white font-bold pb-2">{row.regional}</div>
-                  <div class="font-semibold text-black rounded-full bg-white p-2">👨‍🏫 {row.instructor}</div>
+                  <div class="font-semibold text-black rounded-full bg-slate-400 p-2">👨‍🏫 {row.instructor}</div>
                 </td>
                 {weekDays.map(day => (
                   <td key={`${row.id}-${day.dayNumber}`} class="p-2 border-r border-slate-700">
