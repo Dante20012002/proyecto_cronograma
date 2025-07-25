@@ -490,7 +490,7 @@ const predefinedDetails = [
   'Entrenamiento Terpel POS Operativo',
   'Entrenamiento Terpel POS Administrativo',
   'Formación Inicial Terpel POS Administrativo',
-  'Clientes Propios',
+  'Clientes Propios Administrativo',
   'Masterlub Operativo',
   'Masterlub Administrativo',
   'EDS Confiable',

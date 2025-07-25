@@ -64,7 +64,7 @@ export const detailColorMap: { [key: string]: string } = {
   
   // Productos específicos - Tonos diversos de la nueva paleta
   'Canastilla': '#68b645',
-  'Clientes Propios': '#68b645',
+  'Clientes Propios Administrativo': '#68b645',
   'App Terpel': '#68b645',
   
   // MASTERLUB - Tonos verdes-azules de la nueva paleta
