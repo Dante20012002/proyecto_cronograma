@@ -694,15 +694,21 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
                           {event.time && <div class="text-sm mt-1">⏰ {event.time}</div>}
                           {event.location && (
                             <div class="text-xs mt-1 font-bold">
-                              {event.location.split('/').map((part: string, index: number): JSX.Element => (
-                                index === 0 ? (
-                                  <span key={index}>{part.trim()}</span>
-                                ) : (
-                                  <span key={index}>
-                                    <br />📍 {part.trim()}
-                                  </span>
-                                )
-                              ))}
+                              {event.location.includes('/') ? (
+                                // Si tiene "/", mostrar la primera parte normal y la segunda con el emoji
+                                event.location.split('/').map((part: string, index: number): JSX.Element => (
+                                  index === 0 ? (
+                                    <span key={index}>{part.trim()}</span>
+                                  ) : (
+                                    <span key={index}>
+                                      <br />📍 {part.trim()}
+                                    </span>
+                                  )
+                                ))
+                              ) : (
+                                // Si no tiene "/", mostrar la ubicación completa con el emoji
+                                <span>📍 {event.location.trim()}</span>
+                              )}
                             </div>
                           )}
                         </div>
