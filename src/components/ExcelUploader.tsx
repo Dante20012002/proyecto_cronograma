@@ -39,8 +39,6 @@ interface ExcelUploaderProps {
   onClose: () => void;
 }
 
-
-
 /**
  * Función para validar los datos del Excel
  */
@@ -159,42 +157,40 @@ function dayToNumber(day: string): string {
     const currentWeek = draftGlobalConfig.value.currentWeek;
     const startDate = new Date(currentWeek.startDate);
     
-    // Calcular las fechas de cada día de la semana
-    const weekDays = [];
-    for (let i = 0; i < 5; i++) {
-      const currentDate = new Date(startDate);
-      currentDate.setDate(startDate.getDate() + i);
-      weekDays.push({
-        dayName: currentDate.toLocaleDateString('es-ES', { weekday: 'long' }).toLowerCase(),
-        dayNumber: currentDate.getDate().toString()
-      });
+    // Mapeo de nombres de días a números de día de la semana (0 = domingo, 1 = lunes, etc.)
+    const dayNameToWeekDay: { [key: string]: number } = {
+      'lunes': 1,
+      'martes': 2,
+      'miercoles': 3,
+      'miércoles': 3,
+      'jueves': 4,
+      'viernes': 5
+    };
+    
+    // Encontrar la fecha que corresponde al día solicitado
+    const targetWeekDay = dayNameToWeekDay[day.toLowerCase()];
+    if (targetWeekDay === undefined) {
+      console.error('❌ Día no válido:', day);
+      return startDate.getDate().toString();
     }
     
-    // Mapear día solicitado a fecha
-    const dayMap: { [key: string]: string } = {};
-    weekDays.forEach(wd => {
-      dayMap[wd.dayName] = wd.dayNumber;
-    });
-    
-    // Mapeos adicionales para variaciones (miércoles con y sin acento)
-    if (dayMap['miércoles']) {
-      dayMap['miercoles'] = dayMap['miércoles'];
+    // Ajustar la fecha hasta encontrar el día correcto
+    const targetDate = new Date(startDate);
+    while (targetDate.getDay() !== targetWeekDay) {
+      targetDate.setDate(targetDate.getDate() + 1);
     }
     
-    const result = dayMap[day.toLowerCase()] || weekDays[0]?.dayNumber || '1';
-    
-    console.log('📅 dayToNumber mapping:', {
+    console.log('📅 DEBUG - Cálculo de fecha:', {
       requestedDay: day,
-      currentWeek: currentWeek,
-      weekDays: weekDays,
-      dayMap: dayMap,
-      result: result
+      weekDayNumber: targetWeekDay,
+      calculatedDate: targetDate.toISOString(),
+      result: targetDate.getDate()
     });
     
-    return result;
+    return targetDate.getDate().toString();
   } catch (error) {
     console.error('❌ Error en dayToNumber:', error);
-    return '1'; // Fallback
+    return new Date(draftGlobalConfig.value.currentWeek.startDate).getDate().toString();
   }
 }
 
@@ -983,7 +979,7 @@ Usa verifyExcelLoad() en la consola para verificar el estado.`;
               </div>
             </div>
           )}
-
+          
           {/* Botones finales */}
           <div class="flex justify-end gap-3">
             <button
