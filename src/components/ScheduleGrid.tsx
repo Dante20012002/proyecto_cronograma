@@ -646,7 +646,7 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
               <tr key={row.id} class="border-t border-slate-700">
                 <td class="px-4 py-3 border-r border-slate-700 text-center">
                   <div class="text-xl text-white font-bold pb-2">{row.regional}</div>
-                  <div class="font-semibold text-black rounded-full bg-white p-2">{row.instructor}</div>
+                  <div class="font-semibold text-black rounded-full bg-white p-2">👤 {row.instructor}</div>
                 </td>
                 {weekDays.map(day => (
                   <td key={`${row.id}-${day.dayNumber}`} class="p-2 border-r border-slate-700">
@@ -688,18 +688,18 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
                               <div key={`${row.id}-${day.dayNumber}-${event.id}-detail-${index}`} class="text-sm">{detail}</div>
                             ))
                           ) : (
-                            <div class="text-sm">{event.details}</div>
+                            <div class="text-sm font-semibold">{event.details}</div>
                           )}
-                          {event.modalidad && <div class="text-xs mt-1 font-semibold opacity-80"> {event.modalidad}</div>}
-                          {event.time && <div class="text-sm mt-1">📅 {event.time}</div>}
+                          {event.modalidad && <div class="text-sm mt-1 opacity-80">✏ {event.modalidad}</div>}
+                          {event.time && <div class="text-sm mt-1">⏰ {event.time}</div>}
                           {event.location && (
                             <div class="text-xs mt-1 font-bold">
-                              📍 {event.location.split('/').map((part: string, index: number): JSX.Element => (
+                              {event.location.split('/').map((part: string, index: number): JSX.Element => (
                                 index === 0 ? (
                                   <span key={index}>{part.trim()}</span>
                                 ) : (
                                   <span key={index}>
-                                    <br />{part.trim()}
+                                    <br />📍 {part.trim()}
                                   </span>
                                 )
                               ))}
