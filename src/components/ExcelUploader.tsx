@@ -313,7 +313,8 @@ async function processAndLoadData(data: ExcelEventData[]) {
         time: timeString,
         location: eventData.ubicacion || 'Por definir',
         color: eventData.color || EVENT_COLORS[0],
-        modalidad: eventData.modalidad
+        modalidad: eventData.modalidad,
+        confirmed: false // Los eventos importados desde Excel siempre se crean como no confirmados
       };
       
       const dayNumber = dayToNumber(eventData.dia);

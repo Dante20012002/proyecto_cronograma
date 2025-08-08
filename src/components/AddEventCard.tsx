@@ -1,5 +1,6 @@
 import { useState } from 'preact/hooks';
 import { addEvent, startTimes, endTimes, checkTimeConflict } from '../stores/schedule';
+import { isAdmin } from '../lib/auth';
 import type { Event } from '../stores/schedule';
 import { EVENT_COLORS, getColorForDetail, getRandomEventColor, hexToStyle, getContrastTextColor } from '../lib/colors';
 
@@ -100,7 +101,8 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
     endTime: '',
     location: '',
     color: EVENT_COLORS[0], // Usar el primer color de la nueva paleta
-    modalidad: ''
+    modalidad: '',
+    confirmed: false
   });
   const [useCustomTitle, setUseCustomTitle] = useState(false);
   const [useCustomDetails, setUseCustomDetails] = useState(false);
@@ -192,7 +194,8 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
       time: timeString || undefined,
       location: formData.location || 'Sin ubicación',
       color: formData.color,
-      modalidad: formData.modalidad || undefined
+      modalidad: formData.modalidad || undefined,
+      confirmed: formData.confirmed
     };
     
     addEvent(rowId, day, newEvent);
@@ -400,6 +403,29 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
                 <option value="Presencial">Presencial</option>
                 <option value="Virtual">Virtual</option>
               </select>
+            </div>
+
+            {/* Estado de Confirmación */}
+            <div class="border-t pt-4">
+              <label class="flex items-center space-x-3">
+                <input
+                  type="checkbox"
+                  checked={formData.confirmed}
+                  onChange={(e) => setFormData(prev => ({ ...prev, confirmed: (e.target as HTMLInputElement).checked }))}
+                  disabled={!isAdmin.value}
+                  class={`w-5 h-5 rounded border-2 focus:ring-2 focus:ring-green-500 ${
+                    isAdmin.value 
+                      ? 'text-green-600 border-gray-300 cursor-pointer' 
+                      : 'text-green-600 border-gray-300 cursor-not-allowed opacity-60'
+                  }`}
+                />
+                <span class={`text-sm font-medium ${formData.confirmed ? 'text-green-700' : 'text-gray-600'}`}>
+                  {formData.confirmed ? '✅ Evento Confirmado' : '⏳ Pendiente de Confirmación'}
+                </span>
+                {!isAdmin.value && (
+                  <span class="text-xs text-gray-400">(Solo administradores pueden modificar)</span>
+                )}
+              </label>
             </div>
 
           </div>

@@ -20,6 +20,7 @@ export interface Event {
   location: string;
   color: string;
   modalidad?: string; // Nueva propiedad para modalidad (Presencial, Virtual)
+  confirmed?: boolean; // Nueva propiedad para indicar si el evento está confirmado
 }
 
 export interface Instructor {

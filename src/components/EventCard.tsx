@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'preact/hooks';
 import { updateEvent, deleteEvent, checkTimeConflict, startTimes, endTimes } from '../stores/schedule';
 import { safeConfirm } from '../lib/utils';
+import { isAdmin } from '../lib/auth';
 import type { Event } from '../stores/schedule';
 import { EVENT_COLORS, getColorForDetail, getRandomEventColor, hexToStyle, getContrastTextColor } from '../lib/colors';
 
@@ -101,7 +102,8 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
     details: Array.isArray(event.details) ? event.details.join('\n') : event.details,
     time: event.time || '',
     location: event.location,
-    color: event.color
+    color: event.color,
+    confirmed: event.confirmed || false
   });
 
   const [startTime, setStartTime] = useState('');
@@ -186,7 +188,8 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
       details: finalDetails.trim() || 'Sin detalles especificados',
       location: formData.location.trim() || 'Sin ubicación',
       time: timeString,
-      color: finalColor
+      color: finalColor,
+      confirmed: formData.confirmed
     };
 
     updateEvent(rowId, day, updatedEvent);
@@ -378,6 +381,29 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
             <p class="text-xs text-gray-500 mt-2">
               Seleccionado: <span class="inline-block w-4 h-4 rounded border border-gray-300" style={hexToStyle(formData.color)}></span>
             </p>
+          </div>
+
+          {/* Estado de Confirmación */}
+          <div class="border-t pt-4">
+            <label class="flex items-center space-x-3">
+              <input
+                type="checkbox"
+                checked={formData.confirmed}
+                onChange={(e) => setFormData(prev => ({ ...prev, confirmed: (e.target as HTMLInputElement).checked }))}
+                disabled={!isAdmin.value}
+                class={`w-5 h-5 rounded border-2 focus:ring-2 focus:ring-green-500 ${
+                  isAdmin.value 
+                    ? 'text-green-600 border-gray-300 cursor-pointer' 
+                    : 'text-green-600 border-gray-300 cursor-not-allowed opacity-60'
+                }`}
+              />
+              <span class={`text-sm font-medium ${formData.confirmed ? 'text-green-700' : 'text-gray-600'}`}>
+                {formData.confirmed ? '✅ Evento Confirmado' : '⏳ Pendiente de Confirmación'}
+              </span>
+              {!isAdmin.value && (
+                <span class="text-xs text-gray-400">(Solo administradores pueden modificar)</span>
+              )}
+            </label>
           </div>
         </div>
 
