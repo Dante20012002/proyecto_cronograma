@@ -52,6 +52,8 @@ export interface FilterState {
   instructors: string[];
   regionales: string[];
   modalidades: string[];
+  programas: string[];  // Filtro por título/programa
+  modulos: string[];    // Filtro por detalles/módulo
 }
 
 // --- DATOS DE HORARIOS ---
@@ -387,7 +389,9 @@ export const selectedWeek = signal<{ startDate: string; endDate: string }>(getIn
 export const activeFilters = signal<FilterState>({
   instructors: [],
   regionales: [],
-  modalidades: []
+  modalidades: [],
+  programas: [],
+  modulos: []
 });
 
 // --- INICIALIZACIÓN DE FIREBASE ---
@@ -721,10 +725,20 @@ function markAsDirty() {
  */
 function getFullDateFromDay(dayOfMonth: string): string {
   const currentWeek = draftGlobalConfig.value.currentWeek;
-  const [year, month, day] = currentWeek.startDate.split('-').map(Number);
+  return getFullDateFromDayWithWeek(dayOfMonth, currentWeek);
+}
+
+/**
+ * Genera la fecha completa (YYYY-MM-DD) basada en una semana específica y el día del mes
+ * @param dayOfMonth - Día del mes (1-31)
+ * @param week - Semana específica con startDate y endDate
+ * @returns Fecha completa en formato YYYY-MM-DD
+ */
+function getFullDateFromDayWithWeek(dayOfMonth: string, week: { startDate: string; endDate: string }): string {
+  const [year, month, day] = week.startDate.split('-').map(Number);
   const startDate = new Date(year, month - 1, day);
   
-  // Buscar el día en la semana actual (lunes a viernes)
+  // Buscar el día en la semana específica (lunes a viernes)
   for (let i = 0; i < 5; i++) {
     const checkDate = new Date(startDate);
     checkDate.setDate(startDate.getDate() + i);
@@ -734,7 +748,7 @@ function getFullDateFromDay(dayOfMonth: string): string {
     }
   }
   
-  // Si no se encuentra en la semana actual, usar la fecha del mes actual
+  // Si no se encuentra en la semana específica, usar la fecha del mes actual
   const today = new Date();
   const fullDate = new Date(today.getFullYear(), today.getMonth(), parseInt(dayOfMonth));
   return fullDate.toISOString().split('T')[0];
@@ -1805,7 +1819,9 @@ export function clearFilters() {
   activeFilters.value = {
     instructors: [],
     regionales: [],
-    modalidades: []
+    modalidades: [],
+    programas: [],
+    modulos: []
   };
 }
 
@@ -1837,18 +1853,162 @@ export function getUniqueValues(field: 'instructors' | 'regionales' | 'modalidad
 }
 
 /**
+ * Obtiene eventos únicos de la semana seleccionada
+ * @param isAdmin - Determina si usar datos de admin o publicados
+ * @returns Array de eventos únicos de la semana actual
+ */
+function getEventsFromCurrentWeek(isAdmin: boolean): Event[] {
+  const rows = isAdmin ? draftScheduleRows.value : publishedScheduleRows.value;
+  const currentWeek = isAdmin ? draftGlobalConfig.value.currentWeek : selectedWeek.value;
+  const events: Event[] = [];
+
+  console.log('🔍 getEventsFromCurrentWeek - Filtrando eventos para semana:', {
+    isAdmin,
+    currentWeek,
+    totalRows: rows.length
+  });
+
+  // Generar array de fechas de la semana actual
+  const weekDates: string[] = [];
+  const startDate = new Date(currentWeek.startDate);
+  
+  for (let i = 0; i < 5; i++) { // Lunes a Viernes
+    const date = new Date(startDate);
+    date.setDate(startDate.getDate() + i);
+    weekDates.push(date.toISOString().split('T')[0]);
+  }
+
+  console.log('📅 getEventsFromCurrentWeek - Fechas de la semana:', weekDates);
+
+  rows.forEach(row => {
+    // Buscar eventos en las fechas de la semana actual
+    weekDates.forEach(dateStr => {
+      const dayEvents = row.events[dateStr] || [];
+      if (dayEvents.length > 0) {
+        console.log(`📋 Encontrados ${dayEvents.length} eventos en ${dateStr} para ${row.instructor}`);
+      }
+      events.push(...dayEvents);
+    });
+
+    // También buscar en formato anterior (solo día) para compatibilidad
+    Object.entries(row.events).forEach(([key, dayEvents]) => {
+      if (!key.includes('-')) { // Formato anterior (solo día)
+        const fullDate = getFullDateFromDayWithWeek(key, currentWeek);
+        if (weekDates.includes(fullDate)) {
+          console.log(`📋 Migrando ${dayEvents.length} eventos del día ${key} (${fullDate}) para ${row.instructor}`);
+          events.push(...dayEvents);
+        } else {
+          console.log(`🚫 Excluyendo ${dayEvents.length} eventos del día ${key} (${fullDate}) - fuera de la semana actual`);
+        }
+      }
+    });
+  });
+
+  // Deduplicar eventos por ID
+  const uniqueEvents = events.filter((event, index, self) => 
+    index === self.findIndex(e => e.id === event.id)
+  );
+
+  return uniqueEvents;
+}
+
+/**
+ * Obtiene valores únicos de programas (títulos) de la semana seleccionada
+ * @param isAdmin - Determinar si usar datos de admin o publicados
+ * @returns Array de títulos únicos
+ */
+export function getUniqueProgramsFromWeek(isAdmin: boolean): string[] {
+  const weekEvents = getEventsFromCurrentWeek(isAdmin);
+  const programs = new Set<string>();
+
+  weekEvents.forEach(event => {
+    if (event.title && event.title.trim()) {
+      programs.add(event.title.trim());
+    }
+  });
+
+  return Array.from(programs).sort();
+}
+
+/**
+ * Obtiene valores únicos de módulos (detalles) de la semana seleccionada
+ * @param isAdmin - Determinar si usar datos de admin o publicados
+ * @returns Array de detalles únicos
+ */
+export function getUniqueModulesFromWeek(isAdmin: boolean): string[] {
+  const weekEvents = getEventsFromCurrentWeek(isAdmin);
+  const modules = new Set<string>();
+
+  console.log(`🧩 getUniqueModulesFromWeek - Procesando ${weekEvents.length} eventos de la semana`);
+
+  weekEvents.forEach(event => {
+    if (event.details) {
+      if (Array.isArray(event.details)) {
+        // Si details es un array, agregar cada elemento
+        event.details.forEach(detail => {
+          if (detail && detail.trim()) {
+            console.log(`  ➕ Agregando módulo: "${detail.trim()}" del evento: "${event.title}"`);
+            modules.add(detail.trim());
+          }
+        });
+      } else {
+        // Si details es un string, agregarlo directamente
+        if (event.details.trim()) {
+          console.log(`  ➕ Agregando módulo: "${event.details.trim()}" del evento: "${event.title}"`);
+          modules.add(event.details.trim());
+        }
+      }
+    }
+  });
+
+  const result = Array.from(modules).sort();
+  console.log(`✅ getUniqueModulesFromWeek - Módulos únicos encontrados:`, result);
+  return result;
+}
+
+/**
  * Filtra las filas del cronograma según los filtros activos
- * Para modalidades, filtra eventos individuales en lugar de filas completas
+ * Para modalidades, programas y módulos, filtra eventos individuales en lugar de filas completas
  */
 export function getFilteredRows(rows: ScheduleRow[]): ScheduleRow[] {
   const filters = activeFilters.value;
   
+  console.log('🔍 getFilteredRows - Filtros activos:', {
+    instructors: filters.instructors,
+    regionales: filters.regionales,
+    modalidades: filters.modalidades,
+    programas: filters.programas,
+    modulos: filters.modulos,
+    totalRows: rows.length
+  });
+  
   // Si no hay filtros activos, devolver todas las filas
   if (filters.instructors.length === 0 && 
       filters.regionales.length === 0 && 
-      filters.modalidades.length === 0) {
+      filters.modalidades.length === 0 &&
+      filters.programas.length === 0 &&
+      filters.modulos.length === 0) {
+    console.log('ℹ️ No hay filtros activos, devolviendo todas las filas');
     return rows;
   }
+
+  // Determinar la semana actual según el contexto (admin vs usuario)
+  const isAdminContext = rows === draftScheduleRows.value;
+  const currentWeek = isAdminContext ? draftGlobalConfig.value.currentWeek : selectedWeek.value;
+  
+  console.log('📅 getFilteredRows - Usando semana:', currentWeek, 'isAdmin:', isAdminContext);
+
+  // Generar fechas de la semana actual para filtrar eventos
+  const weekDates: string[] = [];
+  const startDate = new Date(currentWeek.startDate);
+  
+  for (let i = 0; i < 5; i++) { // Lunes a Viernes
+    const date = new Date(startDate);
+    date.setDate(startDate.getDate() + i);
+    weekDates.push(date.toISOString().split('T')[0]);
+  }
+  
+  console.log('📅 getFilteredRows - Fechas de la semana a considerar:', weekDates);
 
   return rows
     .filter(row => {
@@ -1865,29 +2025,85 @@ export function getFilteredRows(rows: ScheduleRow[]): ScheduleRow[] {
       return true;
     })
     .map(row => {
-      // Si no hay filtros de modalidad, devolver la fila tal como está
-      if (filters.modalidades.length === 0) {
+      // Si no hay filtros de eventos, devolver la fila tal como está
+      if (filters.modalidades.length === 0 && 
+          filters.programas.length === 0 && 
+          filters.modulos.length === 0) {
         return row;
       }
 
-      // Filtrar eventos por modalidad
+      // Filtrar eventos por modalidad, programa y módulo
       const filteredEvents: { [day: string]: Event[] } = {};
+      let totalMatchingEvents = 0;
       
       Object.entries(row.events).forEach(([day, events]) => {
+        // Solo considerar eventos de la semana actual
+        let isCurrentWeekDay = false;
+        
+        if (day.includes('-')) {
+          // Formato nuevo (fecha completa): verificar directamente
+          isCurrentWeekDay = weekDates.includes(day);
+        } else {
+          // Formato anterior (solo día): convertir a fecha completa
+          const fullDate = getFullDateFromDayWithWeek(day, currentWeek);
+          isCurrentWeekDay = weekDates.includes(fullDate);
+        }
+        
+        if (!isCurrentWeekDay) {
+          console.log(`⏭️ Saltando eventos del día ${day} (fuera de la semana actual)`);
+          return; // Saltar eventos que no son de la semana actual
+        }
+        
+        console.log(`📅 Procesando ${events.length} eventos del día ${day} (semana actual)`);
+        
         const matchingEvents = events.filter(event => {
-          // Si el evento no tiene modalidad, no coincide con ningún filtro de modalidad
-          if (!event.modalidad) {
-            return false;
+          // Filtro por modalidad
+          if (filters.modalidades.length > 0) {
+            if (!event.modalidad || !filters.modalidades.includes(event.modalidad)) {
+              return false;
+            }
           }
-          // Solo incluir eventos que tengan una modalidad que esté en los filtros activos
-          return filters.modalidades.includes(event.modalidad);
+
+          // Filtro por programa (título)
+          if (filters.programas.length > 0) {
+            if (!event.title || !filters.programas.includes(event.title.trim())) {
+              return false;
+            }
+          }
+
+          // Filtro por módulo (detalles)
+          if (filters.modulos.length > 0) {
+            if (!event.details) {
+              return false;
+            }
+
+            let hasMatchingDetail = false;
+            if (Array.isArray(event.details)) {
+              // Si details es un array, verificar si alguno coincide
+              hasMatchingDetail = event.details.some(detail => 
+                detail && filters.modulos.includes(detail.trim())
+              );
+            } else {
+              // Si details es un string, verificar coincidencia directa
+              hasMatchingDetail = filters.modulos.includes(event.details.trim());
+            }
+
+            if (!hasMatchingDetail) {
+              return false;
+            }
+          }
+
+          return true;
         });
         
         // Solo agregar el día si tiene eventos que coinciden
         if (matchingEvents.length > 0) {
           filteredEvents[day] = matchingEvents;
+          totalMatchingEvents += matchingEvents.length;
         }
       });
+
+      console.log(`📊 ${row.instructor}: ${totalMatchingEvents} eventos coincidentes en ${Object.keys(filteredEvents).length} días`);
 
       // Devolver la fila con eventos filtrados
       return {
@@ -1896,9 +2112,17 @@ export function getFilteredRows(rows: ScheduleRow[]): ScheduleRow[] {
       };
     })
     .filter(row => {
-      // Si después del filtrado de modalidades no hay eventos, no mostrar la fila
-      if (filters.modalidades.length > 0) {
-        return Object.keys(row.events).length > 0;
+      // Si después del filtrado no hay eventos, no mostrar la fila
+      if (filters.modalidades.length > 0 || 
+          filters.programas.length > 0 || 
+          filters.modulos.length > 0) {
+        const hasEvents = Object.keys(row.events).length > 0;
+        if (!hasEvents) {
+          console.log(`🚫 Filtrando instructor sin eventos coincidentes: ${row.instructor}`);
+        } else {
+          console.log(`✅ Manteniendo instructor con eventos: ${row.instructor} (${Object.keys(row.events).length} días con eventos)`);
+        }
+        return hasEvents;
       }
       return true;
     });

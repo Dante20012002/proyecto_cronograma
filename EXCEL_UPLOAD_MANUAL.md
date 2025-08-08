@@ -6,7 +6,7 @@
 |-------|-------------|---------|-------------|
 | **Instructor** | Nombre completo del instructor | JUAN PABLO HERNANDEZ | ✅ |
 | **Regional** | Regional donde se realizará el evento | BUCARAMANGA | ✅ |
-| **Titulo** | Título del evento | ESCUELA DE PROMOTORES | ✅ |
+| **Titulo** | Título del evento (puedes usar cualquier título personalizado) | ESCUELA DE PROMOTORES | ✅ |
 | **Detalles** | Detalles específicos del evento | Módulo Formativo Líquidos | ❌ |
 | **Ubicacion** | Lugar específico del evento | Bucaramanga | ❌ |
 | **Dia** | Día de la semana (lunes a viernes) | lunes | ✅ |
@@ -24,9 +24,14 @@
 
 ### Validaciones Automáticas
 - Formato de fechas y horas
-- Campos obligatorios
+- Campos obligatorios (título es obligatorio pero puede ser cualquier texto)
 - Duplicados de eventos
 - Conflictos de horarios
+
+### Flexibilidad de Títulos
+- **Títulos libres**: Puedes usar cualquier título personalizado para tus eventos
+- **No hay restricciones**: No es necesario usar solo los títulos predefinidos
+- **Ejemplos válidos**: "Capacitación Especial", "Taller Personalizado", "Reunión de Seguimiento", etc.
 
 ### Colores Automáticos
 Los eventos se colorean automáticamente según su tipo:

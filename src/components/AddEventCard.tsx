@@ -52,6 +52,7 @@ const predefinedDescriptions = [
   'Módulo Sánduches',
   'Módulo Sbarro',
   'Módulo Bebidas Calientes',
+  'UDVA P',
   'Construyendo Equipos Altamente Efectivos',
   'Taller EDS Confiable',
   'Festivo',
@@ -136,7 +137,7 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
 
   const handleSave = () => {
     if (!formData.title.trim()) {
-      alert('Por favor ingresa un título para el evento.');
+      alert('El título del programa es obligatorio. Puedes seleccionar uno de la lista o escribir uno personalizado.');
       return;
     }
 
@@ -212,7 +213,10 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
           <div class="space-y-4">
             {/* Title */}
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Programa *</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                Programa * 
+                <span class="text-xs text-gray-500 font-normal ml-1">(obligatorio - puedes usar cualquier título)</span>
+              </label>
               
               {/* Selector de títulos predefinidos */}
               {!useCustomTitle && (
@@ -221,13 +225,13 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
                   onInput={(e) => handleTitleSelect((e.target as HTMLSelectElement).value)}
                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white mb-2"
                 >
-                  <option value="">Selecciona un Programa...</option>
+                  <option value="">Selecciona un programa o escribe uno personalizado...</option>
                   {predefinedTitles.map((title) => (
                     <option key={title} value={title} class="text-gray-900 bg-white">
                       {title}
                     </option>
                   ))}
-                  <option value="custom" class="text-gray-900 bg-white font-semibold">
+                  <option value="custom" class="text-blue-600 bg-blue-50 font-semibold">
                     ✏️ Escribir título personalizado
                   </option>
                 </select>

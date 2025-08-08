@@ -54,6 +54,7 @@ const predefinedDescriptions = [
   'Módulo Sánduches',
   'Módulo Sbarro',
   'Módulo Bebidas Calientes',
+  'UDVA P',
   'Construyendo Equipos Altamente Efectivos',
   'Taller EDS Confiable',
   'Festivo',
@@ -156,7 +157,7 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
   const handleSave = () => {
     // Verificar campos requeridos
     if (!formData.title.trim()) {
-      alert('El título es requerido.');
+      alert('El título del programa es obligatorio. Puedes usar cualquier título personalizado.');
       return;
     }
 

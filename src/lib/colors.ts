@@ -88,6 +88,7 @@ export const detailColorMap: { [key: string]: string } = {
   'Módulo Sánduches': '#dcc934',
   'Módulo Sbarro': '#dcc934',
   'Módulo Bebidas Calientes': '#dcc934',
+  'UDVA P': '#dcd4b4',
 
   // Otras categorías
   'Festivo': '#46646B',

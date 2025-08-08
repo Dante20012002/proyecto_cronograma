@@ -504,6 +504,7 @@ const predefinedDetails = [
   'Módulo Sánduches',
   'Módulo Sbarro',
   'Módulo Bebidas Calientes',
+  'UDVA P',
   'Construyendo Equipos Altamente Efectivos',
   'Taller EDS Confiable',
   'Festivo',

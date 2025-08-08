@@ -1,5 +1,15 @@
 import { useState, useEffect } from 'preact/hooks';
-import { activeFilters, updateFilters, clearFilters, getUniqueValues, type FilterState } from '../stores/schedule';
+import { 
+  activeFilters, 
+  updateFilters, 
+  clearFilters, 
+  getUniqueValues, 
+  getUniqueProgramsFromWeek,
+  getUniqueModulesFromWeek,
+  draftGlobalConfig,
+  selectedWeek,
+  type FilterState 
+} from '../stores/schedule';
 import type { JSX } from 'preact';
 
 /**
@@ -14,26 +24,36 @@ interface FilterBarProps {
 
 /**
  * Componente de filtros reutilizable para el cronograma.
- * Proporciona filtros por instructor, regional y modalidad.
+ * Proporciona filtros por instructor, regional, modalidad, programas y módulos.
+ * Los filtros de programas y módulos se basan únicamente en los eventos de la semana seleccionada.
  */
 export default function FilterBar({ isAdmin, onFilterChange }: FilterBarProps): JSX.Element {
   const [isExpanded, setIsExpanded] = useState(false);
   const [availableOptions, setAvailableOptions] = useState({
     instructors: [] as string[],
     regionales: [] as string[],
-    modalidades: [] as string[]
+    modalidades: [] as string[],
+    programas: [] as string[],
+    modulos: [] as string[]
   });
 
   const filters = activeFilters.value;
 
   // Cargar opciones disponibles
   useEffect(() => {
+    console.log('🔄 FilterBar - Actualizando opciones de filtros');
     setAvailableOptions({
       instructors: getUniqueValues('instructors', isAdmin),
       regionales: getUniqueValues('regionales', isAdmin),
-      modalidades: getUniqueValues('modalidades', isAdmin)
+      modalidades: getUniqueValues('modalidades', isAdmin),
+      programas: getUniqueProgramsFromWeek(isAdmin),
+      modulos: getUniqueModulesFromWeek(isAdmin)
     });
-  }, [isAdmin]);
+  }, [
+    isAdmin, 
+    isAdmin ? draftGlobalConfig.value.currentWeek.startDate : selectedWeek.value.startDate,
+    isAdmin ? draftGlobalConfig.value.currentWeek.endDate : selectedWeek.value.endDate
+  ]);
 
   const handleFilterChange = (field: keyof FilterState, value: string, isChecked: boolean) => {
     const currentValues = filters[field];
@@ -59,18 +79,24 @@ export default function FilterBar({ isAdmin, onFilterChange }: FilterBarProps): 
       onFilterChange({
         instructors: [],
         regionales: [],
-        modalidades: []
+        modalidades: [],
+        programas: [],
+        modulos: []
       });
     }
   };
 
   const hasActiveFilters = filters.instructors.length > 0 || 
                           filters.regionales.length > 0 || 
-                          filters.modalidades.length > 0;
+                          filters.modalidades.length > 0 ||
+                          filters.programas.length > 0 ||
+                          filters.modulos.length > 0;
 
   const totalActiveFilters = filters.instructors.length + 
                             filters.regionales.length + 
-                            filters.modalidades.length;
+                            filters.modalidades.length +
+                            filters.programas.length +
+                            filters.modulos.length;
 
   return (
     <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
@@ -110,7 +136,7 @@ export default function FilterBar({ isAdmin, onFilterChange }: FilterBarProps): 
       {/* Panel de filtros expandido */}
       {isExpanded && (
         <div class="border-t border-gray-200 p-3">
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             
             {/* Filtro de Instructores */}
             <div>
@@ -175,6 +201,48 @@ export default function FilterBar({ isAdmin, onFilterChange }: FilterBarProps): 
               </div>
             </div>
 
+            {/* Filtro de Programas (Títulos) */}
+            <div>
+              <h4 class="font-medium text-gray-700 mb-2">Programas</h4>
+              <div class="max-h-32 overflow-y-auto space-y-1">
+                {availableOptions.programas.map(programa => (
+                  <label key={programa} class="flex items-center space-x-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={filters.programas.includes(programa)}
+                      onChange={(e) => handleFilterChange('programas', programa, (e.target as HTMLInputElement).checked)}
+                      class="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                    />
+                    <span class="text-gray-600" title={programa}>{programa.length > 30 ? `${programa.substring(0, 30)}...` : programa}</span>
+                  </label>
+                ))}
+                {availableOptions.programas.length === 0 && (
+                  <p class="text-sm text-gray-400">No hay programas en esta semana</p>
+                )}
+              </div>
+            </div>
+
+            {/* Filtro de Módulos (Detalles) */}
+            <div>
+              <h4 class="font-medium text-gray-700 mb-2">Módulos</h4>
+              <div class="max-h-32 overflow-y-auto space-y-1">
+                {availableOptions.modulos.map(modulo => (
+                  <label key={modulo} class="flex items-center space-x-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={filters.modulos.includes(modulo)}
+                      onChange={(e) => handleFilterChange('modulos', modulo, (e.target as HTMLInputElement).checked)}
+                      class="rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                    />
+                    <span class="text-gray-600" title={modulo}>{modulo.length > 30 ? `${modulo.substring(0, 30)}...` : modulo}</span>
+                  </label>
+                ))}
+                {availableOptions.modulos.length === 0 && (
+                  <p class="text-sm text-gray-400">No hay módulos en esta semana</p>
+                )}
+              </div>
+            </div>
+
           </div>
 
           {/* Resumen de filtros activos */}
@@ -216,6 +284,32 @@ export default function FilterBar({ isAdmin, onFilterChange }: FilterBarProps): 
                     <button
                       onClick={() => handleFilterChange('modalidades', modalidad, false)}
                       class="ml-1 text-purple-600 hover:text-purple-800"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+
+                {filters.programas.map(programa => (
+                  <span key={`programa-${programa}`} class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-800">
+                    <span class="mr-1">📚</span>
+                    {programa.length > 25 ? `${programa.substring(0, 25)}...` : programa}
+                    <button
+                      onClick={() => handleFilterChange('programas', programa, false)}
+                      class="ml-1 text-orange-600 hover:text-orange-800"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+
+                {filters.modulos.map(modulo => (
+                  <span key={`modulo-${modulo}`} class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-teal-100 text-teal-800">
+                    <span class="mr-1">🧩</span>
+                    {modulo.length > 25 ? `${modulo.substring(0, 25)}...` : modulo}
+                    <button
+                      onClick={() => handleFilterChange('modulos', modulo, false)}
+                      class="ml-1 text-teal-600 hover:text-teal-800"
                     >
                       ×
                     </button>
