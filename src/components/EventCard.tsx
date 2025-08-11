@@ -4,6 +4,7 @@ import { safeConfirm } from '../lib/utils';
 import { isAdmin } from '../lib/auth';
 import type { Event } from '../stores/schedule';
 import { EVENT_COLORS, getColorForDetail, getRandomEventColor, hexToStyle, getContrastTextColor } from '../lib/colors';
+import { PREDEFINED_DETAILS, PREDEFINED_TITLES } from '../lib/predefined-data';
 
 /**
  * Props para el componente EventCard
@@ -20,63 +21,7 @@ interface EventCardProps {
   onClose: () => void;
 }
 
-/**
- * Lista de descripciones predefinidas para eventos.
- */
-const predefinedDescriptions = [
-  'Módulo Protagonistas del Servicio',
-  'Módulo Formativo GNV',
-  'Módulo Formativo Líquidos',
-  'Módulo Formativo Lubricantes',
-  'Protocolo de Servicio EDS',
-  'Gestión Ambiental, Seguridad y Salud en el Trabajo',
-  'Módulo Escuela de Industria',
-  'Excelencia Administrativa',
-  'Vive PITS',
-  'La Toma Vive Terpel & Vive PITS',
-  'Formación Inicial Terpel POS Operativo',
-  'Facturación Electrónica Operativa',
-  'Facturación Electrónica Administrativa',
-  'Canastilla',
-  'Entrenamiento Terpel POS Operativo',
-  'Entrenamiento Terpel POS Administrativo',
-  'Formación Inicial Terpel POS Administrativo',
-  'Clientes Propios Administrativo',
-  'Masterlub Operativo',
-  'Masterlub Administrativo',
-  'EDS Confiable',
-  'Campo de Entrenamiento de Industria Limpia',
-  'Caravana Rumbo PITS',
-  'App Terpel',
-  'Módulo Rollos',
-  'Módulo Historia y Masa',
-  'Módulo Strombolis',
-  'Módulo Perros y Más Perros',
-  'Módulo Sánduches',
-  'Módulo Sbarro',
-  'Módulo Bebidas Calientes',
-  'UDVA P',
-  'Construyendo Equipos Altamente Efectivos',
-  'Taller EDS Confiable',
-  'Festivo',
-  'Gestión Administrativa',
-  'Actualización de Contenidos',
-  'Vacaciones',
-  'Traslado',
-  'Acompañamiento'
-];
 
-
-const predefinedTitles = [
-  'ESCUELA DE PROMOTORES',
-  'INDUSTRIA LIMPIA',
-  'ESCUELA DE ADMINISTRADORES',
-  'LEALTAD',
-  'RED VIRTUAL',
-  'EDS CONFIABLE',
-  'RUMBO',
-  'ESCUELA DE TIENDAS'
-];
 
 /**
  * Componente modal para editar eventos existentes en el cronograma.
@@ -111,6 +56,9 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
   const [selectedDetails, setSelectedDetails] = useState('');
   const [customDetails, setCustomDetails] = useState('');
   const [detailsMode, setDetailsMode] = useState<'predefined' | 'custom'>('predefined');
+  const [selectedTitle, setSelectedTitle] = useState('');
+  const [customTitle, setCustomTitle] = useState('');
+  const [titleMode, setTitleMode] = useState<'predefined' | 'custom'>('predefined');
   const [hasTimeConflict, setHasTimeConflict] = useState(false);
 
   // Función para extraer horarios del string de tiempo
@@ -137,12 +85,21 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
 
     // Verificar si los detalles coinciden con alguna opción predefinida
     const detailsText = Array.isArray(event.details) ? event.details.join('\n') : event.details;
-    if (predefinedDescriptions.includes(detailsText.trim())) {
+    if (PREDEFINED_DETAILS.includes(detailsText.trim())) {
       setSelectedDetails(detailsText.trim());
       setDetailsMode('predefined');
     } else {
       setCustomDetails(detailsText);
       setDetailsMode('custom');
+    }
+
+    // Verificar si el título coincide con alguna opción predefinida
+    if (PREDEFINED_TITLES.includes(event.title.trim())) {
+      setSelectedTitle(event.title.trim());
+      setTitleMode('predefined');
+    } else {
+      setCustomTitle(event.title.trim());
+      setTitleMode('custom');
     }
   }, [event, formData.time]);
 
@@ -157,13 +114,15 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
   }, [startTime, endTime, rowId, day, event.id]);
 
   const handleSave = () => {
+    // Construir valores finales
+    const finalDetails = detailsMode === 'predefined' ? selectedDetails : customDetails;
+    const finalTitle = titleMode === 'predefined' ? selectedTitle : customTitle;
+
     // Verificar campos requeridos
-    if (!formData.title.trim()) {
-      alert('El título del programa es obligatorio. Puedes usar cualquier título personalizado.');
+    if (!finalTitle.trim()) {
+      alert('El título del programa es obligatorio. Puedes seleccionar uno predefinido o escribir uno personalizado.');
       return;
     }
-
-    const finalDetails = detailsMode === 'predefined' ? selectedDetails : customDetails;
 
     // Construir string de tiempo si ambos horarios están presentes
     let timeString = formData.time;
@@ -184,7 +143,7 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
 
     const updatedEvent: Event = {
       ...event,
-      title: formData.title.trim(),
+      title: finalTitle.trim() || 'Sin título especificado',
       details: finalDetails.trim() || 'Sin detalles especificados',
       location: formData.location.trim() || 'Sin ubicación',
       time: timeString,
@@ -236,16 +195,54 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
         <div class="space-y-4">
           {/* Título */}
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
               Programa *
             </label>
-            <input
-              type="text"
-              value={formData.title}
-              onInput={(e) => setFormData(prev => ({ ...prev, title: (e.target as HTMLInputElement).value }))}
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
-              placeholder="Título del evento"
-            />
+            
+            {/* Selector de modo para título */}
+            <div class="flex space-x-4 mb-3">
+              <label class="flex items-center text-gray-700">
+                <input
+                  type="radio"
+                  name="titleMode"
+                  checked={titleMode === 'predefined'}
+                  onChange={() => setTitleMode('predefined')}
+                  class="mr-2"
+                />
+                Seleccionar predefinido
+              </label>
+              <label class="flex items-center text-gray-700">
+                <input
+                  type="radio"
+                  name="titleMode"
+                  checked={titleMode === 'custom'}
+                  onChange={() => setTitleMode('custom')}
+                  class="mr-2"
+                />
+                Escribir personalizado
+              </label>
+            </div>
+
+            {titleMode === 'predefined' ? (
+              <select
+                value={selectedTitle}
+                onChange={(e) => setSelectedTitle((e.target as HTMLSelectElement).value)}
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
+              >
+                <option value="">Selecciona un programa...</option>
+                {PREDEFINED_TITLES.map(title => (
+                  <option key={title} value={title}>{title}</option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                value={customTitle}
+                onInput={(e) => setCustomTitle((e.target as HTMLInputElement).value)}
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
+                placeholder="Escribe el título personalizado del programa"
+              />
+            )}
           </div>
 
           {/* Detalles */}
@@ -292,7 +289,7 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
               >
                 <option value="">Selecciona una descripción...</option>
-                {predefinedDescriptions.map(desc => (
+                {PREDEFINED_DETAILS.map(desc => (
                   <option key={desc} value={desc}>{desc}</option>
                 ))}
               </select>

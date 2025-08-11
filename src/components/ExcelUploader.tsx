@@ -3,6 +3,15 @@ import * as XLSX from 'xlsx';
 import { addEvent, draftScheduleRows, draftInstructors, addInstructor, draftGlobalConfig } from '../stores/schedule';
 import type { Event, Instructor } from '../stores/schedule';
 import { EVENT_COLORS, getColorForDetail, getRandomEventColor, hexToStyle, getContrastTextColor } from '../lib/colors';
+import { 
+  PREDEFINED_TITLES, 
+  PREDEFINED_DETAILS, 
+  PREDEFINED_MODALITIES, 
+  VALID_DAYS, 
+  TIME_EXAMPLES, 
+  REQUIRED_FIELDS, 
+  OPTIONAL_FIELD_DEFAULTS 
+} from '../lib/predefined-data';
 
 
 
@@ -46,11 +55,11 @@ function validateExcelData(data: any[]): { isValid: boolean; errors: ValidationE
   const errors: ValidationError[] = [];
   const validData: ExcelEventData[] = [];
 
-  // Campos requeridos (detalles y ubicacion ahora son opcionales)
-  const requiredFields = ['instructor', 'regional', 'titulo', 'dia'];
+  // Usar campos requeridos desde configuración centralizada
+  const requiredFields = REQUIRED_FIELDS;
   
-  // Días válidos (lunes a viernes)
-  const validDays = ['lunes', 'martes', 'miercoles', 'miércoles', 'jueves', 'viernes'];
+  // Usar días válidos desde configuración centralizada
+  const validDays = VALID_DAYS;
   
   data.forEach((row, index) => {
     const rowNumber = index + 2; // +2 porque empezamos en fila 2 (después del header)
@@ -113,7 +122,7 @@ function validateExcelData(data: any[]): { isValid: boolean; errors: ValidationE
 
     // Si no hay errores para esta fila, agregar a datos válidos
     if (errors.filter(e => e.row === rowNumber).length === 0) {
-      // Manejar campos opcionales con valores por defecto
+      // Manejar campos opcionales con valores por defecto desde configuración centralizada
       const detalles = normalizedRow.detalles ? String(normalizedRow.detalles).trim() : '';
       const ubicacion = normalizedRow.ubicacion ? String(normalizedRow.ubicacion).trim() : '';
       
@@ -121,12 +130,12 @@ function validateExcelData(data: any[]): { isValid: boolean; errors: ValidationE
         instructor: String(normalizedRow.instructor).trim(),
         regional: String(normalizedRow.regional).trim(),
         titulo: String(normalizedRow.titulo).trim(),
-        detalles: detalles,
-        ubicacion: ubicacion || 'Por definir', // Valor por defecto si está vacío
+        detalles: detalles || OPTIONAL_FIELD_DEFAULTS.detalles,
+        ubicacion: ubicacion || OPTIONAL_FIELD_DEFAULTS.ubicacion,
         dia: String(normalizedRow.dia).toLowerCase().trim(),
-        horaInicio: normalizedRow.horainicio || normalizedRow['hora inicio'] || '',
-        horaFin: normalizedRow.horafin || normalizedRow['hora fin'] || '',
-        modalidad: normalizedRow.modalidad || '', // Modalidad opcional
+        horaInicio: normalizedRow.horainicio || normalizedRow['hora inicio'] || OPTIONAL_FIELD_DEFAULTS.horaInicio,
+        horaFin: normalizedRow.horafin || normalizedRow['hora fin'] || OPTIONAL_FIELD_DEFAULTS.horaFin,
+        modalidad: normalizedRow.modalidad || OPTIONAL_FIELD_DEFAULTS.modalidad,
         color: detalles ? getColorForDetail(detalles) : EVENT_COLORS[0] // Color por defecto si no hay detalles
       });
     }
@@ -456,65 +465,7 @@ if (typeof window !== 'undefined') {
   };
 }
 
-/**
- * Lista de títulos predefinidos
- */
-const predefinedTitles = [
-  'ESCUELA DE PROMOTORES',
-  'INDUSTRIA LIMPIA',
-  'ESCUELA DE ADMINISTRADORES',
-  'LEALTAD',
-  'RED VIRTUAL',
-  'EDS CONFIABLE',
-  'RUMBO',
-  'ESCUELA DE TIENDAS'
-];
 
-/**
- * Lista de detalles predefinidos
- */
-const predefinedDetails = [
-  'Módulo Protagonistas del Servicio',
-  'Módulo Formativo GNV',
-  'Módulo Formativo Líquidos',
-  'Módulo Formativo Lubricantes',
-  'Protocolo de Servicio EDS',
-  'Gestión Ambiental, Seguridad y Salud en el Trabajo',
-  'Módulo Escuela de Industria',
-  'Excelencia Administrativa',
-  'Vive PITS',
-  'La Toma Vive Terpel & Vive PITS',
-  'Formación Inicial Terpel POS Operativo',
-  'Facturación Electrónica Operativa',
-  'Facturación Electrónica Administrativa',
-  'Canastilla',
-  'Entrenamiento Terpel POS Operativo',
-  'Entrenamiento Terpel POS Administrativo',
-  'Formación Inicial Terpel POS Administrativo',
-  'Clientes Propios Administrativo',
-  'Masterlub Operativo',
-  'Masterlub Administrativo',
-  'EDS Confiable',
-  'Campo de Entrenamiento de Industria Limpia',
-  'Caravana Rumbo PITS',
-  'App Terpel',
-  'Módulo Rollos',
-  'Módulo Historia y Masa',
-  'Módulo Strombolis',
-  'Módulo Perros y Más Perros',
-  'Módulo Sánduches',
-  'Módulo Sbarro',
-  'Módulo Bebidas Calientes',
-  'UDVA P',
-  'Construyendo Equipos Altamente Efectivos',
-  'Taller EDS Confiable',
-  'Festivo',
-  'Gestión Administrativa',
-  'Actualización de Contenidos',
-  'Vacaciones',
-  'Traslado',
-  'Acompañamiento'
-];
 
 /**
  * Función para descargar plantilla de Excel
@@ -578,8 +529,8 @@ function downloadTemplate() {
   
   // Preparar datos para la pestaña de referencia
   const maxLength = Math.max(
-    predefinedTitles.length,
-    predefinedDetails.length,
+    PREDEFINED_TITLES.length,
+    PREDEFINED_DETAILS.length,
     existingInstructors.length, // Incluir instructores en el cálculo del tamaño
     20 // Para otros datos
   );
@@ -600,38 +551,29 @@ function downloadTemplate() {
     }
     
     // Títulos predefinidos
-    if (i < predefinedTitles.length) {
-      row['Títulos Disponibles'] = predefinedTitles[i];
+    if (i < PREDEFINED_TITLES.length) {
+      row['Títulos Disponibles'] = PREDEFINED_TITLES[i];
     } else {
       row['Títulos Disponibles'] = '';
     }
     
     // Detalles predefinidos
-    if (i < predefinedDetails.length) {
-      row['Detalles Disponibles'] = predefinedDetails[i];
+    if (i < PREDEFINED_DETAILS.length) {
+      row['Detalles Disponibles'] = PREDEFINED_DETAILS[i];
     } else {
       row['Detalles Disponibles'] = '';
     }
     
     // Días válidos
-    const validDays = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes'];
-    if (i < validDays.length) {
-      row['Días Válidos'] = validDays[i];
+    if (i < VALID_DAYS.length) {
+      row['Días Válidos'] = VALID_DAYS[i];
     } else {
       row['Días Válidos'] = '';
     }
     
-    // Ejemplos de horas
-    const exampleTimes = [
-      '7:00 a.m.', '7:30 a.m.', '8:00 a.m.', '8:30 a.m.', '9:00 a.m.',
-      '9:30 a.m.', '10:00 a.m.', '10:30 a.m.', '11:00 a.m.', '11:30 a.m.',
-      '12:00 p.m.', '12:30 p.m.', '1:00 p.m.', '1:30 p.m.', '2:00 p.m.',
-      '2:30 p.m.', '3:00 p.m.', '3:30 p.m.', '4:00 p.m.', '4:30 p.m.', '5:00 p.m.',
-      '5:30 p.m.', '6:00 p.m.', '6:30 p.m.', '7:00 p.m.', '7:30 p.m.', '8:00 p.m.',
-      '8:30 p.m.', '9:00 p.m.', '9:30 p.m.', '10:00 p.m.'
-    ];
-    if (i < exampleTimes.length) {
-      row['Horas Disponibles'] = exampleTimes[i];
+    // Ejemplos de horas desde configuración centralizada
+    if (i < TIME_EXAMPLES.length) {
+      row['Horas Disponibles'] = TIME_EXAMPLES[i];
     } else {
       row['Horas Disponibles'] = '';
     }

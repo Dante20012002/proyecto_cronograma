@@ -3,66 +3,9 @@ import { addEvent, startTimes, endTimes, checkTimeConflict } from '../stores/sch
 import { isAdmin } from '../lib/auth';
 import type { Event } from '../stores/schedule';
 import { EVENT_COLORS, getColorForDetail, getRandomEventColor, hexToStyle, getContrastTextColor } from '../lib/colors';
+import { PREDEFINED_DETAILS, PREDEFINED_TITLES, PREDEFINED_MODALITIES } from '../lib/predefined-data';
 
-/**
- * Lista de títulos predefinidos para eventos.
- */
-const predefinedTitles = [
-  'ESCUELA DE PROMOTORES',
-  'INDUSTRIA LIMPIA',
-  'ESCUELA DE ADMINISTRADORES',
-  'LEALTAD',
-  'RED VIRTUAL',
-  'EDS CONFIABLE',
-  'RUMBO',
-  'ESCUELA DE TIENDAS'
-];
 
-/**
- * Lista de descripciones predefinidas para eventos.
- */
-const predefinedDescriptions = [
-  'Módulo Protagonistas del Servicio',
-  'Módulo Formativo GNV',
-  'Módulo Formativo Líquidos',
-  'Módulo Formativo Lubricantes',
-  'Protocolo de Servicio EDS',
-  'Gestión Ambiental, Seguridad y Salud en el Trabajo',
-  'Módulo Escuela de Industria',
-  'Excelencia Administrativa',
-  'Vive PITS',
-  'La Toma Vive Terpel & Vive PITS',
-  'Formación Inicial Terpel POS Operativo',
-  'Facturación Electrónica Operativa',
-  'Facturación Electrónica Administrativa',
-  'Canastilla',
-  'Entrenamiento Terpel POS Operativo',
-  'Entrenamiento Terpel POS Administrativo',
-  'Formación Inicial Terpel POS Administrativo',
-  'Clientes Propios Administrativo',
-  'Masterlub Operativo',
-  'Masterlub Administrativo',
-  'EDS Confiable',
-  'Campo de Entrenamiento de Industria Limpia',
-  'Caravana Rumbo PITS',
-  'App Terpel',
-  'Módulo Rollos',
-  'Módulo Historia y Masa',
-  'Módulo Strombolis',
-  'Módulo Perros y Más Perros',
-  'Módulo Sánduches',
-  'Módulo Sbarro',
-  'Módulo Bebidas Calientes',
-  'UDVA P',
-  'Construyendo Equipos Altamente Efectivos',
-  'Taller EDS Confiable',
-  'Festivo',
-  'Gestión Administrativa',
-  'Actualización de Contenidos',
-  'Vacaciones',
-  'Traslado',
-  'Acompañamiento'
-];
 
 /**
  * Props para el componente AddEventCard
@@ -229,7 +172,7 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white mb-2"
                 >
                   <option value="">Selecciona un programa o escribe uno personalizado...</option>
-                  {predefinedTitles.map((title) => (
+                  {PREDEFINED_TITLES.map((title) => (
                     <option key={title} value={title} class="text-gray-900 bg-white">
                       {title}
                     </option>
@@ -278,7 +221,7 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white mb-2"
                 >
                   <option value="">Selecciona un módulo...</option>
-                  {predefinedDescriptions.map((description) => (
+                  {PREDEFINED_DETAILS.map((description) => (
                     <option key={description} value={description} class="text-gray-900 bg-white">
                       {description}
                     </option>
@@ -400,8 +343,11 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
               >
                 <option value="">Seleccionar modalidad...</option>
-                <option value="Presencial">Presencial</option>
-                <option value="Virtual">Virtual</option>
+                {PREDEFINED_MODALITIES.map((modality) => (
+                  <option key={modality} value={modality} class="text-gray-900 bg-white">
+                    {modality}
+                  </option>
+                ))}
               </select>
             </div>
 

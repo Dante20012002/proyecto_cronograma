@@ -80,7 +80,7 @@ export const detailColorMap: { [key: string]: string } = {
   'Excelencia Administrativa': '#638287',
   'Construyendo Equipos Altamente Efectivos': '#638287',
   
-  // Módulos de comida - Tonos rojos de la nueva paleta
+  // Módulos de comida
   'Módulo Rollos': '#dcc934',
   'Módulo Historia y Masa': '#dcc934',
   'Módulo Strombolis': '#dcc934',
