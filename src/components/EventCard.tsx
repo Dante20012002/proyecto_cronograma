@@ -4,7 +4,7 @@ import { safeConfirm } from '../lib/utils';
 import { isAdmin } from '../lib/auth';
 import type { Event } from '../stores/schedule';
 import { EVENT_COLORS, getColorForDetail, getRandomEventColor, hexToStyle, getContrastTextColor } from '../lib/colors';
-import { PREDEFINED_DETAILS, PREDEFINED_TITLES } from '../lib/predefined-data';
+import { PREDEFINED_DETAILS, PREDEFINED_TITLES, PREDEFINED_MODALITIES } from '../lib/predefined-data';
 
 /**
  * Props para el componente EventCard
@@ -48,6 +48,7 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
     time: event.time || '',
     location: event.location,
     color: event.color,
+    modalidad: event.modalidad || '',
     confirmed: event.confirmed || false
   });
 
@@ -148,6 +149,7 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
       location: formData.location.trim() || 'Sin ubicación',
       time: timeString,
       color: finalColor,
+      modalidad: formData.modalidad || undefined,
       confirmed: formData.confirmed
     };
 
@@ -356,6 +358,25 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
               placeholder="Ubicación del evento"
             />
+          </div>
+
+          {/* Modalidad */}
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              Modalidad
+            </label>
+            <select
+              value={formData.modalidad}
+              onChange={(e) => setFormData(prev => ({ ...prev, modalidad: (e.target as HTMLSelectElement).value }))}
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
+            >
+              <option value="">Seleccionar modalidad...</option>
+              {PREDEFINED_MODALITIES.map((modality) => (
+                <option key={modality} value={modality}>
+                  {modality}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Color */}
