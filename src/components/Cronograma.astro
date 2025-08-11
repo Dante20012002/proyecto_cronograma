@@ -1,5 +1,4 @@
 ---
-import Layout from '../layouts/Layout.astro';
 import CronogramaWrapper from './CronogramaWrapper';
 
 // Obtener el parámetro mode de la URL
@@ -9,8 +8,8 @@ const isAdmin = searchParams.get('mode') === 'admin';
 
 <!--
 /**
- * Componente Astro que sirve como punto de entrada de la aplicación.
- * Integra el componente CronogramaWrapper con el layout principal.
+ * Componente Astro que sirve como wrapper del cronograma.
+ * Ya no incluye Layout porque se maneja desde index.astro para evitar duplicación.
  * 
  * @component
  * @returns {JSX.Element} Componente Cronograma
@@ -25,6 +24,4 @@ const isAdmin = searchParams.get('mode') === 'admin';
  * ```
  */
 -->
-<Layout title="Cronograma de Formación">
-  <CronogramaWrapper client:load />
-</Layout> 
+<CronogramaWrapper client:load /> 

@@ -1970,9 +1970,26 @@ export function getUniqueModulesFromWeek(isAdmin: boolean): string[] {
 /**
  * Filtra las filas del cronograma según los filtros activos
  * Para modalidades, programas y módulos, filtra eventos individuales en lugar de filas completas
+ * Para usuarios externos, oculta automáticamente instructores sin eventos en la semana actual
  */
 export function getFilteredRows(rows: ScheduleRow[]): ScheduleRow[] {
   const filters = activeFilters.value;
+  
+  // Determinar el contexto (admin vs usuario externo)
+  const isAdminContext = rows === draftScheduleRows.value;
+  
+  // Determinar la semana actual según el contexto (admin vs usuario)
+  const currentWeek = isAdminContext ? draftGlobalConfig.value.currentWeek : selectedWeek.value;
+  
+  // Para usuarios externos, siempre ocultar instructores sin eventos
+  // Para administradores, solo aplicar filtros cuando hay filtros activos
+  const hasActiveFilters = filters.instructors.length > 0 || 
+      filters.regionales.length > 0 || 
+      filters.modalidades.length > 0 ||
+      filters.programas.length > 0 ||
+      filters.modulos.length > 0;
+      
+  const shouldFilterEmptyInstructors = !isAdminContext || hasActiveFilters;
   
   console.log('🔍 getFilteredRows - Filtros activos:', {
     instructors: filters.instructors,
@@ -1980,22 +1997,22 @@ export function getFilteredRows(rows: ScheduleRow[]): ScheduleRow[] {
     modalidades: filters.modalidades,
     programas: filters.programas,
     modulos: filters.modulos,
-    totalRows: rows.length
+    totalRows: rows.length,
+    isAdminContext,
+    shouldFilterEmptyInstructors,
+    currentWeek
   });
   
-  // Si no hay filtros activos, devolver todas las filas
-  if (filters.instructors.length === 0 && 
-      filters.regionales.length === 0 && 
-      filters.modalidades.length === 0 &&
-      filters.programas.length === 0 &&
-      filters.modulos.length === 0) {
-    console.log('ℹ️ No hay filtros activos, devolviendo todas las filas');
+  // Debug adicional para usuarios externos
+  if (!isAdminContext) {
+    console.log('👤 Usuario externo detectado - se ocultarán instructores sin eventos en la semana actual');
+    console.log('📅 Semana actual:', currentWeek);
+  }
+  
+  if (!hasActiveFilters && isAdminContext) {
+    console.log('ℹ️ Admin sin filtros activos, devolviendo todas las filas');
     return rows;
   }
-
-  // Determinar la semana actual según el contexto (admin vs usuario)
-  const isAdminContext = rows === draftScheduleRows.value;
-  const currentWeek = isAdminContext ? draftGlobalConfig.value.currentWeek : selectedWeek.value;
   
   console.log('📅 getFilteredRows - Usando semana:', currentWeek, 'isAdmin:', isAdminContext);
 
@@ -2113,18 +2130,65 @@ export function getFilteredRows(rows: ScheduleRow[]): ScheduleRow[] {
       };
     })
     .filter(row => {
-      // Si después del filtrado no hay eventos, no mostrar la fila
-      if (filters.modalidades.length > 0 || 
-          filters.programas.length > 0 || 
-          filters.modulos.length > 0) {
-        const hasEvents = Object.keys(row.events).length > 0;
-        if (!hasEvents) {
-          console.log(`🚫 Filtrando instructor sin eventos coincidentes: ${row.instructor}`);
-        } else {
-          console.log(`✅ Manteniendo instructor con eventos: ${row.instructor} (${Object.keys(row.events).length} días con eventos)`);
+      // Para usuarios externos, siempre ocultar instructores sin eventos en la semana actual
+      // Para administradores, solo ocultar cuando hay filtros de eventos activos
+      if (shouldFilterEmptyInstructors) {
+        // Si hay filtros de eventos activos, usar los eventos ya filtrados
+        if (hasActiveFilters && (filters.modalidades.length > 0 || filters.programas.length > 0 || filters.modulos.length > 0)) {
+          const hasEventsAfterFiltering = Object.keys(row.events).length > 0;
+          if (!hasEventsAfterFiltering) {
+            console.log(`🚫 Ocultando instructor sin eventos coincidentes con filtros: ${row.instructor}`);
+            return false;
+          } else {
+            const totalEvents = Object.values(row.events).reduce((sum, events) => sum + events.length, 0);
+            console.log(`✅ Mostrando instructor con eventos filtrados: ${row.instructor} (${totalEvents} eventos)`);
+            return true;
+          }
         }
-        return hasEvents;
+        
+        // Para usuarios externos sin filtros de eventos, verificar eventos en la semana actual
+        // Necesitamos verificar en los datos originales de la fila antes del filtrado
+        const originalRow = rows.find(originalRow => originalRow.id === row.id);
+        if (!originalRow) return false;
+        
+        let hasEventsInCurrentWeek = false;
+        let totalEventsInWeek = 0;
+        let daysWithEvents = 0;
+        
+        // Contar eventos en las fechas de la semana actual
+        weekDates.forEach(dateStr => {
+          const eventsInDate = originalRow.events[dateStr] || [];
+          if (eventsInDate.length > 0) {
+            hasEventsInCurrentWeek = true;
+            totalEventsInWeek += eventsInDate.length;
+            daysWithEvents++;
+          }
+        });
+        
+        // También verificar formato anterior (solo día) para compatibilidad
+        if (!hasEventsInCurrentWeek) {
+          Object.entries(originalRow.events).forEach(([key, dayEvents]) => {
+            if (!key.includes('-')) { // Formato anterior (solo día)
+              const fullDate = getFullDateFromDayWithWeek(key, currentWeek);
+              if (weekDates.includes(fullDate) && dayEvents.length > 0) {
+                hasEventsInCurrentWeek = true;
+                totalEventsInWeek += dayEvents.length;
+                daysWithEvents++;
+              }
+            }
+          });
+        }
+        
+        if (!hasEventsInCurrentWeek) {
+          const reason = !isAdminContext ? 'usuario externo' : 'sin eventos en semana actual';
+          console.log(`🚫 Ocultando instructor sin eventos en semana actual (${reason}): ${row.instructor}`);
+          return false;
+        } else {
+          console.log(`✅ Mostrando instructor con eventos en semana actual: ${row.instructor} (${totalEventsInWeek} eventos en ${daysWithEvents} días)`);
+          return true;
+        }
       }
+      
       return true;
     });
 } 
