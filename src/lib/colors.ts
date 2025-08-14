@@ -76,7 +76,7 @@ export const detailColorMap: { [key: string]: string } = {
   'Taller EDS Confiable': '#12b19f',
   
   // Campos y entrenamientos - Tonos verdes de la nueva paleta
-  'Campo de Entrenamiento de Industria Limpia': '#e96f24',
+  'Campo de Entrenamiento de Industria Limpia': '#74C48C',
   'Excelencia Administrativa': '#638287',
   'Construyendo Equipos Altamente Efectivos': '#638287',
   
@@ -88,6 +88,8 @@ export const detailColorMap: { [key: string]: string } = {
   'Módulo Sánduches': '#dcc934',
   'Módulo Sbarro': '#dcc934',
   'Módulo Bebidas Calientes': '#dcc934',
+  'Entrenamiento': '#dcc934',
+  'Seguimiento Apertura': '#dcc934',
   'UDVA P': '#dcd4b4',
 
   // Otras categorías
@@ -96,6 +98,19 @@ export const detailColorMap: { [key: string]: string } = {
   'Actualización de Contenidos': '#46646B',
   'Vacaciones': '#46646B',
   'Traslado': '#46646B',
+
+  // Módulos de EDS Confiable
+  'Módulo Elementos ambientalmente sensibles': '#187BA6',
+  'Módulo Control de derrames y atención de emergencias': '#187BA6',
+  'Módulo Control de calidad': '#187BA6', 
+  'Módulo Medida exacta': '#187BA6',
+  'Módulo Control de incendios': '#187BA6',
+  'Módulo Comportamiento seguro': '#187BA6',
+  'Módulo Primeros auxilios': '#187BA6',
+  'Módulo Investigación de accidentes': '#187BA6',
+  'Bogotá': '#88589B',
+  'Barranquilla': '#88589B',
+  'Empleados Terpel': '#C48E35',
 };
 
 /**
