@@ -47,6 +47,7 @@ export interface GlobalConfig {
     startDate: string;
     endDate: string;
   };
+  viewMode: 'weekly' | 'monthly'; // Nuevo campo para el modo de vista
 }
 
 export interface FilterState {
@@ -301,7 +302,8 @@ function getCurrentWeek(): { startDate: string; endDate: string } {
 const initialGlobalConfig: GlobalConfig = {
   title: 'Cronograma 2025',
   weekTitles: {}, // Inicialmente vacío
-  currentWeek: getCurrentWeek()
+  currentWeek: getCurrentWeek(),
+  viewMode: 'weekly' // Por defecto vista semanal
 };
 
 // --- ESTADO (DRAFT & PUBLISHED) ---
@@ -385,6 +387,9 @@ function getInitialWeek(): { startDate: string; endDate: string } {
 
 // Estado para la semana seleccionada en la vista de usuario
 export const selectedWeek = signal<{ startDate: string; endDate: string }>(getInitialWeek());
+
+// Estado para el modo de vista de usuarios no admin
+export const userViewMode = signal<'weekly' | 'monthly'>('weekly');
 
 // --- ESTADO DE FILTROS ---
 export const activeFilters = signal<FilterState>({
@@ -2191,4 +2196,175 @@ export function getFilteredRows(rows: ScheduleRow[]): ScheduleRow[] {
       
       return true;
     });
+}
+
+// --- FUNCIONES DE NAVEGACIÓN MENSUAL ---
+
+/**
+ * Obtiene el mes actual basado en la semana actual
+ */
+export function getCurrentMonth(): { year: number; month: number } {
+  const currentWeek = draftGlobalConfig.value.currentWeek;
+  const date = new Date(currentWeek.startDate);
+  return {
+    year: date.getFullYear(),
+    month: date.getMonth()
+  };
+}
+
+/**
+ * Navega al mes anterior o siguiente
+ * Para la vista mensual, actualiza la semana de referencia al primer lunes del nuevo mes
+ * Funciona igual que navigateWeek pero navega por meses
+ */
+export function navigateMonth(direction: 'prev' | 'next'): { startDate: string; endDate: string } {
+  const isAdminUser = isAdmin.value;
+  const currentWeek = isAdminUser ? draftGlobalConfig.value.currentWeek : selectedWeek.value;
+  
+  console.log('📅 navigateMonth - Estado inicial:', { 
+    direction, 
+    isAdminUser, 
+    currentWeek 
+  });
+  
+  // Crear fechas locales evitando el desfase de zona horaria (igual que navigateWeek)
+  const [startYear, startMonth, startDay] = currentWeek.startDate.split('-').map(Number);
+  
+  // Para navegación mensual, usamos el día 15 del mes actual como referencia
+  // para asegurar que siempre estemos en el mes correcto
+  const referenceDate = new Date(startYear, startMonth - 1, 15); // month es 0-based, día 15
+  
+  console.log('📅 navigateMonth - Fecha de referencia (día 15 del mes actual):', {
+    año: referenceDate.getFullYear(),
+    mes: referenceDate.getMonth() + 1, // +1 para mostrar mes humano
+    día: referenceDate.getDate()
+  });
+  
+  // Calcular el nuevo mes
+  if (direction === 'prev') {
+    referenceDate.setMonth(referenceDate.getMonth() - 1);
+  } else {
+    referenceDate.setMonth(referenceDate.getMonth() + 1);
+  }
+  
+  console.log('📅 navigateMonth - Fecha después de cambiar mes:', {
+    año: referenceDate.getFullYear(),
+    mes: referenceDate.getMonth() + 1, // +1 para mostrar mes humano
+    día: referenceDate.getDate()
+  });
+  
+  // Obtener el primer día del nuevo mes
+  const firstDayOfMonth = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), 1);
+  
+  console.log('📅 navigateMonth - Primer día del nuevo mes:', {
+    fecha: firstDayOfMonth.toISOString().split('T')[0],
+    díaSemana: firstDayOfMonth.getDay() // 0=domingo, 1=lunes, etc.
+  });
+  
+  // Para navegación mensual, buscar la primera semana completamente dentro del mes
+  // o la segunda semana si la primera cruza meses
+  const dayOfWeek = firstDayOfMonth.getDay(); // 0 = domingo, 1 = lunes, etc.
+  let mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Ajustar para que 0 (domingo) = -6
+  
+  let monday = new Date(firstDayOfMonth);
+  monday.setDate(firstDayOfMonth.getDate() + mondayOffset);
+  
+  let friday = new Date(monday);
+  friday.setDate(monday.getDate() + 4);
+  
+  console.log('📅 navigateMonth - Primera opción de lunes:', monday.toISOString().split('T')[0]);
+  console.log('📅 navigateMonth - Primera opción de viernes:', friday.toISOString().split('T')[0]);
+  
+  // Verificar si esta semana está completamente dentro del nuevo mes
+  const mondayMonth = monday.getMonth();
+  const fridayMonth = friday.getMonth();
+  const targetMonth = referenceDate.getMonth();
+  
+  console.log('📅 navigateMonth - Análisis de meses:', {
+    lunesEnMes: mondayMonth + 1,
+    viernesEnMes: fridayMonth + 1,
+    mesObjetivo: targetMonth + 1
+  });
+  
+  // Si el lunes está en el mes anterior o el viernes en el mes siguiente,
+  // buscar la siguiente semana que esté completamente dentro del mes objetivo
+  if (mondayMonth !== targetMonth || fridayMonth !== targetMonth) {
+    console.log('📅 navigateMonth - Semana cruza meses, buscando siguiente semana');
+    monday.setDate(monday.getDate() + 7);
+    friday.setDate(friday.getDate() + 7);
+    
+    console.log('📅 navigateMonth - Segunda opción de lunes:', monday.toISOString().split('T')[0]);
+    console.log('📅 navigateMonth - Segunda opción de viernes:', friday.toISOString().split('T')[0]);
+  }
+  
+  const formatDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  
+  const newDates = {
+    startDate: formatDate(monday),
+    endDate: formatDate(friday)
+  };
+  
+  console.log('📅 navigateMonth - Nuevas fechas calculadas:', newDates);
+  
+  // Actualizar el estado según el tipo de usuario (igual que navigateWeek, SIN markAsDirty)
+  if (isAdminUser) {
+    console.log('📅 navigateMonth - Actualizando draftGlobalConfig para admin');
+    draftGlobalConfig.value = {
+      ...draftGlobalConfig.value,
+      currentWeek: newDates
+    };
+    console.log('📅 navigateMonth - draftGlobalConfig actualizado:', draftGlobalConfig.value.currentWeek);
+  } else {
+    console.log('📅 navigateMonth - Actualizando selectedWeek para usuario');
+    selectedWeek.value = newDates;
+    console.log('📅 navigateMonth - selectedWeek actualizado:', selectedWeek.value);
+  }
+  
+  console.log('📅 navigateMonth - Estado actualizado exitosamente');
+  
+  return newDates;
+}
+
+/**
+ * Obtiene el rango de fechas completo de un mes
+ */
+export function getMonthDateRange(year: number, month: number): { startDate: string; endDate: string } {
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  
+  const formatDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  
+  return {
+    startDate: formatDate(firstDay),
+    endDate: formatDate(lastDay)
+  };
+}
+
+/**
+ * Cambia el modo de vista entre semanal y mensual (para admins)
+ */
+export function setViewMode(mode: 'weekly' | 'monthly') {
+  draftGlobalConfig.value = {
+    ...draftGlobalConfig.value,
+    viewMode: mode
+  };
+  markAsDirty();
+}
+
+/**
+ * Cambia el modo de vista para usuarios no admin
+ */
+export function setUserViewMode(mode: 'weekly' | 'monthly') {
+  userViewMode.value = mode;
+  console.log('🔄 setUserViewMode - Modo actualizado:', mode);
 } 

@@ -1,12 +1,50 @@
 import { useState, useEffect } from 'preact/hooks';
-import { isConnected, initializeFirebase, cleanupFirebase, debugDataIntegrity, removeDuplicateEvents, clearAllDraftEvents, fixIncompleteEvents, debugPublishState, copyEventInSameCell, debugOperationQueue, migrateAllEventsToNewFormat, cleanupLegacyEvents, resetToCurrentWeek, updateWeekTitle, getWeekTitle, getCurrentWeekTitle } from '../stores/schedule';
+import { useSignal } from '@preact/signals';
+import { isConnected, initializeFirebase, cleanupFirebase, debugDataIntegrity, removeDuplicateEvents, clearAllDraftEvents, fixIncompleteEvents, debugPublishState, copyEventInSameCell, debugOperationQueue, migrateAllEventsToNewFormat, cleanupLegacyEvents, resetToCurrentWeek, updateWeekTitle, getWeekTitle, getCurrentWeekTitle, draftGlobalConfig, publishedGlobalConfig, userViewMode } from '../stores/schedule';
 import { isAdmin, currentUser, exposeDebugTools } from '../lib/auth';
 import type { JSX } from 'preact';
 import AdminToolbar from './AdminToolbar';
 import UserToolbar from './UserToolbar';
 import ScheduleGrid from './ScheduleGrid';
+import MonthlyScheduleGrid from './MonthlyScheduleGrid';
 import { LoginForm } from './LoginForm';
 import FloatingAdminPanel from './FloatingAdminPanel';
+
+/**
+ * Componente interno para renderizar la vista correcta según el modo
+ */
+function ViewRenderer(): JSX.Element {
+  // Usar signals reactivos para que el componente se actualice automáticamente
+  const adminViewMode = useSignal(draftGlobalConfig.value.viewMode);
+  const userViewModeSignal = useSignal(userViewMode.value);
+  const isAdminSignal = useSignal(isAdmin.value);
+
+  // Actualizar cuando cambien los valores
+  useEffect(() => {
+    adminViewMode.value = draftGlobalConfig.value.viewMode;
+  }, [draftGlobalConfig.value.viewMode]);
+
+  useEffect(() => {
+    userViewModeSignal.value = userViewMode.value;
+  }, [userViewMode.value]);
+
+  useEffect(() => {
+    isAdminSignal.value = isAdmin.value;
+  }, [isAdmin.value]);
+
+  const currentViewMode = isAdminSignal.value ? adminViewMode.value : userViewModeSignal.value;
+  
+  console.log('🔄 ViewRenderer - Renderizando vista:', { 
+    currentViewMode, 
+    isAdmin: isAdminSignal.value,
+    adminMode: adminViewMode.value,
+    userMode: userViewModeSignal.value
+  });
+  
+  return currentViewMode === 'monthly' 
+    ? <MonthlyScheduleGrid isAdmin={isAdminSignal.value} />
+    : <ScheduleGrid isAdmin={isAdminSignal.value} />;
+}
 
 /**
  * Componente principal que envuelve toda la funcionalidad del cronograma.
@@ -181,7 +219,8 @@ export default function CronogramaWrapper(): JSX.Element {
           </div>
         )}
         
-        <ScheduleGrid isAdmin={isAdmin.value} />
+        {/* Renderizar vista según el modo seleccionado */}
+        <ViewRenderer />
         
         {/* Panel flotante de administración - solo para admins */}
         {isAdmin.value && <FloatingAdminPanel />}

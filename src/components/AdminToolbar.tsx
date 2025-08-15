@@ -17,6 +17,7 @@ import { isAdmin, currentUser, logout } from '../lib/auth';
 import { safeConfirm } from '../lib/utils';
 import GlobalConfig from './GlobalConfig';
 import InstructorManager from './InstructorManager';
+import ViewModeToggle from './ViewModeToggle';
 import { LoginForm } from './LoginForm';
 import ExcelUploader from './ExcelUploader';
 import FilterBar from './FilterBar';
@@ -239,8 +240,12 @@ export default function AdminToolbar({ onClose }: AdminToolbarProps): JSX.Elemen
         </div>
       )}
 
-      {/* Filtros */}
-      <div class="mb-4">
+      {/* Controles de vista y filtros */}
+      <div class="mb-4 space-y-3">
+        <div class="flex justify-between items-center">
+          <span class="text-sm font-medium text-gray-700">Vista:</span>
+          <ViewModeToggle isAdmin={true} />
+        </div>
         <FilterBar isAdmin={true} />
       </div>
 
