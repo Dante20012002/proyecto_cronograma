@@ -11,7 +11,8 @@ import {
   isSaving,
   isPublishing,
   isProcessing,
-  canPublish
+  canPublish,
+  navigateWeek
 } from '../stores/schedule';
 import { isAdmin, currentUser, logout } from '../lib/auth';
 import { safeConfirm } from '../lib/utils';
@@ -220,12 +221,31 @@ export default function AdminToolbar({ onClose }: AdminToolbarProps): JSX.Elemen
             📊 {dirty.value ? 'Cambios sin publicar' : 'Todo publicado'}
           </p>
         </div>
-        <button
-          onClick={handleLogout}
-          class="text-gray-500 hover:text-gray-700 text-sm transition-colors"
-        >
-          🚪 Cerrar Sesión
-        </button>
+        <div class="flex items-center space-x-3">
+          {/* Botones de navegación de semana */}
+          <div class="flex items-center space-x-2">
+            <button
+              onClick={() => navigateWeek('prev')}
+              disabled={processing.value}
+              class="flex items-center px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <span class="mr-1">←</span> Anterior
+            </button>
+            <button
+              onClick={() => navigateWeek('next')}
+              disabled={processing.value}
+              class="flex items-center px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Siguiente <span class="ml-1">→</span>
+            </button>
+          </div>
+          <button
+            onClick={handleLogout}
+            class="text-gray-500 hover:text-gray-700 text-sm transition-colors"
+          >
+            🚪 Cerrar Sesión
+          </button>
+        </div>
       </div>
 
       {/* Notificaciones */}
