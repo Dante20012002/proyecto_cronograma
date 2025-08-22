@@ -318,7 +318,15 @@ export default function MonthlyScheduleGrid({ isAdmin }: MonthlyScheduleGridProp
                             {event.time && <div class="text-xs opacity-80">⏰ {event.time.split(' a ')[0]}</div>}
                             {event.location && (
                               <div class="text-xs opacity-80">
-                                📍 {event.location.split('/')[0].trim()}
+                                {event.location.split('/').map((part: string, index: number): JSX.Element => (
+                                  index === 0 ? (
+                                    <span key={index}>{part.trim()}</span>
+                                  ) : (
+                                    <span key={index}>
+                                      <br />📍 {part.trim()}
+                                    </span>
+                                  )
+                                ))}
                               </div>
                             )}
                           </div>
