@@ -715,11 +715,11 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
                           {/* Indicador de confirmación */}
                           <div class="absolute top-1 left-1">
                             {event.confirmed ? (
-                              <span class="inline-block w-4 h-4 text-green-500 font-bold text-xs leading-none" title="Evento Confirmado">
+                              <span class="inline-block w-4 h-4 text-green-500 font-bold text-xs bg-gray-500 rounded-sm opacity-50 leading-none" title="Evento Confirmado">
                                 ✓
                               </span>
                             ) : (
-                              <span class="inline-block w-4 h-4 text-orange-500 font-bold text-xs leading-none" title="Pendiente de Confirmación">
+                              <span class="inline-block w-4 h-4 text-orange-500 font-bold text-xs bg-gray-500 rounded-sm opacity-50 leading-none" title="Pendiente de Confirmación">
                                 ⏳
                               </span>
                             )}
