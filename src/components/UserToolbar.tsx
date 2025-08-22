@@ -163,30 +163,16 @@ export default function UserToolbar(): JSX.Element {
         </div>
         <div class="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
           <ViewModeToggle isAdmin={false} />
-          <div class="flex items-center space-x-2">
-            <button
-              onClick={() => handleNavigate('prev')}
-              class="flex-1 sm:flex-none flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
-            >
-              <span class="mr-1">←</span> Anterior
-            </button>
-            <button
-              onClick={() => handleNavigate('next')}
-              class="flex-1 sm:flex-none flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
-            >
-              Siguiente <span class="ml-1">→</span>
-            </button>
-          </div>
           <button
             onClick={handleDownload}
+            disabled={isDownloading}
             class="flex-1 sm:flex-none flex items-center justify-center px-3 py-1.5 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors"
           >
             <span class="mr-1">↓</span> Descargar
           </button>
         </div>
       </div>
-      
-      {/* Filtros */}
+
       <FilterBar isAdmin={false} />
     </div>
   );

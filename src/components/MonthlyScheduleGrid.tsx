@@ -9,9 +9,10 @@ import {
   formatDateDisplay,
   getWeekTitle,
   getPublishedWeekTitle,
-  userViewMode
+  userViewMode,
+  navigateMonth
 } from '../stores/schedule';
-import type { ScheduleRow, Event } from '../stores/schedule';
+import type { ScheduleRow, Event as ScheduleEvent } from '../stores/schedule';
 import EventCard from './EventCard';
 import AddEventCard from './AddEventCard';
 import { getContrastTextColor } from '../lib/colors';
@@ -31,11 +32,11 @@ interface MonthDay {
 }
 
 export default function MonthlyScheduleGrid({ isAdmin }: MonthlyScheduleGridProps) {
-  const [selectedEvent, setSelectedEvent] = useState<{event: Event, rowId: string, day: string} | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<{event: ScheduleEvent, rowId: string, day: string} | null>(null);
   const [showAddEvent, setShowAddEvent] = useState<{rowId: string, day: string} | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
 
-  // Obtener datos según el modo (admin o usuario)
+  // Obtener datos según el modo (admin o usuario) - AHORA REACTIVO
   const scheduleRows = isAdmin ? draftScheduleRows.value : publishedScheduleRows.value;
   const globalConfig = isAdmin ? draftGlobalConfig.value : publishedGlobalConfig.value;
   const week = selectedWeek.value;
@@ -47,10 +48,27 @@ export default function MonthlyScheduleGrid({ isAdmin }: MonthlyScheduleGridProp
   // Obtener el título de la semana
   const weekTitle = isAdmin ? getWeekTitle(currentWeek.startDate, currentWeek.endDate) : getPublishedWeekTitle();
 
-  // Obtener el mes actual desde la configuración
-  const currentDate = new Date(currentWeek.startDate);
-  const currentYear = currentDate.getFullYear();
-  const currentMonth = currentDate.getMonth();
+  // NUEVA LÓGICA: Determinar el mes objetivo basado en la semana actual
+  // Para la vista mensual, queremos mostrar el mes que contiene la mayoría de días de la semana
+  const startDate = new Date(currentWeek.startDate);
+  const endDate = new Date(currentWeek.endDate);
+  
+  // Contar días de cada mes en la semana
+  const daysInStartMonth = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0).getDate() - startDate.getDate() + 1;
+  const daysInEndMonth = endDate.getDate();
+  
+  // Usar el mes que tenga más días en la semana
+  let targetMonth, targetYear;
+  if (daysInStartMonth >= daysInEndMonth) {
+    targetMonth = startDate.getMonth();
+    targetYear = startDate.getFullYear();
+  } else {
+    targetMonth = endDate.getMonth();
+    targetYear = endDate.getFullYear();
+  }
+  
+  const currentYear = targetYear;
+  const currentMonth = targetMonth;
 
   // Detectar scroll para efectos visuales
   useEffect(() => {
@@ -135,8 +153,8 @@ export default function MonthlyScheduleGrid({ isAdmin }: MonthlyScheduleGridProp
   });
 
   // Obtener eventos para un día específico
-  const getEventsForDay = (date: string): Array<{event: Event, rowId: string, instructor: string, regional: string}> => {
-    const events: Array<{event: Event, rowId: string, instructor: string, regional: string}> = [];
+  const getEventsForDay = (date: string): Array<{event: ScheduleEvent, rowId: string, instructor: string, regional: string}> => {
+    const events: Array<{event: ScheduleEvent, rowId: string, instructor: string, regional: string}> = [];
     
     filteredRows.forEach(row => {
       const dayEvents = row.events[date] || [];
@@ -153,7 +171,7 @@ export default function MonthlyScheduleGrid({ isAdmin }: MonthlyScheduleGridProp
     return events;
   };
 
-  const handleEventClick = (event: Event, rowId: string, day: string) => {
+  const handleEventClick = (event: ScheduleEvent, rowId: string, day: string) => {
     if (isAdmin) {
       setSelectedEvent({ event, rowId, day });
     }
@@ -169,25 +187,43 @@ export default function MonthlyScheduleGrid({ isAdmin }: MonthlyScheduleGridProp
     <div id="schedule-grid" class="bg-slate-800 text-white rounded-lg shadow-2xl overflow-hidden">
       {/* Encabezado con el mismo estilo que ScheduleGrid */}
       <div class="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 shadow-lg">
-        <div class={`flex items-center justify-center space-x-6 transition-all duration-300 ${
+        <div class={`flex items-center justify-between transition-all duration-300 ${
           isScrolled ? 'py-3 px-4' : 'py-6 px-6'
         }`}>
-          <img 
-            src="/Imagen1.png" 
-            alt="Logo Terpel" 
-            class={`transition-all duration-300 ${
-              isScrolled ? 'h-16' : 'h-20'
-            }`}
-          />
-          <div>
-            <h1 class={`font-bold tracking-tight transition-all duration-300 text-center ${
-              isScrolled ? 'text-xl' : 'text-3xl'
-            }`}>{weekTitle} - Vista Mensual</h1>
-            <p class={`text-slate-300 transition-all duration-300 text-center ${
-              isScrolled ? 'mt-1 text-xs' : 'mt-2 text-sm'
-            }`}>
-              {monthName}
-            </p>
+          <div class="flex items-center space-x-6">
+            <img 
+              src="/Imagen1.png" 
+              alt="Logo Terpel" 
+              class={`transition-all duration-300 ${
+                isScrolled ? 'h-16' : 'h-20'
+              }`}
+            />
+            <div>
+              <h1 class={`font-bold tracking-tight transition-all duration-300 text-center ${
+                isScrolled ? 'text-xl' : 'text-3xl'
+              }`}>{weekTitle} - Vista Mensual</h1>
+              <p class={`text-slate-300 transition-all duration-300 text-center ${
+                isScrolled ? 'mt-1 text-xs' : 'mt-2 text-sm'
+              }`}>
+                {monthName}
+              </p>
+            </div>
+          </div>
+          
+          {/* Botones de navegación */}
+          <div class="flex items-center space-x-2">
+            <button
+              onClick={() => navigateMonth('prev')}
+              class="flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
+            >
+              <span class="mr-1">←</span> Anterior
+            </button>
+            <button
+              onClick={() => navigateMonth('next')}
+              class="flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
+            >
+              Siguiente <span class="ml-1">→</span>
+            </button>
           </div>
         </div>
       </div>
@@ -274,7 +310,7 @@ export default function MonthlyScheduleGrid({ isAdmin }: MonthlyScheduleGridProp
                             </div>
                             
                             <div class="font-semibold text-xs mb-1">{event.title}</div>
-                            <div class="text-xs opacity-90 mb-1">👨‍🏫 {instructor}</div>
+                            <div class="text-xs opacity-90 mb-1">{event.details}</div>
                             <div class="text-xs opacity-80 mb-1">{regional}</div>
                             
                             {event.modalidad && <div class="text-xs opacity-80">✏ {event.modalidad}</div>}

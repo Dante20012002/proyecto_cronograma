@@ -8,6 +8,7 @@ import {
   getUniqueModulesFromWeek,
   draftGlobalConfig,
   selectedWeek,
+  userViewMode,
   type FilterState 
 } from '../stores/schedule';
 import type { JSX } from 'preact';
@@ -26,9 +27,17 @@ interface FilterBarProps {
  * Componente de filtros reutilizable para el cronograma.
  * Proporciona filtros por instructor, regional, modalidad, programas y módulos.
  * Los filtros de programas y módulos se basan únicamente en los eventos de la semana seleccionada.
+ * Incluye barras de búsqueda para cada tipo de filtro.
  */
 export default function FilterBar({ isAdmin, onFilterChange }: FilterBarProps): JSX.Element {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [searchTerms, setSearchTerms] = useState({
+    instructors: '',
+    regionales: '',
+    modalidades: '',
+    programas: '',
+    modulos: ''
+  });
   const [availableOptions, setAvailableOptions] = useState({
     instructors: [] as string[],
     regionales: [] as string[],
@@ -52,8 +61,25 @@ export default function FilterBar({ isAdmin, onFilterChange }: FilterBarProps): 
   }, [
     isAdmin, 
     isAdmin ? draftGlobalConfig.value.currentWeek.startDate : selectedWeek.value.startDate,
-    isAdmin ? draftGlobalConfig.value.currentWeek.endDate : selectedWeek.value.endDate
+    isAdmin ? draftGlobalConfig.value.currentWeek.endDate : selectedWeek.value.endDate,
+    isAdmin ? draftGlobalConfig.value.viewMode : userViewMode.value
   ]);
+
+  // Función para filtrar opciones basadas en el término de búsqueda
+  const getFilteredOptions = (options: string[], searchTerm: string): string[] => {
+    if (!searchTerm.trim()) return options;
+    return options.filter(option => 
+      option.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  };
+
+  // Función para manejar cambios en los términos de búsqueda
+  const handleSearchChange = (field: keyof typeof searchTerms, value: string) => {
+    setSearchTerms(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
 
   const handleFilterChange = (field: keyof FilterState, value: string, isChecked: boolean) => {
     const currentValues = filters[field];
@@ -75,6 +101,13 @@ export default function FilterBar({ isAdmin, onFilterChange }: FilterBarProps): 
 
   const handleClearAll = () => {
     clearFilters();
+    setSearchTerms({
+      instructors: '',
+      regionales: '',
+      modalidades: '',
+      programas: '',
+      modulos: ''
+    });
     if (onFilterChange) {
       onFilterChange({
         instructors: [],
@@ -141,8 +174,20 @@ export default function FilterBar({ isAdmin, onFilterChange }: FilterBarProps): 
             {/* Filtro de Instructores */}
             <div>
               <h4 class="font-medium text-gray-700 mb-2">Instructores</h4>
+              
+              {/* Barra de búsqueda para instructores */}
+              <div class="mb-2">
+                <input
+                  type="text"
+                  placeholder="Buscar instructores..."
+                  value={searchTerms.instructors}
+                  onChange={(e) => handleSearchChange('instructors', (e.target as HTMLInputElement).value)}
+                  class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              
               <div class="max-h-32 overflow-y-auto space-y-1">
-                {availableOptions.instructors.map(instructor => (
+                {getFilteredOptions(availableOptions.instructors, searchTerms.instructors).map(instructor => (
                   <label key={instructor} class="flex items-center space-x-2 text-sm">
                     <input
                       type="checkbox"
@@ -153,8 +198,10 @@ export default function FilterBar({ isAdmin, onFilterChange }: FilterBarProps): 
                     <span class="text-gray-600">{instructor}</span>
                   </label>
                 ))}
-                {availableOptions.instructors.length === 0 && (
-                  <p class="text-sm text-gray-400">No hay instructores disponibles</p>
+                {getFilteredOptions(availableOptions.instructors, searchTerms.instructors).length === 0 && (
+                  <p class="text-sm text-gray-400">
+                    {searchTerms.instructors ? 'No se encontraron instructores' : 'No hay instructores disponibles'}
+                  </p>
                 )}
               </div>
             </div>
@@ -162,20 +209,34 @@ export default function FilterBar({ isAdmin, onFilterChange }: FilterBarProps): 
             {/* Filtro de Regionales */}
             <div>
               <h4 class="font-medium text-gray-700 mb-2">Regionales</h4>
+              
+              {/* Barra de búsqueda para regionales */}
+              <div class="mb-2">
+                <input
+                  type="text"
+                  placeholder="Buscar regionales..."
+                  value={searchTerms.regionales}
+                  onChange={(e) => handleSearchChange('regionales', (e.target as HTMLInputElement).value)}
+                  class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+              </div>
+              
               <div class="max-h-32 overflow-y-auto space-y-1">
-                {availableOptions.regionales.map(regional => (
+                {getFilteredOptions(availableOptions.regionales, searchTerms.regionales).map(regional => (
                   <label key={regional} class="flex items-center space-x-2 text-sm">
                     <input
                       type="checkbox"
                       checked={filters.regionales.includes(regional)}
                       onChange={(e) => handleFilterChange('regionales', regional, (e.target as HTMLInputElement).checked)}
-                      class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      class="rounded border-gray-300 text-green-600 focus:ring-green-500"
                     />
                     <span class="text-gray-600">{regional}</span>
                   </label>
                 ))}
-                {availableOptions.regionales.length === 0 && (
-                  <p class="text-sm text-gray-400">No hay regionales disponibles</p>
+                {getFilteredOptions(availableOptions.regionales, searchTerms.regionales).length === 0 && (
+                  <p class="text-sm text-gray-400">
+                    {searchTerms.regionales ? 'No se encontraron regionales' : 'No hay regionales disponibles'}
+                  </p>
                 )}
               </div>
             </div>
@@ -183,20 +244,34 @@ export default function FilterBar({ isAdmin, onFilterChange }: FilterBarProps): 
             {/* Filtro de Modalidades */}
             <div>
               <h4 class="font-medium text-gray-700 mb-2">Modalidades</h4>
+              
+              {/* Barra de búsqueda para modalidades */}
+              <div class="mb-2">
+                <input
+                  type="text"
+                  placeholder="Buscar modalidades..."
+                  value={searchTerms.modalidades}
+                  onChange={(e) => handleSearchChange('modalidades', (e.target as HTMLInputElement).value)}
+                  class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+              
               <div class="max-h-32 overflow-y-auto space-y-1">
-                {availableOptions.modalidades.map(modalidad => (
+                {getFilteredOptions(availableOptions.modalidades, searchTerms.modalidades).map(modalidad => (
                   <label key={modalidad} class="flex items-center space-x-2 text-sm">
                     <input
                       type="checkbox"
                       checked={filters.modalidades.includes(modalidad)}
                       onChange={(e) => handleFilterChange('modalidades', modalidad, (e.target as HTMLInputElement).checked)}
-                      class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      class="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                     />
                     <span class="text-gray-600">{modalidad}</span>
                   </label>
                 ))}
-                {availableOptions.modalidades.length === 0 && (
-                  <p class="text-sm text-gray-400">No hay modalidades disponibles</p>
+                {getFilteredOptions(availableOptions.modalidades, searchTerms.modalidades).length === 0 && (
+                  <p class="text-sm text-gray-400">
+                    {searchTerms.modalidades ? 'No se encontraron modalidades' : 'No hay modalidades disponibles'}
+                  </p>
                 )}
               </div>
             </div>
@@ -204,8 +279,20 @@ export default function FilterBar({ isAdmin, onFilterChange }: FilterBarProps): 
             {/* Filtro de Programas (Títulos) */}
             <div>
               <h4 class="font-medium text-gray-700 mb-2">Programas</h4>
+              
+              {/* Barra de búsqueda para programas */}
+              <div class="mb-2">
+                <input
+                  type="text"
+                  placeholder="Buscar programas..."
+                  value={searchTerms.programas}
+                  onChange={(e) => handleSearchChange('programas', (e.target as HTMLInputElement).value)}
+                  class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                />
+              </div>
+              
               <div class="max-h-32 overflow-y-auto space-y-1">
-                {availableOptions.programas.map(programa => (
+                {getFilteredOptions(availableOptions.programas, searchTerms.programas).map(programa => (
                   <label key={programa} class="flex items-center space-x-2 text-sm">
                     <input
                       type="checkbox"
@@ -216,8 +303,10 @@ export default function FilterBar({ isAdmin, onFilterChange }: FilterBarProps): 
                     <span class="text-gray-600" title={programa}>{programa.length > 30 ? `${programa.substring(0, 30)}...` : programa}</span>
                   </label>
                 ))}
-                {availableOptions.programas.length === 0 && (
-                  <p class="text-sm text-gray-400">No hay programas en esta semana</p>
+                {getFilteredOptions(availableOptions.programas, searchTerms.programas).length === 0 && (
+                  <p class="text-sm text-gray-400">
+                    {searchTerms.programas ? 'No se encontraron programas' : 'No hay programas en esta semana'}
+                  </p>
                 )}
               </div>
             </div>
@@ -225,8 +314,20 @@ export default function FilterBar({ isAdmin, onFilterChange }: FilterBarProps): 
             {/* Filtro de Módulos (Detalles) */}
             <div>
               <h4 class="font-medium text-gray-700 mb-2">Módulos</h4>
+              
+              {/* Barra de búsqueda para módulos */}
+              <div class="mb-2">
+                <input
+                  type="text"
+                  placeholder="Buscar módulos..."
+                  value={searchTerms.modulos}
+                  onChange={(e) => handleSearchChange('modulos', (e.target as HTMLInputElement).value)}
+                  class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                />
+              </div>
+              
               <div class="max-h-32 overflow-y-auto space-y-1">
-                {availableOptions.modulos.map(modulo => (
+                {getFilteredOptions(availableOptions.modulos, searchTerms.modulos).map(modulo => (
                   <label key={modulo} class="flex items-center space-x-2 text-sm">
                     <input
                       type="checkbox"
@@ -237,8 +338,10 @@ export default function FilterBar({ isAdmin, onFilterChange }: FilterBarProps): 
                     <span class="text-gray-600" title={modulo}>{modulo.length > 30 ? `${modulo.substring(0, 30)}...` : modulo}</span>
                   </label>
                 ))}
-                {availableOptions.modulos.length === 0 && (
-                  <p class="text-sm text-gray-400">No hay módulos en esta semana</p>
+                {getFilteredOptions(availableOptions.modulos, searchTerms.modulos).length === 0 && (
+                  <p class="text-sm text-gray-400">
+                    {searchTerms.modulos ? 'No se encontraron módulos' : 'No hay módulos en esta semana'}
+                  </p>
                 )}
               </div>
             </div>

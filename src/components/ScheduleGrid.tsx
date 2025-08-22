@@ -15,7 +15,8 @@ import {
   addEvent as addScheduleEvent,
   getWeekTitle,
   getPublishedWeekTitle,
-  getFilteredRows
+  getFilteredRows,
+  navigateWeek
 } from '../stores/schedule';
 import EventCard from './EventCard';
 import AddEventCard from './AddEventCard';
@@ -596,23 +597,41 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
       <div class={`bg-slate-900 text-white sticky top-0 z-20 shadow-lg transition-all duration-300 ${
         isScrolled ? 'p-3' : 'p-6'
       }`}>
-        <div class="flex items-center justify-center space-x-4">
-          <img 
-            src="/Imagen1.png" 
-            alt="Logo Terpel" 
-            class={`transition-all duration-300 ${
-              isScrolled ? 'h-16' : 'h-20'
-            }`}
-          />
-          <div>
-            <h1 class={`font-bold tracking-tight transition-all duration-300 text-center ${
-              isScrolled ? 'text-xl' : 'text-3xl'
-            }`}>{weekTitle}</h1>
-            <p class={`text-slate-300 transition-all duration-300 text-center ${
-              isScrolled ? 'mt-1 text-xs' : 'mt-2 text-sm'
-            }`}>
-              {formatDateDisplay(currentWeek.startDate)} - {formatDateDisplay(currentWeek.endDate)}
-            </p>
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-4">
+            <img 
+              src="/Imagen1.png" 
+              alt="Logo Terpel" 
+              class={`transition-all duration-300 ${
+                isScrolled ? 'h-16' : 'h-20'
+              }`}
+            />
+            <div>
+              <h1 class={`font-bold tracking-tight transition-all duration-300 text-center ${
+                isScrolled ? 'text-xl' : 'text-3xl'
+              }`}>{weekTitle}</h1>
+              <p class={`text-slate-300 transition-all duration-300 text-center ${
+                isScrolled ? 'mt-1 text-xs' : 'mt-2 text-sm'
+              }`}>
+                {formatDateDisplay(currentWeek.startDate)} - {formatDateDisplay(currentWeek.endDate)}
+              </p>
+            </div>
+          </div>
+          
+          {/* Botones de navegación */}
+          <div class="flex items-center space-x-2">
+            <button
+              onClick={() => navigateWeek('prev')}
+              class="flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
+            >
+              <span class="mr-1">←</span> Anterior
+            </button>
+            <button
+              onClick={() => navigateWeek('next')}
+              class="flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
+            >
+              Siguiente <span class="ml-1">→</span>
+            </button>
           </div>
         </div>
       </div>

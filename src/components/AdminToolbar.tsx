@@ -221,12 +221,15 @@ export default function AdminToolbar({ onClose }: AdminToolbarProps): JSX.Elemen
             📊 {dirty.value ? 'Cambios sin publicar' : 'Todo publicado'}
           </p>
         </div>
-        <button
-          onClick={handleLogout}
-          class="text-gray-500 hover:text-gray-700 text-sm transition-colors"
-        >
-          🚪 Cerrar Sesión
-        </button>
+        <div class="flex items-center space-x-4">
+          <ViewModeToggle isAdmin={true} />
+          <button
+            onClick={handleLogout}
+            class="text-gray-500 hover:text-gray-700 text-sm transition-colors"
+          >
+            🚪 Cerrar Sesión
+          </button>
+        </div>
       </div>
 
       {/* Notificaciones */}
@@ -240,12 +243,8 @@ export default function AdminToolbar({ onClose }: AdminToolbarProps): JSX.Elemen
         </div>
       )}
 
-      {/* Controles de vista y filtros */}
-      <div class="mb-4 space-y-3">
-        <div class="flex justify-between items-center">
-          <span class="text-sm font-medium text-gray-700">Vista:</span>
-          <ViewModeToggle isAdmin={true} />
-        </div>
+      {/* Controles de filtros */}
+      <div class="mb-4">
         <FilterBar isAdmin={true} />
       </div>
 
