@@ -147,9 +147,9 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
       title: finalTitle.trim() || 'Sin título especificado',
       details: finalDetails.trim() || 'Sin detalles especificados',
       location: formData.location.trim() || 'Sin ubicación',
-      time: timeString,
+      time: timeString || null,
       color: finalColor,
-      modalidad: formData.modalidad || undefined,
+      modalidad: formData.modalidad || null,
       confirmed: formData.confirmed
     };
 

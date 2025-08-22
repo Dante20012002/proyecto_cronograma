@@ -16,10 +16,10 @@ export interface Event {
   id: string;
   title: string;
   details: string | string[];
-  time?: string;
+  time?: string | null;
   location: string;
   color: string;
-  modalidad?: string; // Nueva propiedad para modalidad (Presencial, Virtual)
+  modalidad?: string | null; // Nueva propiedad para modalidad (Presencial, Virtual)
   confirmed?: boolean; // Nueva propiedad para indicar si el evento está confirmado
 }
 
@@ -47,6 +47,7 @@ export interface GlobalConfig {
     startDate: string;
     endDate: string;
   };
+  viewMode: 'weekly' | 'monthly'; // Nuevo campo para el modo de vista
 }
 
 export interface FilterState {
@@ -301,7 +302,8 @@ function getCurrentWeek(): { startDate: string; endDate: string } {
 const initialGlobalConfig: GlobalConfig = {
   title: 'Cronograma 2025',
   weekTitles: {}, // Inicialmente vacío
-  currentWeek: getCurrentWeek()
+  currentWeek: getCurrentWeek(),
+  viewMode: 'weekly' // Por defecto vista semanal
 };
 
 // --- ESTADO (DRAFT & PUBLISHED) ---
@@ -385,6 +387,9 @@ function getInitialWeek(): { startDate: string; endDate: string } {
 
 // Estado para la semana seleccionada en la vista de usuario
 export const selectedWeek = signal<{ startDate: string; endDate: string }>(getInitialWeek());
+
+// Estado para el modo de vista de usuarios no admin
+export const userViewMode = signal<'weekly' | 'monthly'>('weekly');
 
 // --- ESTADO DE FILTROS ---
 export const activeFilters = signal<FilterState>({
@@ -1863,12 +1868,6 @@ function getEventsFromCurrentWeek(isAdmin: boolean): Event[] {
   const currentWeek = isAdmin ? draftGlobalConfig.value.currentWeek : selectedWeek.value;
   const events: Event[] = [];
 
-  console.log('🔍 getEventsFromCurrentWeek - Filtrando eventos para semana:', {
-    isAdmin,
-    currentWeek,
-    totalRows: rows.length
-  });
-
   // Generar array de fechas de la semana actual
   const weekDates: string[] = [];
   const startDate = new Date(currentWeek.startDate);
@@ -1879,15 +1878,10 @@ function getEventsFromCurrentWeek(isAdmin: boolean): Event[] {
     weekDates.push(date.toISOString().split('T')[0]);
   }
 
-  console.log('📅 getEventsFromCurrentWeek - Fechas de la semana:', weekDates);
-
   rows.forEach(row => {
     // Buscar eventos en las fechas de la semana actual
     weekDates.forEach(dateStr => {
       const dayEvents = row.events[dateStr] || [];
-      if (dayEvents.length > 0) {
-        console.log(`📋 Encontrados ${dayEvents.length} eventos en ${dateStr} para ${row.instructor}`);
-      }
       events.push(...dayEvents);
     });
 
@@ -1896,10 +1890,7 @@ function getEventsFromCurrentWeek(isAdmin: boolean): Event[] {
       if (!key.includes('-')) { // Formato anterior (solo día)
         const fullDate = getFullDateFromDayWithWeek(key, currentWeek);
         if (weekDates.includes(fullDate)) {
-          console.log(`📋 Migrando ${dayEvents.length} eventos del día ${key} (${fullDate}) para ${row.instructor}`);
           events.push(...dayEvents);
-        } else {
-          console.log(`🚫 Excluyendo ${dayEvents.length} eventos del día ${key} (${fullDate}) - fuera de la semana actual`);
         }
       }
     });
@@ -1914,15 +1905,15 @@ function getEventsFromCurrentWeek(isAdmin: boolean): Event[] {
 }
 
 /**
- * Obtiene valores únicos de programas (títulos) de la semana seleccionada
+ * Obtiene valores únicos de programas (títulos) del periodo actual (semana o mes según el modo de vista)
  * @param isAdmin - Determinar si usar datos de admin o publicados
  * @returns Array de títulos únicos
  */
 export function getUniqueProgramsFromWeek(isAdmin: boolean): string[] {
-  const weekEvents = getEventsFromCurrentWeek(isAdmin);
+  const periodEvents = getEventsFromCurrentPeriod(isAdmin);
   const programs = new Set<string>();
 
-  weekEvents.forEach(event => {
+  periodEvents.forEach(event => {
     if (event.title && event.title.trim()) {
       programs.add(event.title.trim());
     }
@@ -1932,39 +1923,33 @@ export function getUniqueProgramsFromWeek(isAdmin: boolean): string[] {
 }
 
 /**
- * Obtiene valores únicos de módulos (detalles) de la semana seleccionada
+ * Obtiene valores únicos de módulos (detalles) del periodo actual (semana o mes según el modo de vista)
  * @param isAdmin - Determinar si usar datos de admin o publicados
  * @returns Array de detalles únicos
  */
 export function getUniqueModulesFromWeek(isAdmin: boolean): string[] {
-  const weekEvents = getEventsFromCurrentWeek(isAdmin);
+  const periodEvents = getEventsFromCurrentPeriod(isAdmin);
   const modules = new Set<string>();
 
-  console.log(`🧩 getUniqueModulesFromWeek - Procesando ${weekEvents.length} eventos de la semana`);
-
-  weekEvents.forEach(event => {
+  periodEvents.forEach(event => {
     if (event.details) {
       if (Array.isArray(event.details)) {
         // Si details es un array, agregar cada elemento
         event.details.forEach(detail => {
           if (detail && detail.trim()) {
-            console.log(`  ➕ Agregando módulo: "${detail.trim()}" del evento: "${event.title}"`);
             modules.add(detail.trim());
           }
         });
       } else {
         // Si details es un string, agregarlo directamente
         if (event.details.trim()) {
-          console.log(`  ➕ Agregando módulo: "${event.details.trim()}" del evento: "${event.title}"`);
           modules.add(event.details.trim());
         }
       }
     }
   });
 
-  const result = Array.from(modules).sort();
-  console.log(`✅ getUniqueModulesFromWeek - Módulos únicos encontrados:`, result);
-  return result;
+  return Array.from(modules).sort();
 }
 
 /**
@@ -1991,30 +1976,9 @@ export function getFilteredRows(rows: ScheduleRow[]): ScheduleRow[] {
       
   const shouldFilterEmptyInstructors = !isAdminContext || hasActiveFilters;
   
-  console.log('🔍 getFilteredRows - Filtros activos:', {
-    instructors: filters.instructors,
-    regionales: filters.regionales,
-    modalidades: filters.modalidades,
-    programas: filters.programas,
-    modulos: filters.modulos,
-    totalRows: rows.length,
-    isAdminContext,
-    shouldFilterEmptyInstructors,
-    currentWeek
-  });
-  
-  // Debug adicional para usuarios externos
-  if (!isAdminContext) {
-    console.log('👤 Usuario externo detectado - se ocultarán instructores sin eventos en la semana actual');
-    console.log('📅 Semana actual:', currentWeek);
-  }
-  
   if (!hasActiveFilters && isAdminContext) {
-    console.log('ℹ️ Admin sin filtros activos, devolviendo todas las filas');
     return rows;
   }
-  
-  console.log('📅 getFilteredRows - Usando semana:', currentWeek, 'isAdmin:', isAdminContext);
 
   // Generar fechas de la semana actual para filtrar eventos
   const weekDates: string[] = [];
@@ -2068,11 +2032,8 @@ export function getFilteredRows(rows: ScheduleRow[]): ScheduleRow[] {
         }
         
         if (!isCurrentWeekDay) {
-          console.log(`⏭️ Saltando eventos del día ${day} (fuera de la semana actual)`);
           return; // Saltar eventos que no son de la semana actual
         }
-        
-        console.log(`📅 Procesando ${events.length} eventos del día ${day} (semana actual)`);
         
         const matchingEvents = events.filter(event => {
           // Filtro por modalidad
@@ -2137,11 +2098,8 @@ export function getFilteredRows(rows: ScheduleRow[]): ScheduleRow[] {
         if (hasActiveFilters && (filters.modalidades.length > 0 || filters.programas.length > 0 || filters.modulos.length > 0)) {
           const hasEventsAfterFiltering = Object.keys(row.events).length > 0;
           if (!hasEventsAfterFiltering) {
-            console.log(`🚫 Ocultando instructor sin eventos coincidentes con filtros: ${row.instructor}`);
             return false;
           } else {
-            const totalEvents = Object.values(row.events).reduce((sum, events) => sum + events.length, 0);
-            console.log(`✅ Mostrando instructor con eventos filtrados: ${row.instructor} (${totalEvents} eventos)`);
             return true;
           }
         }
@@ -2152,16 +2110,12 @@ export function getFilteredRows(rows: ScheduleRow[]): ScheduleRow[] {
         if (!originalRow) return false;
         
         let hasEventsInCurrentWeek = false;
-        let totalEventsInWeek = 0;
-        let daysWithEvents = 0;
         
         // Contar eventos en las fechas de la semana actual
         weekDates.forEach(dateStr => {
           const eventsInDate = originalRow.events[dateStr] || [];
           if (eventsInDate.length > 0) {
             hasEventsInCurrentWeek = true;
-            totalEventsInWeek += eventsInDate.length;
-            daysWithEvents++;
           }
         });
         
@@ -2172,23 +2126,208 @@ export function getFilteredRows(rows: ScheduleRow[]): ScheduleRow[] {
               const fullDate = getFullDateFromDayWithWeek(key, currentWeek);
               if (weekDates.includes(fullDate) && dayEvents.length > 0) {
                 hasEventsInCurrentWeek = true;
-                totalEventsInWeek += dayEvents.length;
-                daysWithEvents++;
               }
             }
           });
         }
         
-        if (!hasEventsInCurrentWeek) {
-          const reason = !isAdminContext ? 'usuario externo' : 'sin eventos en semana actual';
-          console.log(`🚫 Ocultando instructor sin eventos en semana actual (${reason}): ${row.instructor}`);
-          return false;
-        } else {
-          console.log(`✅ Mostrando instructor con eventos en semana actual: ${row.instructor} (${totalEventsInWeek} eventos en ${daysWithEvents} días)`);
-          return true;
-        }
+        return hasEventsInCurrentWeek;
       }
       
       return true;
     });
+}
+
+// --- FUNCIONES DE NAVEGACIÓN MENSUAL ---
+
+/**
+ * Obtiene el mes actual basado en la semana actual
+ */
+export function getCurrentMonth(): { year: number; month: number } {
+  const currentWeek = draftGlobalConfig.value.currentWeek;
+  const date = new Date(currentWeek.startDate);
+  return {
+    year: date.getFullYear(),
+    month: date.getMonth()
+  };
+}
+
+/**
+ * Navega al mes anterior o siguiente
+ * Para la vista mensual, actualiza la semana de referencia al primer lunes del nuevo mes
+ * Funciona igual que navigateWeek pero navega por meses
+ */
+export function navigateMonth(direction: 'prev' | 'next'): { startDate: string; endDate: string } {
+  const isAdminUser = isAdmin.value;
+  const currentWeek = isAdminUser ? draftGlobalConfig.value.currentWeek : selectedWeek.value;
+  
+  // Crear fechas locales evitando el desfase de zona horaria
+  const [startYear, startMonth, startDay] = currentWeek.startDate.split('-').map(Number);
+  
+  // Para navegación mensual, usamos el día 15 del mes actual como referencia
+  // para asegurar que siempre estemos en el mes correcto
+  const referenceDate = new Date(startYear, startMonth - 1, 15); // month es 0-based, día 15
+  
+  // Calcular el nuevo mes
+  if (direction === 'prev') {
+    referenceDate.setMonth(referenceDate.getMonth() - 1);
+  } else {
+    referenceDate.setMonth(referenceDate.getMonth() + 1);
+  }
+  
+  // NUEVA LÓGICA: Para navegación mensual, buscar la primera semana completa del mes objetivo
+  const targetMonth = referenceDate.getMonth();
+  const targetYear = referenceDate.getFullYear();
+  
+  // Empezar desde el primer día del mes objetivo
+  let monday = new Date(targetYear, targetMonth, 1);
+  
+  // Si el primer día del mes no es lunes, buscar el lunes de esa semana
+  const dayOfWeek = monday.getDay(); // 0 = domingo, 1 = lunes, etc.
+  
+  if (dayOfWeek !== 1) { // Si no es lunes
+    // Calcular cuántos días hacia atrás necesitamos para llegar al lunes
+    const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // 0 (domingo) = 6 días atrás, 2 (martes) = 1 día atrás
+    monday.setDate(monday.getDate() - daysToSubtract);
+  }
+  
+  // Si el lunes está en el mes anterior, buscar la siguiente semana
+  if (monday.getMonth() !== targetMonth) {
+    monday.setDate(monday.getDate() + 7);
+  }
+  
+  // Para la vista mensual, usar semana completa (lunes a domingo)
+  let sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  
+  const formatDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  
+  const newDates = {
+    startDate: formatDate(monday),
+    endDate: formatDate(sunday)
+  };
+  
+  // Actualizar el estado según el tipo de usuario (SIN markAsDirty)
+  if (isAdminUser) {
+    draftGlobalConfig.value = {
+      ...draftGlobalConfig.value,
+      currentWeek: newDates
+    };
+  } else {
+    selectedWeek.value = newDates;
+  }
+  
+  return newDates;
+}
+
+/**
+ * Obtiene el rango de fechas completo de un mes
+ */
+export function getMonthDateRange(year: number, month: number): { startDate: string; endDate: string } {
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  
+  const formatDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  
+  return {
+    startDate: formatDate(firstDay),
+    endDate: formatDate(lastDay)
+  };
+}
+
+/**
+ * Cambia el modo de vista entre semanal y mensual (para admins)
+ */
+export function setViewMode(mode: 'weekly' | 'monthly') {
+  draftGlobalConfig.value = {
+    ...draftGlobalConfig.value,
+    viewMode: mode
+  };
+  markAsDirty();
+}
+
+/**
+ * Cambia el modo de vista para usuarios no admin
+ */
+export function setUserViewMode(mode: 'weekly' | 'monthly') {
+  userViewMode.value = mode;
+  console.log('🔄 setUserViewMode - Modo actualizado:', mode);
 } 
+
+/**
+ * Obtiene eventos de la semana actual o del mes actual según el modo de vista
+ * @param isAdmin - Determinar si usar datos de admin o publicados
+ * @returns Array de eventos
+ */
+function getEventsFromCurrentPeriod(isAdmin: boolean): Event[] {
+  const viewMode = isAdmin ? draftGlobalConfig.value.viewMode : userViewMode.value;
+  
+  if (viewMode === 'monthly') {
+    return getEventsFromCurrentMonth(isAdmin);
+  } else {
+    return getEventsFromCurrentWeek(isAdmin);
+  }
+}
+
+/**
+ * Obtiene eventos del mes actual
+ * @param isAdmin - Determinar si usar datos de admin o publicados
+ * @returns Array de eventos
+ */
+function getEventsFromCurrentMonth(isAdmin: boolean): Event[] {
+  const rows = isAdmin ? draftScheduleRows.value : publishedScheduleRows.value;
+  const currentWeek = isAdmin ? draftGlobalConfig.value.currentWeek : selectedWeek.value;
+  const events: Event[] = [];
+
+  // Obtener el mes y año de la semana actual
+  const startDate = new Date(currentWeek.startDate);
+  const year = startDate.getFullYear();
+  const month = startDate.getMonth();
+
+  // Generar array de fechas del mes completo
+  const monthDates: string[] = [];
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  
+  for (let day = 1; day <= lastDay.getDate(); day++) {
+    const date = new Date(year, month, day);
+    monthDates.push(date.toISOString().split('T')[0]);
+  }
+
+  rows.forEach(row => {
+    // Buscar eventos en las fechas del mes actual
+    monthDates.forEach(dateStr => {
+      const dayEvents = row.events[dateStr] || [];
+      events.push(...dayEvents);
+    });
+
+    // También buscar en formato anterior (solo día) para compatibilidad
+    Object.entries(row.events).forEach(([key, dayEvents]) => {
+      if (!key.includes('-')) { // Formato anterior (solo día)
+        // Para el mes, necesitamos verificar si el día está en el mes actual
+        const dayNumber = parseInt(key);
+        if (dayNumber >= 1 && dayNumber <= lastDay.getDate()) {
+          const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNumber).padStart(2, '0')}`;
+          events.push(...dayEvents);
+        }
+      }
+    });
+  });
+
+  // Deduplicar eventos por ID
+  const uniqueEvents = events.filter((event, index, self) => 
+    index === self.findIndex(e => e.id === event.id)
+  );
+
+  return uniqueEvents;
+}

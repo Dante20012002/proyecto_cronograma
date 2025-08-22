@@ -44,10 +44,10 @@ export default function EventEditor({ event, rowId, day, isOpen, onClose }: Even
             ...row.events[day][eventIndex],
             title: formData.title,
             details: formData.details.includes('\n') ? formData.details.split('\n') : formData.details,
-            time: formData.time || undefined,
+            time: formData.time || null,
             location: formData.location,
             color: formData.color,
-            modalidad: formData.modalidad || undefined
+            modalidad: formData.modalidad || null
           };
           
           const newEvents = [...row.events[day]];

@@ -134,10 +134,10 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
       id: `evt-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       title: formData.title,
       details: formData.details ? (formData.details.includes('\n') ? formData.details.split('\n') : formData.details) : 'Sin detalles especificados',
-      time: timeString || undefined,
+      time: timeString || null,
       location: formData.location || 'Sin ubicación',
       color: formData.color,
-      modalidad: formData.modalidad || undefined,
+      modalidad: formData.modalidad || null,
       confirmed: formData.confirmed
     };
     

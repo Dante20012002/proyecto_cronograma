@@ -1,5 +1,6 @@
-import { useState } from 'preact/hooks';
-import { publishedGlobalConfig, selectedWeek, navigateWeek, formatDateDisplay, getPublishedWeekTitle } from '../stores/schedule';
+import { useState, useEffect } from 'preact/hooks';
+import { publishedGlobalConfig, selectedWeek, navigateWeek, navigateMonth, formatDateDisplay, getPublishedWeekTitle, getCurrentMonth, userViewMode } from '../stores/schedule';
+import ViewModeToggle from './ViewModeToggle';
 import type { JSX } from 'preact';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -18,13 +19,28 @@ import FilterBar from './FilterBar';
  * ```
  */
 export default function UserToolbar(): JSX.Element {
+  const [isDownloading, setIsDownloading] = useState(false);
+  
   const config = publishedGlobalConfig.value;
   const week = selectedWeek.value;
+  const viewMode = userViewMode.value; // Usar el modo de vista específico para usuarios
+  const currentMonth = getCurrentMonth();
   
   // Obtener el título específico de la semana actual
   const weekTitle = getPublishedWeekTitle();
 
+  const handleNavigate = (direction: 'prev' | 'next') => {
+    console.log('🔄 UserToolbar - Navegando:', { direction, viewMode, week });
+    
+    if (viewMode === 'weekly') {
+      navigateWeek(direction);
+    } else {
+      navigateMonth(direction);
+    }
+  };
+
   const handleDownload = async () => {
+    setIsDownloading(true);
     const element = document.getElementById('schedule-grid');
     
     if (element) {
@@ -123,6 +139,7 @@ export default function UserToolbar(): JSX.Element {
         console.error('Error al generar el PDF:', error);
         alert('Error al generar el PDF. Por favor, inténtelo de nuevo.');
       } finally {
+        setIsDownloading(false);
         // Restaurar estilos originales
         if (scrollContainer instanceof HTMLElement) {
           scrollContainer.style.maxHeight = originalStyles.maxHeight;
@@ -145,30 +162,17 @@ export default function UserToolbar(): JSX.Element {
           </p>
         </div>
         <div class="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
-          <div class="flex items-center space-x-2">
-            <button
-              onClick={() => navigateWeek('prev')}
-              class="flex-1 sm:flex-none flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
-            >
-              <span class="mr-1">←</span> Anterior
-            </button>
-            <button
-              onClick={() => navigateWeek('next')}
-              class="flex-1 sm:flex-none flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
-            >
-              Siguiente <span class="ml-1">→</span>
-            </button>
-          </div>
+          <ViewModeToggle isAdmin={false} />
           <button
             onClick={handleDownload}
+            disabled={isDownloading}
             class="flex-1 sm:flex-none flex items-center justify-center px-3 py-1.5 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors"
           >
             <span class="mr-1">↓</span> Descargar
           </button>
         </div>
       </div>
-      
-      {/* Filtros */}
+
       <FilterBar isAdmin={false} />
     </div>
   );
