@@ -2331,3 +2331,145 @@ function getEventsFromCurrentMonth(isAdmin: boolean): Event[] {
 
   return uniqueEvents;
 }
+
+/**
+ * Función para filtrar filas en la vista mensual
+ * Considera todos los eventos del mes, no solo de la semana actual
+ */
+export function getFilteredRowsForMonth(rows: ScheduleRow[], targetMonth: number, targetYear: number): ScheduleRow[] {
+  const filters = activeFilters.value;
+  
+  // Determinar el contexto (admin vs usuario externo)
+  const isAdminContext = rows === draftScheduleRows.value;
+  
+  // Para usuarios externos, siempre ocultar instructores sin eventos
+  // Para administradores, solo aplicar filtros cuando hay filtros activos
+  const hasActiveFilters = filters.instructors.length > 0 || 
+      filters.regionales.length > 0 || 
+      filters.modalidades.length > 0 ||
+      filters.programas.length > 0 ||
+      filters.modulos.length > 0;
+      
+  const shouldFilterEmptyInstructors = !isAdminContext || hasActiveFilters;
+  
+  if (!hasActiveFilters && isAdminContext) {
+    return rows;
+  }
+
+  // Generar todas las fechas del mes objetivo
+  const monthDates: string[] = [];
+  const firstDayOfMonth = new Date(targetYear, targetMonth, 1);
+  const lastDayOfMonth = new Date(targetYear, targetMonth + 1, 0);
+  
+  for (let d = new Date(firstDayOfMonth); d <= lastDayOfMonth; d.setDate(d.getDate() + 1)) {
+    monthDates.push(d.toISOString().split('T')[0]);
+  }
+
+  return rows
+    .filter(row => {
+      // Filtro por instructor
+      if (filters.instructors.length > 0 && !filters.instructors.includes(row.instructor)) {
+        return false;
+      }
+
+      // Filtro por regional
+      if (filters.regionales.length > 0 && !filters.regionales.includes(row.regional)) {
+        return false;
+      }
+
+      return true;
+    })
+    .map(row => {
+      // Si no hay filtros de eventos, devolver la fila tal como está
+      if (filters.modalidades.length === 0 && 
+          filters.programas.length === 0 && 
+          filters.modulos.length === 0) {
+        return row;
+      }
+
+      // Filtrar eventos por modalidad, programa y módulo
+      const filteredEvents: { [day: string]: Event[] } = {};
+      let totalMatchingEvents = 0;
+      
+      Object.entries(row.events).forEach(([day, events]) => {
+        // Solo considerar eventos del mes objetivo
+        let isTargetMonthDay = false;
+        
+        if (day.includes('-')) {
+          // Formato nuevo (fecha completa): verificar directamente
+          isTargetMonthDay = monthDates.includes(day);
+        } else {
+          // Formato anterior (solo día): convertir a fecha completa y verificar
+          const fullDate = getFullDateFromDayWithWeek(day, { startDate: firstDayOfMonth.toISOString().split('T')[0], endDate: lastDayOfMonth.toISOString().split('T')[0] });
+          isTargetMonthDay = monthDates.includes(fullDate);
+        }
+        
+        if (!isTargetMonthDay) {
+          return; // Saltar eventos que no son del mes objetivo
+        }
+        
+        const matchingEvents = events.filter(event => {
+          // Filtro por modalidad
+          if (filters.modalidades.length > 0) {
+            if (!event.modalidad || !filters.modalidades.includes(event.modalidad)) {
+              return false;
+            }
+          }
+
+          // Filtro por programa (título)
+          if (filters.programas.length > 0) {
+            if (!event.title || !filters.programas.includes(event.title.trim())) {
+              return false;
+            }
+          }
+
+          // Filtro por módulo (detalles)
+          if (filters.modulos.length > 0) {
+            if (!event.details) {
+              return false;
+            }
+
+            const detailsArray = Array.isArray(event.details) ? event.details : [event.details];
+            const hasMatchingModule = detailsArray.some(detail => 
+              filters.modulos.some(module => 
+                detail.toLowerCase().includes(module.toLowerCase())
+              )
+            );
+
+            if (!hasMatchingModule) {
+              return false;
+            }
+          }
+
+          return true;
+        });
+
+        if (matchingEvents.length > 0) {
+          filteredEvents[day] = matchingEvents;
+          totalMatchingEvents += matchingEvents.length;
+        }
+      });
+
+      // Si no hay eventos que coincidan con los filtros, devolver fila vacía
+      if (totalMatchingEvents === 0) {
+        return {
+          ...row,
+          events: {}
+        };
+      }
+
+      return {
+        ...row,
+        events: filteredEvents
+      };
+    })
+    .filter(row => {
+      // Para usuarios externos o cuando hay filtros activos, ocultar instructores sin eventos
+      if (shouldFilterEmptyInstructors) {
+        const hasEvents = Object.values(row.events).some(events => events.length > 0);
+        return hasEvents;
+      }
+      
+      return true;
+    });
+}

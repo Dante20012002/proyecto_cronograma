@@ -6,6 +6,7 @@ import {
   publishedGlobalConfig,
   selectedWeek,
   getFilteredRows,
+  getFilteredRowsForMonth,
   formatDateDisplay,
   getWeekTitle,
   getPublishedWeekTitle,
@@ -41,12 +42,6 @@ export default function MonthlyScheduleGrid({ isAdmin }: MonthlyScheduleGridProp
   const globalConfig = isAdmin ? draftGlobalConfig.value : publishedGlobalConfig.value;
   const week = selectedWeek.value;
   const currentWeek = isAdmin ? globalConfig.currentWeek : week;
-  
-  // Aplicar filtros
-  const filteredRows = getFilteredRows(scheduleRows);
-
-  // Obtener el título de la semana
-  const weekTitle = isAdmin ? getWeekTitle(currentWeek.startDate, currentWeek.endDate) : getPublishedWeekTitle();
 
   // NUEVA LÓGICA: Determinar el mes objetivo basado en la semana actual
   // Para la vista mensual, queremos mostrar el mes que contiene la mayoría de días de la semana
@@ -69,6 +64,12 @@ export default function MonthlyScheduleGrid({ isAdmin }: MonthlyScheduleGridProp
   
   const currentYear = targetYear;
   const currentMonth = targetMonth;
+  
+  // Aplicar filtros para vista mensual (considera todos los eventos del mes)
+  const filteredRows = getFilteredRowsForMonth(scheduleRows, currentMonth, currentYear);
+
+  // Obtener el título de la semana
+  const weekTitle = isAdmin ? getWeekTitle(currentWeek.startDate, currentWeek.endDate) : getPublishedWeekTitle();
 
   // Detectar scroll para efectos visuales
   useEffect(() => {
