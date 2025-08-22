@@ -299,11 +299,11 @@ export default function MonthlyScheduleGrid({ isAdmin }: MonthlyScheduleGridProp
                             {/* Indicador de confirmación */}
                             <div class="absolute top-1 left-1">
                               {event.confirmed ? (
-                                <span class="inline-block w-3 h-3 text-green-400 font-bold text-xs leading-none" title="Evento Confirmado">
+                                <span class="inline-block w-3 h-3 text-green-400 bg-gray-500 rounded-sm font-bold justify-center text-xs leading-none" title="Evento Confirmado">
                                   ✓
                                 </span>
                               ) : (
-                                <span class="inline-block w-3 h-3 text-orange-400 font-bold text-xs leading-none" title="Pendiente de Confirmación">
+                                <span class="inline-block w-3 h-3 text-orange-400 font-bold bg-gray-500 rounded-sm justify-center text-xs leading-none" title="Pendiente de Confirmación">
                                   ⏳
                                 </span>
                               )}
