@@ -28,6 +28,7 @@ export default function UserToolbar(): JSX.Element {
   
   // Obtener el título específico de la semana actual
   const weekTitle = getPublishedWeekTitle();
+  const Title = 'Cronograma Mensual Escuelas Terpel';
 
   const handleNavigate = (direction: 'prev' | 'next') => {
     console.log('🔄 UserToolbar - Navegando:', { direction, viewMode, week });
@@ -108,9 +109,9 @@ export default function UserToolbar(): JSX.Element {
         
         // Agregar título
         pdf.setFontSize(16);
-        pdf.text(weekTitle, 20, 20);
+        userViewMode.value === 'monthly' ? pdf.text(Title, 20, 20) : pdf.text(weekTitle, 20, 20);
         pdf.setFontSize(12);
-        pdf.text(`${formatDateDisplay(week.startDate)} - ${formatDateDisplay(week.endDate)}`, 20, 30);
+        userViewMode.value === 'monthly' ? null : pdf.text(`${formatDateDisplay(week.startDate)} - ${formatDateDisplay(week.endDate)}`, 20, 30);
         
         // Calcular dimensiones de la imagen respetando el aspect ratio
         const maxImageWidth = pdfWidth - 40; // Dejar márgenes
