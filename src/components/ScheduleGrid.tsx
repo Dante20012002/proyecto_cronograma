@@ -610,8 +610,8 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
               <h1 class={`font-bold tracking-tight transition-all duration-300 text-center ${
                 isScrolled ? 'text-xl' : 'text-3xl'
               }`}>{weekTitle}</h1>
-              <p class={`text-slate-300 transition-all duration-300 text-center ${
-                isScrolled ? 'mt-1 text-xs' : 'mt-2 text-sm'
+              <p class={`text-slate-300 transition-all font-semibold duration-300 text-center ${
+                isScrolled ? 'mt-1 text-lg' : 'mt-2 text-lg'
               }`}>
                 {formatDateDisplay(currentWeek.startDate)} - {formatDateDisplay(currentWeek.endDate)}
               </p>

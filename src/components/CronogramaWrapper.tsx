@@ -187,7 +187,7 @@ export default function CronogramaWrapper(): JSX.Element {
       <div class="min-h-screen bg-gray-100 flex items-center justify-center p-4">
         <div class="bg-white rounded-lg shadow-md p-6 max-w-md w-full text-center">
           <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <h3 class="text-lg font-medium text-gray-900">Conectando con Firebase...</h3>
+          <h3 class="text-lg font-medium text-gray-900">Conectando...</h3>
           <p class="text-gray-600 text-sm mt-1">Por favor espera mientras establecemos la conexión.</p>
         </div>
       </div>
