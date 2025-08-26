@@ -157,9 +157,9 @@ export default function UserToolbar(): JSX.Element {
     <div class="space-y-4 w-full">
       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full space-y-2 sm:space-y-0">
         <div>
-          <h2 class="text-lg font-bold text-gray-900">{weekTitle}</h2>
+          <h2 class="text-lg font-bold text-gray-900">{userViewMode.value === 'monthly' ? Title : weekTitle}</h2>
           <p class="text-sm text-gray-600">
-            {formatDateDisplay(week.startDate)} - {formatDateDisplay(week.endDate)}
+            {userViewMode.value === 'monthly' ? null : `${formatDateDisplay(week.startDate)} - ${formatDateDisplay(week.endDate)}`}
           </p>
         </div>
         <div class="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
