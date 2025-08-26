@@ -56,7 +56,7 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
   const [endTime, setEndTime] = useState('');
   const [selectedDetails, setSelectedDetails] = useState('');
   const [customDetails, setCustomDetails] = useState('');
-  const [detailsMode, setDetailsMode] = useState<'predefined' | 'custom'>('predefined');
+  const [detailsMode, setDetailsMode] = useState<'predefined' | 'custom' | null>(null);
   const [selectedTitle, setSelectedTitle] = useState('');
   const [customTitle, setCustomTitle] = useState('');
   const [titleMode, setTitleMode] = useState<'predefined' | 'custom'>('predefined');
@@ -86,8 +86,10 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
 
     // Verificar si los detalles coinciden con alguna opción predefinida
     const detailsText = Array.isArray(event.details) ? event.details.join('\n') : event.details;
-    if (PREDEFINED_DETAILS.includes(detailsText.trim())) {
-      setSelectedDetails(detailsText.trim());
+    const trimmedDetails = detailsText.trim();
+    
+    if (PREDEFINED_DETAILS.includes(trimmedDetails)) {
+      setSelectedDetails(trimmedDetails);
       setDetailsMode('predefined');
     } else {
       setCustomDetails(detailsText);
@@ -379,27 +381,52 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
             </select>
           </div>
 
-          {/* Color */}
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Color del evento
-            </label>
-            <div class="grid grid-cols-12 gap-2 max-h-32 overflow-y-auto">
-              {colorOptions.map(color => (
-                <button
-                  key={color}
-                  onClick={() => setFormData(prev => ({ ...prev, color }))}
-                  class={`w-8 h-8 rounded border-2 hover:scale-110 transition-transform ${
-                    formData.color === color ? 'ring-2 ring-gray-400 ring-offset-1' : 'border-gray-300'
-                  }`}
-                  style={hexToStyle(color)}
-                />
-              ))}
+
+
+          {/* Mostrar información del color automático para detalles predefinidos */}
+          {detailsMode === 'predefined' && selectedDetails && selectedDetails.trim() !== '' && (
+            <div class="bg-blue-50 border border-blue-200 rounded-md p-3">
+              <div class="flex items-center space-x-2">
+                <div class="w-4 h-4 rounded-full border border-gray-300" style={hexToStyle(formData.color)}></div>
+                <span class="text-sm text-blue-800">
+                  Color asignado automáticamente para este detalle
+                </span>
+              </div>
             </div>
-            <p class="text-xs text-gray-500 mt-2">
-              Seleccionado: <span class="inline-block w-4 h-4 rounded border border-gray-300" style={hexToStyle(formData.color)}></span>
-            </p>
-          </div>
+          )}
+
+          {/* Color Picker - Solo mostrar para detalles personalizados */}
+          {detailsMode === 'custom' && (
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Color del evento
+              </label>
+              <div class="grid grid-cols-12 gap-2 max-h-32 overflow-y-auto">
+                {colorOptions.map(color => (
+                  <button
+                    key={color}
+                    onClick={() => setFormData(prev => ({ ...prev, color }))}
+                    class={`w-8 h-8 rounded border-2 hover:scale-110 transition-transform ${
+                      formData.color === color ? 'ring-2 ring-gray-400 ring-offset-1' : 'border-gray-300'
+                    }`}
+                    style={hexToStyle(color)}
+                  />
+                ))}
+              </div>
+              <p class="text-xs text-gray-500 mt-2">
+                Seleccionado: <span class="inline-block w-4 h-4 rounded border border-gray-300" style={hexToStyle(formData.color)}></span>
+              </p>
+            </div>
+          )}
+
+          {/* Fallback: Si no se ha determinado el modo aún, no mostrar nada */}
+          {detailsMode === null && (
+            <div class="bg-gray-50 border border-gray-200 rounded-md p-3">
+              <span class="text-sm text-gray-600">
+                Cargando configuración de colores...
+              </span>
+            </div>
+          )}
 
           {/* Estado de Confirmación */}
           <div class="border-t pt-4">
