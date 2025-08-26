@@ -2175,6 +2175,23 @@ export function getFilteredRows(rows: ScheduleRow[]): ScheduleRow[] {
       }
       
       return true;
+    })
+    .sort((a, b) => {
+      // Ordenar alfabéticamente por regional (A-Z)
+      const regionalA = a.regional.toLowerCase();
+      const regionalB = b.regional.toLowerCase();
+      
+      if (regionalA < regionalB) return -1;
+      if (regionalA > regionalB) return 1;
+      
+      // Si las regionales son iguales, ordenar por instructor
+      const instructorA = a.instructor.toLowerCase();
+      const instructorB = b.instructor.toLowerCase();
+      
+      if (instructorA < instructorB) return -1;
+      if (instructorA > instructorB) return 1;
+      
+      return 0;
     });
 }
 
@@ -2551,5 +2568,22 @@ export function getFilteredRowsForMonth(rows: ScheduleRow[], targetMonth: number
       }
       
       return true;
+    })
+    .sort((a, b) => {
+      // Ordenar alfabéticamente por regional (A-Z)
+      const regionalA = a.regional.toLowerCase();
+      const regionalB = b.regional.toLowerCase();
+      
+      if (regionalA < regionalB) return -1;
+      if (regionalA > regionalB) return 1;
+      
+      // Si las regionales son iguales, ordenar por instructor
+      const instructorA = a.instructor.toLowerCase();
+      const instructorB = b.instructor.toLowerCase();
+      
+      if (instructorA < instructorB) return -1;
+      if (instructorA > instructorB) return 1;
+      
+      return 0;
     });
 }
