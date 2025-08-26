@@ -204,9 +204,9 @@ export default function MonthlyScheduleGrid({ isAdmin }: MonthlyScheduleGridProp
                 isScrolled ? 'text-xl' : 'text-3xl'
               }`}>Cronograma Mensual Escuelas Colombia</h1>
               <p class={`text-slate-300 transition-all duration-300 text-center ${
-                isScrolled ? 'mt-1 text-xs' : 'mt-2 text-sm'
+                isScrolled ? 'mt-1 text-xs' : 'mt-2 text-lg first-letter:uppercase font-semibold  '
               }`}>
-                {monthName}
+                {monthName} 
               </p>
             </div>
           </div>
