@@ -202,7 +202,7 @@ export default function MonthlyScheduleGrid({ isAdmin }: MonthlyScheduleGridProp
             <div>
               <h1 class={`font-bold tracking-tight transition-all duration-300 text-center ${
                 isScrolled ? 'text-xl' : 'text-3xl'
-              }`}>{weekTitle} - Vista Mensual</h1>
+              }`}>Cronograma Mensual Escuelas Colombia</h1>
               <p class={`text-slate-300 transition-all duration-300 text-center ${
                 isScrolled ? 'mt-1 text-xs' : 'mt-2 text-sm'
               }`}>

@@ -1999,24 +1999,52 @@ export function getFilteredRows(rows: ScheduleRow[]): ScheduleRow[] {
         return false;
       }
 
-      // Filtro por regional
-      if (filters.regionales.length > 0 && !filters.regionales.includes(row.regional)) {
-        return false;
+      // NUEVA LÓGICA: Filtro por regional con excepción para eventos nacionales
+      if (filters.regionales.length > 0) {
+        // Verificar si el instructor tiene eventos nacionales en la semana actual
+        let hasNationalEvents = false;
+        
+        Object.entries(row.events).forEach(([day, events]) => {
+          // Solo considerar eventos de la semana actual
+          let isCurrentWeekDay = false;
+          
+          if (day.includes('-')) {
+            // Formato nuevo (fecha completa): verificar directamente
+            isCurrentWeekDay = weekDates.includes(day);
+          } else {
+            // Formato anterior (solo día): convertir a fecha completa
+            const fullDate = getFullDateFromDayWithWeek(day, currentWeek);
+            isCurrentWeekDay = weekDates.includes(fullDate);
+          }
+          
+          if (isCurrentWeekDay) {
+            events.forEach(event => {
+              // Verificar si el evento es nacional
+              if (event.location && (
+                event.location.toLowerCase().includes('nacional') ||
+                event.location.toLowerCase().includes('todas las regionales')
+              )) {
+                hasNationalEvents = true;
+              }
+            });
+          }
+        });
+        
+        // Si no tiene eventos nacionales y no está en las regionales filtradas, excluir
+        if (!hasNationalEvents && !filters.regionales.includes(row.regional)) {
+          return false;
+        }
       }
 
       return true;
     })
     .map(row => {
-      // Si no hay filtros de eventos, devolver la fila tal como está
-      if (filters.modalidades.length === 0 && 
-          filters.programas.length === 0 && 
-          filters.modulos.length === 0) {
-        return row;
-      }
-
-      // Filtrar eventos por modalidad, programa y módulo
+      // NUEVA LÓGICA: Filtrar eventos considerando filtros de eventos y filtros de regional
       const filteredEvents: { [day: string]: Event[] } = {};
       let totalMatchingEvents = 0;
+      
+      // Verificar si este instructor está en las regionales filtradas
+      const isInFilteredRegionals = filters.regionales.length === 0 || filters.regionales.includes(row.regional);
       
       Object.entries(row.events).forEach(([day, events]) => {
         // Solo considerar eventos de la semana actual
@@ -2036,6 +2064,18 @@ export function getFilteredRows(rows: ScheduleRow[]): ScheduleRow[] {
         }
         
         const matchingEvents = events.filter(event => {
+          // NUEVA LÓGICA: Si hay filtro de regionales y el instructor no está en las regionales filtradas,
+          // solo mostrar eventos nacionales
+          if (filters.regionales.length > 0 && !isInFilteredRegionals) {
+            // Solo mostrar eventos nacionales
+            if (!event.location || !(
+              event.location.toLowerCase().includes('nacional') ||
+              event.location.toLowerCase().includes('todas las regionales')
+            )) {
+              return false;
+            }
+          }
+          
           // Filtro por modalidad
           if (filters.modalidades.length > 0) {
             if (!event.modalidad || !filters.modalidades.includes(event.modalidad)) {
@@ -2372,24 +2412,52 @@ export function getFilteredRowsForMonth(rows: ScheduleRow[], targetMonth: number
         return false;
       }
 
-      // Filtro por regional
-      if (filters.regionales.length > 0 && !filters.regionales.includes(row.regional)) {
-        return false;
+      // NUEVA LÓGICA: Filtro por regional con excepción para eventos nacionales
+      if (filters.regionales.length > 0) {
+        // Verificar si el instructor tiene eventos nacionales en el mes objetivo
+        let hasNationalEvents = false;
+        
+        Object.entries(row.events).forEach(([day, events]) => {
+          // Solo considerar eventos del mes objetivo
+          let isTargetMonthDay = false;
+          
+          if (day.includes('-')) {
+            // Formato nuevo (fecha completa): verificar directamente
+            isTargetMonthDay = monthDates.includes(day);
+          } else {
+            // Formato anterior (solo día): convertir a fecha completa y verificar
+            const fullDate = getFullDateFromDayWithWeek(day, { startDate: firstDayOfMonth.toISOString().split('T')[0], endDate: lastDayOfMonth.toISOString().split('T')[0] });
+            isTargetMonthDay = monthDates.includes(fullDate);
+          }
+          
+          if (isTargetMonthDay) {
+            events.forEach(event => {
+              // Verificar si el evento es nacional
+              if (event.location && (
+                event.location.toLowerCase().includes('nacional') ||
+                event.location.toLowerCase().includes('todas las regionales')
+              )) {
+                hasNationalEvents = true;
+              }
+            });
+          }
+        });
+        
+        // Si no tiene eventos nacionales y no está en las regionales filtradas, excluir
+        if (!hasNationalEvents && !filters.regionales.includes(row.regional)) {
+          return false;
+        }
       }
 
       return true;
     })
     .map(row => {
-      // Si no hay filtros de eventos, devolver la fila tal como está
-      if (filters.modalidades.length === 0 && 
-          filters.programas.length === 0 && 
-          filters.modulos.length === 0) {
-        return row;
-      }
-
-      // Filtrar eventos por modalidad, programa y módulo
+      // NUEVA LÓGICA: Filtrar eventos considerando filtros de eventos y filtros de regional
       const filteredEvents: { [day: string]: Event[] } = {};
       let totalMatchingEvents = 0;
+      
+      // Verificar si este instructor está en las regionales filtradas
+      const isInFilteredRegionals = filters.regionales.length === 0 || filters.regionales.includes(row.regional);
       
       Object.entries(row.events).forEach(([day, events]) => {
         // Solo considerar eventos del mes objetivo
@@ -2409,6 +2477,18 @@ export function getFilteredRowsForMonth(rows: ScheduleRow[], targetMonth: number
         }
         
         const matchingEvents = events.filter(event => {
+          // NUEVA LÓGICA: Si hay filtro de regionales y el instructor no está en las regionales filtradas,
+          // solo mostrar eventos nacionales
+          if (filters.regionales.length > 0 && !isInFilteredRegionals) {
+            // Solo mostrar eventos nacionales
+            if (!event.location || !(
+              event.location.toLowerCase().includes('nacional') ||
+              event.location.toLowerCase().includes('todas las regionales')
+            )) {
+              return false;
+            }
+          }
+          
           // Filtro por modalidad
           if (filters.modalidades.length > 0) {
             if (!event.modalidad || !filters.modalidades.includes(event.modalidad)) {
