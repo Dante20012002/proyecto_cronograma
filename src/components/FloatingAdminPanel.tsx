@@ -1,9 +1,10 @@
 import { useState } from 'preact/hooks';
-import { hasPermission } from '../lib/auth';
+import { hasPermission, isSuperAdmin } from '../lib/auth';
 import GlobalConfig from './GlobalConfig';
 import InstructorManager from './InstructorManager';
 import AdminManager from './AdminManager';
 import AdminDebugPanel from './AdminDebugPanel';
+import DataExporter from './DataExporter';
 import type { JSX } from 'preact';
 
 interface TooltipProps {
@@ -150,6 +151,14 @@ export default function FloatingAdminPanel(): JSX.Element {
       color: 'bg-yellow-600 hover:bg-yellow-700',
       permission: 'canAccessDebugPanel',
       title: '🛠️ Panel de Debugging'
+    },
+    {
+      id: 'export',
+      icon: '📤',
+      tooltip: 'Exportar Toda la Data',
+      color: 'bg-green-600 hover:bg-green-700',
+      permission: 'canManageAdmins', // Solo super admins
+      title: '📤 Exportar Sistema'
     }
   ];
 
@@ -215,6 +224,11 @@ export default function FloatingAdminPanel(): JSX.Element {
       >
         <AdminDebugPanel />
       </Modal>
+
+      {/* Modal para exportación de datos - renderizado directamente sin Modal wrapper */}
+      {activePanel === 'export' && (
+        <DataExporter onClose={closePanel} />
+      )}
     </>
   );
 }

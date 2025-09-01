@@ -2032,7 +2032,7 @@ export function getFilteredRows(rows: ScheduleRow[]): ScheduleRow[] {
         
         // Si no tiene eventos nacionales y no está en las regionales filtradas, excluir
         if (!hasNationalEvents && !filters.regionales.includes(row.regional)) {
-          return false;
+        return false;
         }
       }
 
@@ -2174,7 +2174,7 @@ export function getFilteredRows(rows: ScheduleRow[]): ScheduleRow[] {
         return hasEventsInCurrentWeek;
       }
       
-      return true;
+          return true;
     })
     .sort((a, b) => {
       // Ordenar alfabéticamente por regional (A-Z)
@@ -2587,3 +2587,5 @@ export function getFilteredRowsForMonth(rows: ScheduleRow[], targetMonth: number
       return 0;
     });
 }
+
+ 
