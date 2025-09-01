@@ -81,15 +81,15 @@ export const detailColorMap: { [key: string]: string } = {
   'Construyendo Equipos Altamente Efectivos': '#638287',
   
   // Módulos de comida
-  'Módulo Rollos': '#dcc934',
-  'Módulo Historia y Masa': '#dcc934',
-  'Módulo Strombolis': '#dcc934',
-  'Módulo Perros y Más Perros': '#dcc934',
-  'Módulo Sánduches': '#dcc934',
-  'Módulo Sbarro': '#dcc934',
-  'Módulo Bebidas Calientes': '#dcc934',
-  'Entrenamiento': '#dcc934',
-  'Seguimiento Apertura': '#dcc934',
+  'Módulo Rollos': '#d69833',
+  'Módulo Historia y Masa': '#d69833',
+  'Módulo Strombolis': '#d69833',
+  'Módulo Perros y Más Perros': '#d69833',
+  'Módulo Sánduches': '#d69833',
+  'Módulo Sbarro': '#d69833',
+  'Módulo Bebidas Calientes': '#d69833',
+  'Entrenamiento Tienda': '#d69833',
+  'Seguimiento Apertura': '#d69833',
   'UDVA P': '#dcd4b4',
 
   // Otras categorías
