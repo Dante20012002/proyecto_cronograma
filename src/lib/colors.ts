@@ -90,6 +90,8 @@ export const detailColorMap: { [key: string]: string } = {
   'Módulo Bebidas Calientes': '#d69833',
   'Entrenamiento Tienda': '#d69833',
   'Seguimiento Apertura': '#d69833',
+
+  // Proyectos
   'UDVA P': '#dcd4b4',
 
   // Otras categorías
@@ -98,6 +100,7 @@ export const detailColorMap: { [key: string]: string } = {
   'Actualización de Contenidos': '#46646B',
   'Vacaciones': '#46646B',
   'Traslado': '#46646B',
+  'Preparación de Formación': '#46646B',
 
   // Módulos de EDS Confiable
   'Módulo Elementos ambientalmente sensibles': '#187BA6',

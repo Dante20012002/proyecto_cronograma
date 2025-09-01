@@ -80,7 +80,8 @@ export const PREDEFINED_DETAILS = [
   'Barranquilla',
   'Empleados Terpel',
   'Seguimiento Apertura',
-  'Entrenamiento Tienda'
+  'Entrenamiento Tienda',
+  'Preparación de Formación'
 ];
 
 /**
