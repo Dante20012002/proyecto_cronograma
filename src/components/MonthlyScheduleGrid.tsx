@@ -312,7 +312,13 @@ export default function MonthlyScheduleGrid({ isAdmin }: MonthlyScheduleGridProp
                             
                             <div class="font-semibold text-xs mb-1">{event.title}</div>
                             <div class="text-xs opacity-90 mb-1">{event.details}</div>
-                            <div class="text-xs opacity-80 mb-1">{regional}</div>
+                            {/* Solo mostrar regional si el evento NO es nacional */}
+                            {!(event.location && (
+                              event.location.toLowerCase().includes('nacional') ||
+                              event.location.toLowerCase().includes('todas las regionales')
+                            )) && (
+                              <div class="text-xs opacity-80 mb-1">{regional}</div>
+                            )}
                             
                             {event.modalidad && <div class="text-xs opacity-80">✏ {event.modalidad}</div>}
                             {event.time && <div class="text-xs opacity-80">⏰ {event.time.split(' a ')[0]}</div>}
