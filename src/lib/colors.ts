@@ -103,16 +103,16 @@ export const detailColorMap: { [key: string]: string } = {
   'Preparación de Formación': '#46646B',
 
   // Módulos de EDS Confiable
-  'Módulo Elementos ambientalmente sensibles': '#187BA6',
-  'Módulo Control de derrames y atención de emergencias': '#187BA6',
-  'Módulo Control de calidad': '#187BA6', 
-  'Módulo Medida exacta': '#187BA6',
-  'Módulo Control de incendios': '#187BA6',
-  'Módulo Comportamiento seguro': '#187BA6',
-  'Módulo Primeros auxilios': '#187BA6',
-  'Módulo Investigación de accidentes': '#187BA6',
-  'Bogotá': '#88589B',
-  'Barranquilla': '#88589B',
+  'Módulo Elementos ambientalmente sensibles': '#EC447C',
+  'Módulo Control de derrames y atención de emergencias': '#EC447C',
+  'Módulo Control de calidad': '#EC447C', 
+  'Módulo Medida exacta': '#EC447C',
+  'Módulo Control de incendios': '#EC447C',
+  'Módulo Comportamiento seguro': '#EC447C',
+  'Módulo Primeros auxilios': '#EC447C',
+  'Módulo Investigación de accidentes': '#EC447C',
+  'Bogotá': '#12b19f',
+  'Barranquilla': '#12b19f',
   'Empleados Terpel': '#C48E35',
 };
 
