@@ -182,6 +182,20 @@ export const hasPermission = (permission: keyof AdminPermissions): boolean => {
 };
 
 /**
+ * Función para verificar si el usuario actual es super administrador
+ * @returns boolean - True si el usuario es super admin
+ */
+export const isSuperAdmin = (): boolean => {
+  // Un super admin tiene todos los permisos, especialmente canManageAdmins y canAccessDebugPanel
+  return userPermissions.value?.canManageAdmins === true && 
+         userPermissions.value?.canAccessDebugPanel === true &&
+         userPermissions.value?.canPublish === true &&
+         userPermissions.value?.canEditGlobalConfig === true &&
+         userPermissions.value?.canManageInstructors === true &&
+         userPermissions.value?.canUploadExcel === true;
+};
+
+/**
  * Función para revalidar los permisos del usuario actual
  * Útil después de cambios en los permisos del usuario
  */

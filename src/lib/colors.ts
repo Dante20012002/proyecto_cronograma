@@ -81,15 +81,17 @@ export const detailColorMap: { [key: string]: string } = {
   'Construyendo Equipos Altamente Efectivos': '#638287',
   
   // Módulos de comida
-  'Módulo Rollos': '#dcc934',
-  'Módulo Historia y Masa': '#dcc934',
-  'Módulo Strombolis': '#dcc934',
-  'Módulo Perros y Más Perros': '#dcc934',
-  'Módulo Sánduches': '#dcc934',
-  'Módulo Sbarro': '#dcc934',
-  'Módulo Bebidas Calientes': '#dcc934',
-  'Entrenamiento': '#dcc934',
-  'Seguimiento Apertura': '#dcc934',
+  'Módulo Rollos': '#f8945c',
+  'Módulo Historia y Masa': '#f8945c',
+  'Módulo Strombolis': '#f8945c',
+  'Módulo Perros y Más Perros': '#f8945c',
+  'Módulo Sánduches': '#f8945c',
+  'Módulo Sbarro': '#f8945c',
+  'Módulo Bebidas Calientes': '#f8945c',
+  'Entrenamiento Tienda': '#f8945c',
+  'Seguimiento Apertura': '#f8945c',
+
+  // Proyectos
   'UDVA P': '#dcd4b4',
 
   // Otras categorías
@@ -98,18 +100,19 @@ export const detailColorMap: { [key: string]: string } = {
   'Actualización de Contenidos': '#46646B',
   'Vacaciones': '#46646B',
   'Traslado': '#46646B',
+  'Preparación de Formación': '#46646B',
 
   // Módulos de EDS Confiable
-  'Módulo Elementos ambientalmente sensibles': '#187BA6',
-  'Módulo Control de derrames y atención de emergencias': '#187BA6',
-  'Módulo Control de calidad': '#187BA6', 
-  'Módulo Medida exacta': '#187BA6',
-  'Módulo Control de incendios': '#187BA6',
-  'Módulo Comportamiento seguro': '#187BA6',
-  'Módulo Primeros auxilios': '#187BA6',
-  'Módulo Investigación de accidentes': '#187BA6',
-  'Bogotá': '#88589B',
-  'Barranquilla': '#88589B',
+  'Módulo Elementos ambientalmente sensibles': '#EC447C',
+  'Módulo Control de derrames y atención de emergencias': '#EC447C',
+  'Módulo Control de calidad': '#EC447C', 
+  'Módulo Medida exacta': '#EC447C',
+  'Módulo Control de incendios': '#EC447C',
+  'Módulo Comportamiento seguro': '#EC447C',
+  'Módulo Primeros auxilios': '#EC447C',
+  'Módulo Investigación de accidentes': '#EC447C',
+  'Bogotá': '#12b19f',
+  'Barranquilla': '#12b19f',
   'Empleados Terpel': '#C48E35',
 };
 
