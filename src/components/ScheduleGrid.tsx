@@ -183,41 +183,17 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
       return a.title.localeCompare(b.title);
     });
     
-    // Log para debugging (solo en modo admin)
-    if (isAdminProp && sortedEvents.length > 0) {
-      console.log(`📅 Eventos ordenados para día ${dayNumber} (${fullDate}):`, {
-        fullDateEvents: eventsByFullDate.length,
-        dayEvents: eventsByDay.length,
-        totalUnique: uniqueEvents.length,
-        sortedEvents: sortedEvents.map(e => ({ 
-          id: e.id, 
-          title: e.title, 
-          time: e.time,
-          timeMinutes: timeToMinutes(e.time || '')
-        }))
-      });
-    }
-    
     return sortedEvents;
   };
 
   const handleEventClick = (event: ScheduleEvent, rowId: string, day: string) => {
-    console.log('=== EVENTO CLICK DETECTADO ===');
-    console.log('Event:', event);
-    console.log('RowId:', rowId);
-    console.log('Day:', day);
-    console.log('isAdminProp:', isAdminProp);
-    
     if (!isAdminProp) {
-      console.log('❌ No es admin, saliendo...');
       return;
     }
     
-    console.log('✅ Abriendo editor de eventos...');
     setEditingEvent(event);
     setEditingRowId(rowId);
     setEditingDay(day);
-    console.log('Estado actualizado:', { editingEvent: event.id, editingRowId: rowId, editingDay: day });
   };
 
   const handleCloseEventEditor = () => {
@@ -239,8 +215,6 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
     // Solo mostrar menú contextual para administradores
     if (!isAdminProp) return;
     
-    console.log('🖱️ Clic derecho detectado:', { eventId, rowId, day });
-    
     e.preventDefault();
     e.stopPropagation();
     
@@ -261,8 +235,6 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
   const handleCopyEvent = () => {
     if (!contextMenu) return;
     
-    console.log('📋 Copiando evento desde menú contextual...');
-    
     const result = copyEventInSameCell(contextMenu.eventId, contextMenu.rowId, contextMenu.day);
     
     if (result?.success) {
@@ -271,7 +243,6 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
       // Forzar reinicialización de SortableJS después de copiar
       // para asegurar que el nuevo elemento sea reconocido
       setTimeout(() => {
-        console.log('🔄 Forzando reinicialización después de copiar evento');
         const key = `${contextMenu.rowId}-${contextMenu.day}`;
         const element = document.querySelector(`[data-row-id="${contextMenu.rowId}"][data-day="${contextMenu.day}"]`);
         
@@ -280,9 +251,8 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
             sortableRefs.current[key]?.destroy();
             sortableRefs.current[key] = null;
             const cleanup = initializeSortable(element, contextMenu.rowId, contextMenu.day);
-            console.log('✅ Reinicialización completada después de copiar');
           } catch (error) {
-            console.warn('⚠️ Error en reinicialización después de copiar:', error);
+            // Error en reinicialización después de copiar
           }
         }
       }, 200);
@@ -296,8 +266,6 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
   const handleDrop = async (evt: Sortable.SortableEvent) => {
     if (!isAdminProp) return;
     
-    console.log('=== DRAG AND DROP INICIADO ===');
-    
     // Prevenir manipulación automática del DOM por SortableJS
     if (evt.preventDefault) {
       evt.preventDefault();
@@ -308,7 +276,6 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
     
     const eventId = evt.item.getAttribute('data-event-id');
     if (!eventId) {
-      console.error('❌ No se encontró el ID del evento');
       setMoveNotification('❌ Error: ID de evento no encontrado');
       return;
     }
@@ -320,21 +287,8 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
     const toRowId = evt.to.getAttribute('data-row-id');
     const toDay = evt.to.getAttribute('data-day');
     
-    console.log('📋 Detalles del movimiento:', {
-      eventId,
-      from: { rowId: fromRowId, day: fromDay },
-      to: { rowId: toRowId, day: toDay },
-      fromElement: evt.from,
-      toElement: evt.to,
-      oldIndex: evt.oldIndex,
-      newIndex: evt.newIndex
-    });
-    
     // Validar que tenemos todos los datos necesarios
     if (!fromRowId || !fromDay || !toRowId || !toDay) {
-      console.error('❌ Datos incompletos para el movimiento:', {
-        fromRowId, fromDay, toRowId, toDay
-      });
       setMoveNotification('❌ Error: Datos incompletos');
       return;
     }
@@ -342,18 +296,11 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
     // Solo mover si es diferente posición
     if (fromRowId !== toRowId || fromDay !== toDay) {
       try {
-        console.log('🚀 Iniciando movimiento de evento...');
         moveEvent(eventId, fromRowId, fromDay, toRowId, toDay);
-        console.log('✅ EVENTO MOVIDO CORRECTAMENTE');
-        
-        // Mostrar notificación de éxito
         setMoveNotification('✅ Evento movido correctamente');
       } catch (error) {
-        console.error('❌ Error al mover evento:', error);
         setMoveNotification('❌ Error al mover evento');
       }
-    } else {
-      console.log('ℹ️ EVENTO SOLTADO EN LA MISMA POSICIÓN - No se requiere acción');
     }
   };
 
@@ -364,16 +311,13 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
     
     // Si ya existe una instancia, destruirla primero
     if (sortableRefs.current[key]) {
-      console.log('🔄 Destruyendo instancia existente de SortableJS:', key);
       try {
         sortableRefs.current[key]?.destroy();
       } catch (error) {
-        console.warn('⚠️ Error al destruir instancia SortableJS:', error);
+        // Error al destruir instancia SortableJS
       }
       sortableRefs.current[key] = null;
     }
-    
-    console.log('🎯 Inicializando SortableJS para:', key);
     
     try {
       const sortableInstance = Sortable.create(element, {
@@ -395,9 +339,6 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
         preventOnFilter: false,
         filter: '.no-drag', // Elementos que no se pueden arrastrar
         onStart: (evt) => {
-          const eventId = evt.item.getAttribute('data-event-id');
-          console.log('🚀 Drag iniciado:', { eventId, from: { rowId, day } });
-          
           // Agregar clase para prevenir selección de texto
           document.body.classList.add('dragging');
           
@@ -415,26 +356,22 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
           const targetDay = target.getAttribute('data-day');
           
           if (targetRowId && targetDay) {
-            console.log('📍 Moviendo sobre:', { targetRowId, targetDay });
             return true; // Permitir drop
           }
           return false; // No permitir drop
         },
         onAdd: (evt) => {
-          console.log('➕ Evento agregado a nueva celda');
           // Evitar manipulación automática del DOM
           evt.preventDefault && evt.preventDefault();
           return false;
         },
         onRemove: (evt) => {
-          console.log('➖ Evento removido de celda original');
+          // Evento removido de celda original
         },
         onChange: (evt) => {
-          console.log('🔄 Orden cambiado dentro de la misma celda');
+          // Orden cambiado dentro de la misma celda
         },
         onEnd: (evt) => {
-          console.log('🏁 Drag finalizado');
-          
           // Limpiar clases y estilos
           document.body.classList.remove('dragging');
           document.body.style.userSelect = '';
@@ -446,36 +383,30 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
       });
       
       sortableRefs.current[key] = sortableInstance;
-      console.log('✅ SortableJS inicializado correctamente para:', key);
       
       return () => {
-        console.log('🧹 Limpiando instancia SortableJS:', key);
         try {
           if (sortableRefs.current[key]) {
             sortableRefs.current[key]?.destroy();
         sortableRefs.current[key] = null;
           }
         } catch (error) {
-          console.warn('⚠️ Error al limpiar instancia SortableJS:', error);
+          // Error al limpiar instancia SortableJS
         }
       };
     } catch (error) {
-      console.error('❌ Error al crear instancia SortableJS:', error);
       return null;
     }
   };
 
   useEffect(() => {
-    console.log('🔄 Reinicializando SortableJS - rows changed');
-    
     // Limpiar todas las instancias existentes primero
     Object.entries(sortableRefs.current).forEach(([key, instance]) => {
       if (instance) {
-        console.log('🧹 Destruyendo instancia existente:', key);
         try {
           instance.destroy();
         } catch (error) {
-          console.warn('⚠️ Error al destruir instancia:', key, error);
+          // Error al destruir instancia
         }
       }
     });
@@ -487,8 +418,6 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
     const timeoutId = setTimeout(() => {
     const elements = document.querySelectorAll('[data-sortable="true"]');
     const cleanupFns: (() => void)[] = [];
-      
-      console.log(`🎯 Inicializando ${elements.length} celdas de SortableJS`);
 
     elements.forEach((element) => {
       const rowId = element.getAttribute('data-row-id');
@@ -502,7 +431,6 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
 
       // Guardar las funciones de limpieza para el próximo ciclo
       return () => {
-        console.log('🧹 Ejecutando limpieza de useEffect');
         cleanupFns.forEach(fn => fn());
       };
     }, 100);
@@ -515,7 +443,7 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
           try {
             instance.destroy();
           } catch (error) {
-            console.warn('⚠️ Error al destruir instancia en cleanup:', error);
+            // Error al destruir instancia en cleanup
           }
         }
       });

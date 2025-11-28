@@ -178,10 +178,9 @@ function dayToNumber(day: string): string {
     
     // Encontrar la fecha que corresponde al día solicitado
     const targetWeekDay = dayNameToWeekDay[day.toLowerCase()];
-    if (targetWeekDay === undefined) {
-      console.error('❌ Día no válido:', day);
-      return startDate.getDate().toString();
-    }
+      if (targetWeekDay === undefined) {
+        return startDate.getDate().toString();
+      }
     
     // Ajustar la fecha hasta encontrar el día correcto
     const targetDate = new Date(startDate);
@@ -189,16 +188,8 @@ function dayToNumber(day: string): string {
       targetDate.setDate(targetDate.getDate() + 1);
     }
     
-    console.log('📅 DEBUG - Cálculo de fecha:', {
-      requestedDay: day,
-      weekDayNumber: targetWeekDay,
-      calculatedDate: targetDate.toISOString(),
-      result: targetDate.getDate()
-    });
-    
     return targetDate.getDate().toString();
   } catch (error) {
-    console.error('❌ Error en dayToNumber:', error);
     return new Date(draftGlobalConfig.value.currentWeek.startDate).getDate().toString();
   }
 }
@@ -207,11 +198,7 @@ function dayToNumber(day: string): string {
  * Función para procesar y cargar los datos al sistema
  */
 async function processAndLoadData(data: ExcelEventData[]) {
-  console.log('📊 processAndLoadData - Iniciando carga incremental de', data.length, 'eventos');
-  
   // PASO 1: NO limpiar instructores existentes - mantener datos históricos
-  console.log('📋 Manteniendo instructores existentes con sus datos históricos');
-  
   // Agrupar eventos por instructor para procesamiento eficiente
   const eventsByInstructor = new Map<string, ExcelEventData[]>();
   
@@ -223,10 +210,7 @@ async function processAndLoadData(data: ExcelEventData[]) {
     eventsByInstructor.get(instructorKey)!.push(eventData);
   });
   
-  console.log('👥 processAndLoadData - Procesando', eventsByInstructor.size, 'instructores del Excel');
-  
   // PASO 2: Verificar instructores existentes y crear nuevos solo si es necesario
-  console.log('🔍 PASO 2: Verificando instructores existentes...');
   const currentInstructors = draftInstructors.value;
   const currentRows = draftScheduleRows.value;
   const instructorMapping = new Map<string, string>(); // instructorKey -> instructorId
@@ -235,18 +219,15 @@ async function processAndLoadData(data: ExcelEventData[]) {
   currentRows.forEach(row => {
     const instructorKey = row.instructor.toLowerCase();
     instructorMapping.set(instructorKey, row.id);
-    console.log(`✅ Instructor existente mapeado: ${row.instructor} → ID: ${row.id}`);
   });
   
   // PASO 3: Crear solo instructores nuevos que no existan
-  console.log('➕ PASO 3: Creando instructores nuevos (si es necesario)...');
   let newInstructorsCreated = 0;
   
   for (const [instructorKey, events] of eventsByInstructor.entries()) {
     if (!instructorMapping.has(instructorKey)) {
       // El instructor no existe, crearlo
     const instructorData = events[0]; // Tomar datos del primer evento
-      console.log(`➕ Creando instructor nuevo: ${instructorData.instructor}`);
     
     // Crear el instructor
     addInstructor(instructorData.instructor, instructorData.regional);
@@ -264,46 +245,19 @@ async function processAndLoadData(data: ExcelEventData[]) {
     
     if (createdRow) {
         instructorMapping.set(instructorKey, createdRow.id);
-        console.log(`✅ Instructor nuevo creado: ${createdRow.instructor} → ID: ${createdRow.id}`);
     } else {
-        console.error(`❌ ERROR: No se pudo crear instructor nuevo: ${instructorData.instructor}`);
         throw new Error(`No se pudo crear instructor nuevo: ${instructorData.instructor}`);
-      }
-    } else {
-      // El instructor ya existe, usar el existente
-      const existingId = instructorMapping.get(instructorKey)!;
-      const existingRow = currentRows.find(row => row.id === existingId);
-      const eventData = events[0];
-      
-      console.log(`🔄 Instructor existente detectado: ${eventData.instructor}`);
-      console.log(`   📍 Datos actuales: ${existingRow?.regional}`);
-      console.log(`   📍 Datos del Excel: ${eventData.regional}`);
-      
-      // Verificar si hay cambios en regional
-      if (existingRow && (
-        existingRow.regional !== eventData.regional
-      )) {
-        console.log(`   ⚠️ INFORMACIÓN: El instructor ${eventData.instructor} tiene diferentes datos de ubicación para esta semana.`);
-        console.log(`   📝 Esta es una situación normal: los instructores pueden trabajar en diferentes regiones por semana.`);
-        console.log(`   ✅ Se mantendrán los datos históricos y se agregarán eventos con la nueva ubicación.`);
       }
     }
   }
   
-  console.log(`📊 Resumen de instructores: ${currentRows.length - newInstructorsCreated} existentes + ${newInstructorsCreated} nuevos = ${instructorMapping.size} total`);
-  
   // PASO 4: Agregar eventos a cada instructor (respetando datos históricos)
-  console.log('📅 PASO 4: Agregando eventos (modo incremental)...');
-  
   for (const [instructorKey, events] of eventsByInstructor.entries()) {
     const instructorId = instructorMapping.get(instructorKey);
     
     if (!instructorId) {
-      console.error(`❌ No se encontró ID para instructor: ${events[0].instructor}`);
       continue;
     }
-    
-    console.log(`📅 Procesando ${events.length} eventos para ${events[0].instructor} (ID: ${instructorId})`);
     
     for (let index = 0; index < events.length; index++) {
       const eventData = events[index];
@@ -328,19 +282,13 @@ async function processAndLoadData(data: ExcelEventData[]) {
       
       const dayNumber = dayToNumber(eventData.dia);
       
-      console.log(`  ➕ Evento ${index + 1}/${events.length}: ${eventData.titulo} → Instructor ID: ${instructorId}, Día: ${dayNumber}`);
-      
       // Agregar evento (se agrega a la semana actual, respetando eventos históricos)
       addEvent(instructorId, dayNumber, newEvent);
       
       // Pausa corta entre eventos
       await new Promise(resolve => setTimeout(resolve, 50));
     }
-    
-    console.log(`✅ Completados eventos para: ${events[0].instructor}`);
   }
-  
-  console.log('✅ processAndLoadData - Carga incremental completa de', data.length, 'eventos');
   
   // PASO 5: Verificación final
   await verifyFinalState(eventsByInstructor.size, data.length, newInstructorsCreated);
@@ -350,8 +298,6 @@ async function processAndLoadData(data: ExcelEventData[]) {
  * Función para verificar el estado final después de la carga
  */
 async function verifyFinalState(expectedNewInstructors: number, expectedEvents: number, newInstructorsCreated: number) {
-  console.log('🔍 Verificando estado final...');
-  
   await new Promise(resolve => setTimeout(resolve, 500)); // Esperar que se estabilice
   
   const finalRows = draftScheduleRows.value;
@@ -361,30 +307,7 @@ async function verifyFinalState(expectedNewInstructors: number, expectedEvents: 
     sum + Object.values(row.events).reduce((daySum, events) => daySum + events.length, 0), 0
   );
   
-  console.log('📊 Estado final:');
-  console.log(`  👥 Instructores totales en sistema: ${finalInstructors.length}`);
-  console.log(`  🆕 Instructores nuevos creados: ${newInstructorsCreated}`);
-  console.log(`  📅 Eventos totales en sistema: ${totalEvents}`);
-  console.log(`  📅 Eventos agregados en esta carga: ${expectedEvents}`);
-  
-  // Mostrar detalle de cada instructor con eventos en la semana actual
-  const currentWeek = draftGlobalConfig.value.currentWeek;
-  console.log(`📅 Eventos para la semana: ${currentWeek.startDate} - ${currentWeek.endDate}`);
-  
-  finalRows.forEach(row => {
-    const eventCount = Object.values(row.events).reduce((sum, events) => sum + events.length, 0);
-    console.log(`  👤 ${row.instructor} (${row.regional}): ${eventCount} eventos totales`);
-  });
-  
   const success = newInstructorsCreated >= 0 && totalEvents >= expectedEvents;
-  
-  if (success) {
-    console.log('✅ Verificación exitosa: Carga incremental completada correctamente');
-    console.log('📝 Los datos históricos se han preservado');
-    console.log('🆕 Los nuevos eventos se han agregado a la semana actual');
-  } else {
-    console.warn('⚠️ Verificación con diferencias detectadas');
-  }
   
   return success;
 }
@@ -395,27 +318,6 @@ async function verifyFinalState(expectedNewInstructors: number, expectedEvents: 
 function debugExcelUpload() {
   const currentRows = draftScheduleRows.value;
   const currentInstructors = draftInstructors.value;
-  
-  console.log('🔍 DEBUG EXCEL UPLOAD - Estado actual:');
-  console.log('👥 Total instructores:', currentInstructors.length);
-  console.log('📋 Total filas:', currentRows.length);
-  
-  // Mostrar cada instructor con sus eventos
-  currentRows.forEach(row => {
-    const totalEvents = Object.values(row.events).reduce((sum, events) => sum + events.length, 0);
-    console.log(`\n👤 ${row.instructor} (${row.regional})`);
-    console.log(`  📅 Total eventos: ${totalEvents}`);
-    
-    // Mostrar eventos por día
-    Object.entries(row.events).forEach(([day, events]) => {
-      if (events.length > 0) {
-        console.log(`    Día ${day}: ${events.length} eventos`);
-        events.forEach(event => {
-          console.log(`      - ${event.title} (${event.location})`);
-        });
-      }
-    });
-  });
   
   return {
     instructors: currentInstructors.length,
@@ -433,35 +335,20 @@ if (typeof window !== 'undefined') {
   // Función adicional para verificar después de la carga
   (window as any).verifyExcelLoad = () => {
     const result = debugExcelUpload();
-    console.log('\n🔍 VERIFICACIÓN POST-CARGA:');
-    console.log(`📊 Se encontraron ${result.instructors} instructores con ${result.totalEvents} eventos totales`);
-    
-    if (result.instructors === 0) {
-      console.log('❌ PROBLEMA: No se encontraron instructores');
-    } else if (result.totalEvents === 0) {
-      console.log('❌ PROBLEMA: No se encontraron eventos');
-    } else {
-      console.log('✅ La carga parece exitosa');
-    }
-    
     return result;
   };
   
   // Función para probar el mapeo de días
   (window as any).testDayMapping = () => {
     const days = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'];
-    console.log('\n📅 PRUEBA DE MAPEO DE DÍAS:');
     days.forEach(day => {
-      const result = dayToNumber(day);
-      console.log(`${day} → ${result}`);
+      dayToNumber(day);
     });
   };
   
   // Función para limpiar duplicados manualmente
   (window as any).cleanupInstructorDuplicates = async () => {
-    console.log('🧹 Iniciando limpieza manual de duplicados...');
-    console.log('⚠️ Esta función aún no está implementada. Usa el AdminToolbar para limpiar duplicados.');
-    console.log('✅ Para verificar el estado actual, ejecuta verifyExcelLoad()');
+    // Esta función aún no está implementada. Usa el AdminToolbar para limpiar duplicados.
   };
 }
 
@@ -478,8 +365,6 @@ function downloadTemplate() {
     name: instructor.name,
     regional: instructor.regional
   }));
-  
-  console.log('📋 Instructores existentes para plantilla:', existingInstructors.length);
   
   // --- PESTAÑA 1: PLANTILLA DE EVENTOS ---
   const templateData = [
@@ -708,8 +593,6 @@ export default function ExcelUploader({ onClose }: ExcelUploaderProps) {
       const worksheet = workbook.Sheets[sheetName];
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
       
-      console.log('📊 Datos del Excel parseados:', jsonData);
-      
       const validation = validateExcelData(jsonData);
       
       if (validation.isValid) {
@@ -736,18 +619,11 @@ export default function ExcelUploader({ onClose }: ExcelUploaderProps) {
 
   const handleLoadData = async () => {
     if (previewData.length > 0) {
-      console.log('🚀 Iniciando carga de eventos desde Excel...');
-      
       // Mostrar resumen de lo que se va a cargar
       const instructorCounts = new Map<string, number>();
       previewData.forEach(event => {
         const count = instructorCounts.get(event.instructor) || 0;
         instructorCounts.set(event.instructor, count + 1);
-      });
-      
-      console.log('📊 Resumen de carga:');
-      instructorCounts.forEach((count, instructor) => {
-        console.log(`  👤 ${instructor}: ${count} eventos`);
       });
       
       try {
@@ -783,7 +659,6 @@ Usa verifyExcelLoad() en la consola para verificar el estado.`;
         alert(successMessage);
         onClose();
       } catch (error) {
-        console.error('❌ Error durante la carga:', error);
         alert('❌ Error durante la carga de eventos. Revisa la consola para más detalles.');
       }
     }

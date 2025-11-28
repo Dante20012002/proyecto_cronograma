@@ -72,8 +72,6 @@ export default function GlobalConfig(): JSX.Element {
   };
 
   const handleNavigate = (direction: 'prev' | 'next') => {
-    console.log('🔄 GlobalConfig - Navegando:', { direction, currentViewMode });
-    
     let newDates;
     if (currentViewMode === 'monthly') {
       // Para vista mensual, navegar por meses

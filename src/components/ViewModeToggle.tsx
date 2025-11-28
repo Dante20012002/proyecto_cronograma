@@ -20,8 +20,6 @@ export default function ViewModeToggle({ isAdmin }: ViewModeToggleProps) {
   }, [isAdmin, draftGlobalConfig.value.viewMode, userViewMode.value]);
 
   const handleModeChange = (mode: 'weekly' | 'monthly') => {
-    console.log('🔄 ViewModeToggle - Cambiando modo:', { mode, isAdmin });
-    
     if (isAdmin) {
       // Para admins, actualizar el draft
       setViewMode(mode);

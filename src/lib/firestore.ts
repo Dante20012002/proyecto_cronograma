@@ -45,7 +45,6 @@ export async function logOperation(operation: string, status: 'success' | 'error
     };
     
     await setDoc(doc(db as Firestore, 'logs', `${Date.now()}`), log);
-    console.log(`[Firebase Log] ${operation}:`, status, details);
   } catch (e) {
     console.error('Error logging to Firebase:', e);
   }
@@ -54,19 +53,9 @@ export async function logOperation(operation: string, status: 'success' | 'error
 // Función para verificar la integridad de los datos
 async function verifyDataIntegrity(data: FirestoreSchedule): Promise<boolean> {
   try {
-    console.log('=== VERIFICANDO INTEGRIDAD DE DATOS ===');
-    console.log('Datos a verificar:', {
-      instructorsCount: data.instructors.length,
-      scheduleRowsCount: data.scheduleRows.length,
-      globalConfig: data.globalConfig
-    });
-
     // Verificar que todos los instructores tienen una fila correspondiente
     const instructorIds = new Set(data.instructors.map(i => i.id));
     const rowIds = new Set(data.scheduleRows.map(r => r.id));
-    
-    console.log('IDs de instructores:', Array.from(instructorIds));
-    console.log('IDs de filas:', Array.from(rowIds));
     
     const allInstructorsHaveRows = Array.from(instructorIds).every(id => rowIds.has(id));
     if (!allInstructorsHaveRows) {
@@ -88,14 +77,9 @@ async function verifyDataIntegrity(data: FirestoreSchedule): Promise<boolean> {
     let totalEvents = 0;
     
     for (const row of data.scheduleRows) {
-      console.log(`Verificando eventos de la fila: ${row.instructor} (${row.id})`);
-      
       for (const [day, events] of Object.entries(row.events)) {
-        console.log(`  Día ${day}: ${events.length} eventos`);
-        
         for (const event of events) {
           totalEvents++;
-          console.log(`    Evento: ${event.id} - ${event.title}`);
           
           // Verificar que el ID es único
           if (eventIds.has(event.id)) {
@@ -136,7 +120,6 @@ async function verifyDataIntegrity(data: FirestoreSchedule): Promise<boolean> {
       }
     }
 
-    console.log(`✅ Verificación exitosa: ${totalEvents} eventos únicos verificados`);
     return true;
   } catch (error) {
     console.error('ERROR en verifyDataIntegrity:', error);
@@ -187,7 +170,6 @@ async function saveWithRetry(
     }, error);
 
     if (currentTry < maxRetries) {
-      console.log(`Reintentando guardar datos (intento ${currentTry + 1} de ${maxRetries})...`);
       await new Promise(resolve => setTimeout(resolve, 1000 * currentTry));
       return saveWithRetry(docRef, data, maxRetries, currentTry + 1);
     }
@@ -270,12 +252,10 @@ export async function initializeDataIfNeeded() {
 
     if (!draftDoc.exists()) {
       await setDoc(doc(db, 'schedule', DRAFT_DOC), initialData);
-      console.log('Datos de borrador inicializados');
     }
 
     if (!publishedDoc.exists()) {
       await setDoc(doc(db, 'schedule', PUBLISHED_DOC), initialData);
-      console.log('Datos publicados inicializados');
     }
   } catch (error) {
     console.error('Error inicializando datos:', error);

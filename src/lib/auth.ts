@@ -53,13 +53,10 @@ const checkIfAdminInFirestore = async (email: string): Promise<{
   permissions: AdminPermissions | null;
 }> => {
   try {
-    console.log('🔍 Verificando admin en Firestore para:', email);
-    
     const adminDoc = await getDoc(doc(db, 'admins', email));
     
     if (adminDoc.exists()) {
       const adminData = adminDoc.data() as AdminUserData;
-      console.log('✅ Datos de admin encontrados:', adminData);
       
       // Verificar que el administrador esté activo
       if (adminData.active) {
@@ -68,11 +65,9 @@ const checkIfAdminInFirestore = async (email: string): Promise<{
           permissions: adminData.permissions
         };
       } else {
-        console.log('⚠️ Administrador encontrado pero está inactivo');
         return { isAdmin: false, permissions: null };
       }
     } else {
-      console.log('❌ No se encontró documento de admin en Firestore');
       return { isAdmin: false, permissions: null };
     }
   } catch (error) {
@@ -89,9 +84,6 @@ const checkIfAdminInFirestore = async (email: string): Promise<{
  */
 const checkEmergencyAdmin = (email: string): boolean => {
   const isEmergencyAdmin = EMERGENCY_ADMIN_EMAILS.includes(email);
-  if (isEmergencyAdmin) {
-    console.log('🆘 Usando admin de emergencia para:', email);
-  }
   return isEmergencyAdmin;
 };
 
@@ -142,7 +134,6 @@ const checkIfAdmin = async (email: string | null): Promise<{
     // En caso de error, usar lista de emergencia como último recurso
     const isEmergencyAdmin = checkEmergencyAdmin(email);
     if (isEmergencyAdmin) {
-      console.log('🆘 Usando verificación de emergencia debido a error');
       const emergencyPermissions: AdminPermissions = {
         canPublish: true,
         canEditGlobalConfig: true,
@@ -160,8 +151,6 @@ const checkIfAdmin = async (email: string | null): Promise<{
 
 // Observador del estado de autenticación
 onAuthStateChanged(auth, async (user) => {
-  console.log('🔄 Estado de auth cambiado:', user?.email || 'no user');
-  
   isLoading.value = true;
   currentUser.value = user;
   
@@ -170,12 +159,6 @@ onAuthStateChanged(auth, async (user) => {
       const { isAdmin: adminStatus, permissions } = await checkIfAdmin(user.email);
       isAdmin.value = adminStatus;
       userPermissions.value = permissions;
-      
-      console.log('✅ Usuario autenticado:', {
-        email: user.email,
-        isAdmin: adminStatus,
-        permissions: permissions
-      });
     } catch (error) {
       console.error('Error verificando permisos de usuario:', error);
       isAdmin.value = false;
@@ -217,28 +200,17 @@ export const revalidatePermissions = async (): Promise<void> => {
  * @returns Promise con resultado del login
  */
 export const login = async (email: string, password: string) => {
-  try {
-    console.log('🔐 Intentando login para:', email);
-    
+  try {    
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
-    
-    console.log('✅ Login exitoso, verificando permisos...');
     
     // Verificar permisos de administrador
     const { isAdmin: adminStatus, permissions } = await checkIfAdmin(user.email);
     isAdmin.value = adminStatus;
     userPermissions.value = permissions;
     
-    console.log('🎯 Resultado de login:', {
-      email: user.email,
-      isAdmin: adminStatus,
-      permissions: permissions
-    });
-    
     return { success: true, user };
   } catch (error: unknown) {
-    console.error('❌ Error al iniciar sesión:', error);
     return { 
       success: false, 
       error: (error as { code?: string })?.code === 'auth/invalid-credential'
@@ -254,17 +226,14 @@ export const login = async (email: string, password: string) => {
  */
 export const logout = async () => {
   try {
-    console.log('🚪 Cerrando sesión...');
     await signOut(auth);
     
     // Limpiar estados
     isAdmin.value = false;
     userPermissions.value = null;
     
-    console.log('✅ Sesión cerrada exitosamente');
     return { success: true };
   } catch (error: unknown) {
-    console.error('❌ Error al cerrar sesión:', error);
     return { success: false, error: 'Error al cerrar sesión' };
   }
 };
@@ -275,7 +244,6 @@ export const logout = async () => {
  */
 export const initializeSuperAdmin = async (): Promise<void> => {
   if (!import.meta.env.DEV) {
-    console.warn('⚠️ initializeSuperAdmin solo debe ejecutarse en desarrollo');
     return;
   }
 
@@ -299,10 +267,9 @@ export const initializeSuperAdmin = async (): Promise<void> => {
     };
 
     await setDoc(doc(db, 'admins', 'instructoresterpel@spira.co'), superAdminData);
-    console.log('✅ Super administrador inicializado en Firestore');
     
   } catch (error) {
-    console.error('❌ Error inicializando super administrador:', error);
+    console.error('Error inicializando super administrador:', error);
   }
 };
 
@@ -314,6 +281,5 @@ export const exposeDebugTools = (): void => {
   // Verificar que estamos en el navegador y en modo desarrollo
   if (typeof window !== 'undefined' && import.meta.env.DEV) {
     (window as any).initializeSuperAdmin = initializeSuperAdmin;
-    console.log('🛠️ Función initializeSuperAdmin disponible en development mode');
   }
 }; 

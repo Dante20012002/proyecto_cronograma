@@ -169,11 +169,9 @@ export default function AdminManager(): JSX.Element {
     
     try {
       // Paso 1: Crear usuario en Firebase Auth
-      console.log('🔐 Creando usuario en Firebase Auth...');
       await createUserWithEmailAndPassword(auth, formData.email.trim(), formData.password);
       
       // Paso 2: Crear documento en Firestore con permisos
-      console.log('📋 Creando documento de permisos...');
       const adminData: Omit<AdminUser, 'createdAt'> = {
         email: formData.email.trim(),
         role: formData.role,
@@ -187,8 +185,6 @@ export default function AdminManager(): JSX.Element {
         ...adminData,
         createdAt: serverTimestamp()
       });
-
-      console.log('✅ Administrador creado exitosamente');
       
       // Limpiar formulario
       setFormData({ email: '', displayName: '', role: 'admin', password: '' });

@@ -50,7 +50,6 @@ export default function FilterBar({ isAdmin, onFilterChange }: FilterBarProps): 
 
   // Cargar opciones disponibles
   useEffect(() => {
-    console.log('🔄 FilterBar - Actualizando opciones de filtros');
     setAvailableOptions({
       instructors: getUniqueValues('instructors', isAdmin),
       regionales: getUniqueValues('regionales', isAdmin),

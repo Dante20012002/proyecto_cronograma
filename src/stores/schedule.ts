@@ -351,7 +351,6 @@ async function processOperationQueue() {
   }
   
   isProcessingQueue = true;
-  console.log(`🚦 Procesando cola de operaciones (${operationQueue.length} operaciones pendientes)`);
   
   while (operationQueue.length > 0) {
     const operation = operationQueue.shift();
@@ -361,13 +360,12 @@ async function processOperationQueue() {
         // Pequeño delay entre operaciones para evitar conflictos
         await new Promise(resolve => setTimeout(resolve, 50));
       } catch (error) {
-        console.error('❌ Error en operación de la cola:', error);
+        // Error en operación de la cola
       }
     }
   }
   
   isProcessingQueue = false;
-  console.log('✅ Cola de operaciones procesada completamente');
 }
 
 // Función auxiliar para obtener la semana inicial
@@ -421,7 +419,6 @@ export async function initializeFirebase() {
       if (!hasInitializedWeek) {
         setTimeout(() => {
           if (isAdmin.value && isWeekOutdated()) {
-            console.log('📅 Reseteando automáticamente a la semana actual para admin (primera carga)');
             resetToCurrentWeek();
           }
           hasInitializedWeek = true; // Marcar como inicializado
@@ -435,36 +432,27 @@ export async function initializeFirebase() {
       publishedGlobalConfig.value = data.globalConfig;
       isConnected.value = true;
     });
-
-    console.log('Firebase inicializado correctamente');
     
     // Ejecutar migración automática después de la inicialización
     setTimeout(() => {
-      console.log('🔄 Ejecutando migración automática al nuevo formato de fechas...');
       const migrated = migrateAllEventsToNewFormat();
       
       if (migrated > 0) {
-        console.log(`✅ Migración completada: ${migrated} instructores migrados`);
         // Guardar automáticamente después de migrar
         saveDraftChanges().then(() => {
-          console.log('✅ Datos migrados guardados en Firebase');
+          // Datos migrados guardados en Firebase
         }).catch(error => {
-          console.error('❌ Error al guardar datos migrados:', error);
+          // Error al guardar datos migrados
         });
       }
       
       // Verificar y limpiar duplicados automáticamente después de la migración
-      console.log('🔍 Verificando integridad de datos al inicializar...');
       const result = debugDataIntegrity();
       
       if (!result.isValid && result.problematicEvents.length > 0) {
         const duplicateEvents = result.problematicEvents.filter(p => p.issue === 'duplicate_id');
         if (duplicateEvents.length > 0) {
-          console.log(`⚠️ Se encontraron ${duplicateEvents.length} eventos duplicados. Limpiando automáticamente...`);
           const removed = removeDuplicateEvents();
-          if (removed > 0) {
-            console.log(`✅ Se eliminaron ${removed} eventos duplicados automáticamente.`);
-          }
         }
       }
     }, 3000); // Esperar 3 segundos para que todo se cargue
@@ -503,28 +491,22 @@ export async function publishChanges() {
   }
 
   try {
-    console.log('🚀 Iniciando publicación de cambios...');
     isPublishing.value = true;
     isProcessing.value = true;
     canPublish.value = false; // Bloquear inmediatamente
 
     // Verificar integridad antes de publicar
-    console.log('🔍 Verificando integridad antes de publicar...');
     const integrityResult = debugDataIntegrity();
     if (!integrityResult.isValid) {
       const duplicates = integrityResult.problematicEvents.filter(p => p.issue === 'duplicate_id');
       const incompleteEvents = integrityResult.problematicEvents.filter(p => p.issue === 'incomplete_event');
       
       if (duplicates.length > 0) {
-        console.log(`⚠️ Se encontraron ${duplicates.length} eventos duplicados antes de publicar. Limpiando automáticamente...`);
         const removed = removeDuplicateEvents();
-        console.log(`✅ Se eliminaron ${removed} eventos duplicados antes de publicar.`);
       }
       
       if (incompleteEvents.length > 0) {
-        console.log(`⚠️ Se encontraron ${incompleteEvents.length} eventos incompletos antes de publicar. Corrigiendo automáticamente...`);
         const fixed = fixIncompleteEvents(incompleteEvents);
-        console.log(`✅ Se corrigieron ${fixed} eventos incompletos antes de publicar.`);
       }
     }
 
@@ -534,7 +516,6 @@ export async function publishChanges() {
     const currentDraftGlobalConfig = draftGlobalConfig.value;
 
     // MIGRAR DATOS AL NUEVO FORMATO ANTES DE PUBLICAR
-    console.log('🔄 Migrando datos al nuevo formato antes de publicar...');
     let migratedRows = currentDraftScheduleRows.map(row => {
       const migratedRow = migrateEventsToFullDate(row);
       return migratedRow;
@@ -543,7 +524,6 @@ export async function publishChanges() {
     // Verificar si hubo cambios en la migración
     const migrationHadChanges = JSON.stringify(currentDraftScheduleRows) !== JSON.stringify(migratedRows);
     if (migrationHadChanges) {
-      console.log('✅ Datos migrados al nuevo formato para publicación');
       currentDraftScheduleRows = migratedRows;
       
       // Actualizar el estado draft con los datos migrados
@@ -551,11 +531,9 @@ export async function publishChanges() {
       markAsDirty();
       
       // Guardar los datos migrados en draft primero
-      console.log('💾 Guardando datos migrados en draft...');
       await saveDraftChanges();
     }
 
-    console.log('📦 Publicando datos en Firebase...');
     // Intentar publicar los cambios (ahora con datos migrados)
     const saveSuccess = await publishData({
       instructors: currentDraftInstructors,
@@ -567,7 +545,6 @@ export async function publishChanges() {
       throw new Error('No se pudieron publicar los cambios después de varios intentos');
     }
 
-    console.log('⏱️ Esperando confirmación de Firebase...');
     // Esperar un momento para asegurar que Firebase procese los cambios
     await new Promise(resolve => setTimeout(resolve, 2000));
 
@@ -584,7 +561,6 @@ export async function publishChanges() {
     hasUnpublishedChanges.value = false;
     canPublish.value = false; // Resetear después de publicar
 
-    console.log('✅ CAMBIOS PUBLICADOS EXITOSAMENTE (con migración automática)');
     return true;
   } catch (error) {
     console.error('❌ Error al publicar cambios:', error);
@@ -605,32 +581,25 @@ export async function saveDraftChanges() {
   }
 
   try {
-    console.log('💾 Iniciando guardado de borrador...');
     isSaving.value = true;
     isProcessing.value = true;
     canPublish.value = false; // Bloquear publicación durante guardado
 
     // Verificar integridad antes de guardar
-    console.log('🔍 Verificando integridad antes de guardar...');
     const integrityResult = debugDataIntegrity();
     if (!integrityResult.isValid) {
       const duplicates = integrityResult.problematicEvents.filter(p => p.issue === 'duplicate_id');
       const incompleteEvents = integrityResult.problematicEvents.filter(p => p.issue === 'incomplete_event');
       
       if (duplicates.length > 0) {
-        console.log(`⚠️ Se encontraron ${duplicates.length} eventos duplicados antes de guardar. Limpiando automáticamente...`);
         const removed = removeDuplicateEvents();
-        console.log(`✅ Se eliminaron ${removed} eventos duplicados antes de guardar.`);
       }
       
       if (incompleteEvents.length > 0) {
-        console.log(`⚠️ Se encontraron ${incompleteEvents.length} eventos incompletos antes de guardar. Corrigiendo automáticamente...`);
         const fixed = fixIncompleteEvents(incompleteEvents);
-        console.log(`✅ Se corrigieron ${fixed} eventos incompletos automáticamente.`);
       }
     }
 
-    console.log('📦 Guardando datos en Firebase...');
     const success = await saveDraftData({
       instructors: draftInstructors.value,
       scheduleRows: draftScheduleRows.value,
@@ -639,16 +608,12 @@ export async function saveDraftChanges() {
 
     if (success) {
       hasUnpublishedChanges.value = true;
-      console.log('✅ BORRADOR GUARDADO EXITOSAMENTE');
       
       // Esperar 2 segundos y luego permitir publicar
-      console.log('⏱️ Esperando 2 segundos antes de permitir publicar...');
       setTimeout(() => {
         canPublish.value = true;
-        console.log('✅ PUBLICACIÓN HABILITADA');
       }, 2000);
     } else {
-      console.log('❌ Error al guardar borrador');
       canPublish.value = false;
     }
 
@@ -675,10 +640,7 @@ export function clearAllDraftEvents(currentWeekOnly: boolean = false) {
       Object.keys(eventsToKeep).forEach(dateStr => {
         // Las fechas están en formato YYYY-MM-DD, así que podemos compararlas directamente
         if (dateStr >= currentWeek.startDate && dateStr <= currentWeek.endDate) {
-          console.log(`🗑️ Eliminando eventos del día ${dateStr} (dentro de la semana actual)`);
           delete eventsToKeep[dateStr];
-        } else {
-          console.log(`✅ Manteniendo eventos del día ${dateStr} (fuera de la semana actual)`);
         }
       });
       
@@ -687,9 +649,6 @@ export function clearAllDraftEvents(currentWeekOnly: boolean = false) {
         events: eventsToKeep
       };
     });
-    
-    console.log('📅 Resumen de limpieza:');
-    console.log(`  Semana actual: ${currentWeek.startDate} a ${currentWeek.endDate}`);
     
     draftScheduleRows.value = updatedRows;
   } else {
@@ -856,12 +815,6 @@ export function updateEvent(rowId: string, day: string, updatedEvent: Event) {
 }
 
 export function deleteEvent(rowId: string, day: string, eventId: string) {
-  console.log('🗑️ deleteEvent - Iniciando eliminación:', {
-    rowId,
-    day,
-    eventId
-  });
-
   const rows = [...draftScheduleRows.value];
   const rowIndex = rows.findIndex(row => row.id === rowId);
   
@@ -874,7 +827,6 @@ export function deleteEvent(rowId: string, day: string, eventId: string) {
     let eventIndex = events.findIndex(e => e.id === eventId);
     
     if (eventIndex !== -1) {
-      console.log('🗑️ deleteEvent - Eliminando del nuevo formato (fecha completa)');
       events.splice(eventIndex, 1);
       row.events[fullDate] = events;
     } else {
@@ -883,7 +835,6 @@ export function deleteEvent(rowId: string, day: string, eventId: string) {
       eventIndex = events.findIndex(e => e.id === eventId);
       
       if (eventIndex !== -1) {
-        console.log('🗑️ deleteEvent - Eliminando del formato anterior (solo día)');
         events.splice(eventIndex, 1);
         row.events[day] = events;
       }
@@ -893,12 +844,7 @@ export function deleteEvent(rowId: string, day: string, eventId: string) {
       rows[rowIndex] = row;
       draftScheduleRows.value = rows;
       markAsDirty();
-      console.log('✅ deleteEvent - Evento eliminado exitosamente');
-    } else {
-      console.log('❌ deleteEvent - Evento no encontrado con ID:', eventId);
     }
-  } else {
-    console.log('❌ deleteEvent - Fila no encontrada con ID:', rowId);
   }
 }
 
@@ -919,12 +865,6 @@ export function addEvent(rowId: string, day: string, newEvent: Event) {
     rows[rowIndex] = row;
     draftScheduleRows.value = rows;
     markAsDirty();
-    
-    console.log('✅ addEvent - Evento agregado con fecha completa:', {
-      eventId: newEvent.id,
-      day: day,
-      fullDate: fullDate
-    });
   }
 }
 
@@ -948,17 +888,9 @@ export function addInstructor(name: string, regional: string) {
     events: {}
   };
 
-  console.log('➕ addInstructor - Creando instructor:', {
-    id: newInstructor.id,
-    name: name,
-    regional: regional
-  });
-
   draftInstructors.value = [...draftInstructors.value, newInstructor];
   draftScheduleRows.value = [...draftScheduleRows.value, newRow];
   markAsDirty();
-  
-  console.log('✅ addInstructor - Instructor creado correctamente');
 }
 
 export function updateInstructor(id: string, name: string, regional: string) {
@@ -972,42 +904,12 @@ export function updateInstructor(id: string, name: string, regional: string) {
     const currentInstructor = instructors[instructorIndex];
     const currentRow = rows[rowIndex];
     
-    // Verificar si cambió la ubicación
-    const locationChanged = currentRow.regional !== regional;
-    
-    if (locationChanged) {
-      console.log(`📍 Actualizando ubicación de ${currentInstructor.name}:`);
-      console.log(`  📍 Anterior: ${currentRow.regional}`);
-      console.log(`  📍 Nueva: ${regional}`);
-      console.log(`  ℹ️ NOTA: Esta actualización afecta la información principal del instructor.`);
-      console.log(`  ℹ️ Los eventos históricos mantienen sus ubicaciones originales por semana.`);
-      
-      // Verificar si tiene eventos en múltiples ubicaciones
-      const uniqueLocations = new Set<string>();
-      Object.values(currentRow.events).forEach(dayEvents => {
-        dayEvents.forEach(event => {
-          if (event.location) {
-            uniqueLocations.add(event.location);
-          }
-        });
-      });
-      
-      if (uniqueLocations.size > 1) {
-        console.log(`  📊 Este instructor tiene eventos históricos en ${uniqueLocations.size} ubicaciones diferentes:`);
-        uniqueLocations.forEach(location => {
-          console.log(`    - ${location}`);
-        });
-      }
-    }
-    
     instructors[instructorIndex] = { ...instructors[instructorIndex], name, regional };
     rows[rowIndex] = { ...rows[rowIndex], instructor: name, regional };
     
     draftInstructors.value = instructors;
     draftScheduleRows.value = rows;
     markAsDirty();
-    
-    console.log(`✅ Instructor actualizado: ${name} (${regional})`);
   }
 }
 
@@ -1026,26 +928,10 @@ export function deleteInstructor(id: string) {
     return total + dayEvents.length;
   }, 0);
   
-  const eventDays = Object.keys(instructorRow.events).filter(day => 
-    instructorRow.events[day].length > 0
-  ).length;
-  
-  console.log(`🗑️ Eliminando instructor: ${instructor.name}`);
-  console.log(`📊 Eventos históricos que se eliminarán: ${totalEvents} eventos en ${eventDays} días`);
-  
-  // Mostrar detalles de eventos por día para referencia
-  Object.entries(instructorRow.events).forEach(([day, events]) => {
-    if (events.length > 0) {
-      console.log(`  📅 ${day}: ${events.length} eventos`);
-    }
-  });
-  
   // Proceder con la eliminación
   draftInstructors.value = draftInstructors.value.filter(i => i.id !== id);
   draftScheduleRows.value = draftScheduleRows.value.filter(r => r.id !== id);
   markAsDirty();
-  
-  console.log(`✅ Instructor ${instructor.name} eliminado junto con ${totalEvents} eventos históricos`);
 }
 
 // --- OPERACIONES DE CONFIGURACIÓN ---
@@ -1104,8 +990,6 @@ export function updateWeekTitle(startDate: string, endDate: string, title: strin
   };
   
   markAsDirty();
-  
-  console.log(`📝 Título actualizado para semana ${startDate}: "${title}"`);
 }
 
 /**
@@ -1149,7 +1033,6 @@ export function updateWeek(startDate: string, endDate: string) {
  */
 export function resetToCurrentWeek() {
   const currentWeek = getCurrentWeek();
-  console.log('📅 Reseteando a la semana actual:', currentWeek);
   
   draftGlobalConfig.value = {
     ...draftGlobalConfig.value,
@@ -1242,9 +1125,6 @@ export function moveEvent(
   toDay: string
 ) {
   try {
-    console.log('=== FUNCIÓN MOVEEVENT INICIADA ===');
-    console.log('📋 Parámetros:', { eventId, fromRowId, fromDay, toRowId, toDay });
-    
     // Validar parámetros
     if (!eventId || !fromRowId || !fromDay || !toRowId || !toDay) {
       console.error('❌ Parámetros inválidos para moveEvent');
@@ -1305,20 +1185,17 @@ export function moveEvent(
       draftScheduleRows.value = rows;
       markAsDirty();
       
-      console.log('✅ EVENTO MOVIDO CORRECTAMENTE');
-      
       // Agregar guardado a la cola
       addToOperationQueue(async () => {
         if (!isSaving.value && !isPublishing.value && !isProcessing.value) {
           await saveDraftChanges();
-          console.log('✅ EVENTO MOVIDO Y GUARDADO EN FIREBASE');
         }
       }).catch(error => {
-        console.error('❌ Error al guardar en Firebase:', error);
+        // Error al guardar en Firebase
       });
     }
   } catch (error) {
-    console.error('❌ Error al mover el evento:', error);
+    // Error al mover el evento
   }
 }
 
@@ -1330,9 +1207,6 @@ export function copyEvent(
   toDay: string
 ) {
   try {
-    console.log('=== FUNCIÓN COPYEVENT INICIADA ===');
-    console.log('📋 Parámetros:', { eventId, fromRowId, fromDay, toRowId, toDay });
-    
     // Validar parámetros
     if (!eventId || !fromRowId || !fromDay || !toRowId || !toDay) {
       console.error('❌ Parámetros inválidos para copyEvent');
@@ -1403,21 +1277,17 @@ export function copyEvent(
     draftScheduleRows.value = rows;
     markAsDirty();
     
-    console.log('✅ EVENTO COPIADO CORRECTAMENTE');
-    
     // Agregar guardado a la cola
     addToOperationQueue(async () => {
       if (!isSaving.value && !isPublishing.value && !isProcessing.value) {
         await saveDraftChanges();
-        console.log('✅ EVENTO COPIADO Y GUARDADO EN FIREBASE');
       }
     }).catch(error => {
-      console.error('❌ Error al guardar copia en Firebase:', error);
+      // Error al guardar copia en Firebase
     });
 
     return { success: true, message: 'Evento copiado exitosamente' };
   } catch (error) {
-    console.error('❌ Error al copiar el evento:', error);
     return { success: false, error: 'Error interno' };
   }
 }
@@ -1426,8 +1296,6 @@ export function copyEvent(
 
 // Función específica para copiar un evento en la misma celda
 export function copyEventInSameCell(eventId: string, rowId: string, day: string) {
-  console.log('📋 Copiando evento en la misma celda:', { eventId, rowId, day });
-  
   // Usar la función copyEvent existente, copiando en la misma ubicación
   return copyEvent(eventId, rowId, day, rowId, day);
 }
@@ -1443,18 +1311,9 @@ export function debugDataIntegrity() {
     globalConfig: draftGlobalConfig.value
   };
 
-  console.log('=== DEBUG INTEGRIDAD DE DATOS ===');
-  console.log(`🔍 Estado del sistema: Guardando=${isSaving.value}, Publicando=${isPublishing.value}, Procesando=${isProcessing.value}`);
-  console.log(`📊 Cola de operaciones: ${operationQueue.length} pendientes, Procesando=${isProcessingQueue}`);
-  console.log('Instructores:', data.instructors.length);
-  console.log('Filas de cronograma:', data.scheduleRows.length);
-
   // Verificar instructores vs filas
   const instructorIds = new Set(data.instructors.map(i => i.id));
   const rowIds = new Set(data.scheduleRows.map(r => r.id));
-  
-  console.log('IDs de instructores:', Array.from(instructorIds));
-  console.log('IDs de filas:', Array.from(rowIds));
 
   const missingRows = Array.from(instructorIds).filter(id => !rowIds.has(id));
   const extraRows = Array.from(rowIds).filter(id => !instructorIds.has(id));
@@ -1472,14 +1331,9 @@ export function debugDataIntegrity() {
   const problematicEvents = [];
 
   for (const row of data.scheduleRows) {
-    console.log(`Fila: ${row.instructor} (${row.id})`);
-    
     for (const [day, events] of Object.entries(row.events)) {
-      console.log(`  Día ${day}: ${events.length} eventos`);
-      
       for (const event of events) {
         totalEvents++;
-        console.log(`    Evento: ${event.id} - ${event.title}`);
 
         // Verificar ID único
         if (eventIds.has(event.id)) {
@@ -1503,32 +1357,10 @@ export function debugDataIntegrity() {
     }
   }
 
-  console.log(`Total de eventos: ${totalEvents}`);
-  console.log(`Eventos problemáticos: ${problematicEvents.length}`);
-  
-  if (problematicEvents.length > 0) {
-    console.error('Eventos con problemas:', problematicEvents);
-    
-    // Si hay operaciones en curso, ser más tolerante
-    if (isProcessingQueue || isSaving.value || isProcessing.value) {
-      console.warn('⚠️ Hay operaciones en curso, algunos problemas pueden ser temporales');
-    }
-  }
-
   const isValid = missingRows.length === 0 && problematicEvents.length === 0;
   
   // Durante operaciones activas, ser más tolerante con problemas menores
   const isOperating = isProcessingQueue || isSaving.value || isProcessing.value || operationQueue.length > 0;
-  if (isOperating && problematicEvents.length > 0) {
-    const seriousProblems = problematicEvents.filter(p => p.issue === 'duplicate_id');
-    const minorProblems = problematicEvents.filter(p => p.issue !== 'duplicate_id');
-    
-    if (seriousProblems.length === 0 && minorProblems.length > 0) {
-      console.warn(`⚠️ Problemas menores durante operaciones activas (${minorProblems.length}), pueden ser temporales`);
-    }
-  }
-  
-  console.log(isValid ? '✅ Datos válidos' : (isOperating ? '⚠️ Datos en proceso' : '❌ Datos inválidos'));
   
   return {
     isValid: isValid || (isOperating && problematicEvents.filter(p => p.issue === 'duplicate_id').length === 0),
@@ -1541,7 +1373,6 @@ export function debugDataIntegrity() {
 }
 
 export function removeDuplicateEvents() {
-  console.log('=== INICIANDO LIMPIEZA DE EVENTOS DUPLICADOS ===');
   const rows = [...draftScheduleRows.value];
   const globalEventIds = new Set<string>();
   let duplicatesRemoved = 0;
@@ -1554,7 +1385,6 @@ export function removeDuplicateEvents() {
       
       for (const event of events) {
         if (globalEventIds.has(event.id)) {
-          console.log(`🗑️ Removiendo evento duplicado: ${event.id} - ${event.title}`);
           duplicatesRemoved++;
         } else {
           globalEventIds.add(event.id);
@@ -1567,16 +1397,14 @@ export function removeDuplicateEvents() {
     
     rows[i] = row;
   }
-
-  console.log(`✅ Eventos duplicados removidos: ${duplicatesRemoved}`);
   
   if (duplicatesRemoved > 0) {
     draftScheduleRows.value = rows;
     markAsDirty();
     saveDraftChanges().then(() => {
-      console.log('✅ Datos limpiados guardados en Firebase');
+      // Datos limpiados guardados en Firebase
     }).catch(error => {
-      console.error('Error al guardar datos limpiados:', error);
+      // Error al guardar datos limpiados
     });
   }
   
@@ -1584,7 +1412,6 @@ export function removeDuplicateEvents() {
 }
 
 export function fixIncompleteEvents(problematicEvents: any[]) {
-  console.log('=== INICIANDO CORRECCIÓN DE EVENTOS INCOMPLETOS ===');
   const rows = [...draftScheduleRows.value];
   let eventsFixed = 0;
 
@@ -1626,15 +1453,12 @@ export function fixIncompleteEvents(problematicEvents: any[]) {
     }
     
     if (wasFixed) {
-      console.log(`🔧 Corrigiendo evento incompleto: ${event.id} - ${correctedEvent.title}`);
       events[eventIndex] = correctedEvent;
       row.events[day] = events;
       rows[rowIndex] = row;
       eventsFixed++;
     }
   }
-  
-  console.log(`✅ Eventos incompletos corregidos: ${eventsFixed}`);
   
   if (eventsFixed > 0) {
     draftScheduleRows.value = rows;
@@ -1669,8 +1493,6 @@ export function updateDraftEvent(rowId: string, day: string, eventId: string, up
 
 // Función para debug del estado de publicación
 export function debugPublishState() {
-  console.log('=== ESTADO DE PUBLICACIÓN ===');
-  
   const draft = {
     instructors: draftInstructors.value.length,
     scheduleRows: draftScheduleRows.value.length,
@@ -1688,36 +1510,11 @@ export function debugPublishState() {
     globalConfig: publishedGlobalConfig.value.title
   };
   
-  console.log('📝 Estado Draft:', draft);
-  console.log('📤 Estado Published:', published);
-  
-  // Verificar formato de eventos en published
-  console.log('\n=== ANÁLISIS DE FORMATO DE EVENTOS PUBLISHED ===');
-  publishedScheduleRows.value.forEach(row => {
-    const eventKeys = Object.keys(row.events);
-    const hasNewFormat = eventKeys.some(key => key.includes('-'));
-    const hasOldFormat = eventKeys.some(key => !key.includes('-'));
-    const totalEvents = Object.values(row.events).flat().length;
-    
-    console.log(`Instructor: ${row.instructor}`);
-    console.log(`  - Formato nuevo (fechas completas): ${hasNewFormat ? '✅' : '❌'}`);
-    console.log(`  - Formato anterior (solo días): ${hasOldFormat ? '⚠️' : '✅'}`);
-    console.log(`  - Total eventos: ${totalEvents}`);
-    console.log(`  - Claves de eventos:`, eventKeys);
-  });
-  
   return { draft, published };
 }
 
 // Función para debug de la cola de operaciones
 export function debugOperationQueue() {
-  console.log('=== ESTADO DE LA COLA DE OPERACIONES ===');
-  console.log('Cola en procesamiento:', isProcessingQueue);
-  console.log('Operaciones pendientes:', operationQueue.length);
-  console.log('Estado de guardado:', isSaving.value);
-  console.log('Estado de publicación:', isPublishing.value);
-  console.log('Estado de procesamiento:', isProcessing.value);
-  
   return {
     isProcessingQueue,
     pendingOperations: operationQueue.length,
@@ -1733,8 +1530,6 @@ export function debugOperationQueue() {
  * Migra todos los eventos del formato anterior al nuevo formato
  */
 export function migrateAllEventsToNewFormat() {
-  console.log('🔄 Migrando todos los eventos al nuevo formato...');
-  
   const rows = [...draftScheduleRows.value];
   let migratedCount = 0;
   
@@ -1751,9 +1546,6 @@ export function migrateAllEventsToNewFormat() {
   if (migratedCount > 0) {
     draftScheduleRows.value = rows;
     markAsDirty();
-    console.log(`✅ Migrados ${migratedCount} instructores al nuevo formato`);
-  } else {
-    console.log('ℹ️ No se requirió migración');
   }
   
   return migratedCount;
@@ -1763,8 +1555,6 @@ export function migrateAllEventsToNewFormat() {
  * Limpia eventos del formato anterior después de una migración exitosa
  */
 export function cleanupLegacyEvents() {
-  console.log('🧹 Limpiando eventos del formato anterior...');
-  
   const rows = [...draftScheduleRows.value];
   let cleanedCount = 0;
   
@@ -1779,8 +1569,6 @@ export function cleanupLegacyEvents() {
       if (key.includes('-') && key.match(/^\d{4}-\d{2}-\d{2}$/)) {
         // Mantener eventos con formato de fecha completa
         cleanedEvents[key] = events;
-      } else {
-        console.log(`🗑️ Removiendo eventos del formato anterior: ${key}`);
       }
     });
     
@@ -1796,9 +1584,6 @@ export function cleanupLegacyEvents() {
   if (cleanedCount > 0) {
     draftScheduleRows.value = rows;
     markAsDirty();
-    console.log(`✅ Limpiados ${cleanedCount} instructores del formato anterior`);
-  } else {
-    console.log('ℹ️ No se requirió limpieza');
   }
   
   return cleanedCount;
@@ -1989,8 +1774,6 @@ export function getFilteredRows(rows: ScheduleRow[]): ScheduleRow[] {
     date.setDate(startDate.getDate() + i);
     weekDates.push(date.toISOString().split('T')[0]);
   }
-  
-  console.log('📅 getFilteredRows - Fechas de la semana a considerar:', weekDates);
 
   return rows
     .filter(row => {
@@ -2121,8 +1904,6 @@ export function getFilteredRows(rows: ScheduleRow[]): ScheduleRow[] {
           totalMatchingEvents += matchingEvents.length;
         }
       });
-
-      console.log(`📊 ${row.instructor}: ${totalMatchingEvents} eventos coincidentes en ${Object.keys(filteredEvents).length} días`);
 
       // Devolver la fila con eventos filtrados
       return {
@@ -2318,7 +2099,6 @@ export function setViewMode(mode: 'weekly' | 'monthly') {
  */
 export function setUserViewMode(mode: 'weekly' | 'monthly') {
   userViewMode.value = mode;
-  console.log('🔄 setUserViewMode - Modo actualizado:', mode);
 } 
 
 /**

@@ -88,13 +88,6 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
 
     // Validar conflictos de horario
     if (formData.startTime && formData.endTime) {
-      console.log('🕐 AddEventCard - Validando conflictos para nuevo evento:', {
-        rowId,
-        day,
-        startTime: formData.startTime,
-        endTime: formData.endTime
-      });
-
       const { hasConflict, conflictingEvent } = checkTimeConflict(
         rowId,
         day,
@@ -106,17 +99,9 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
         const conflictMessage = conflictingEvent.time 
           ? `"${conflictingEvent.title}" programado de ${conflictingEvent.time}`
           : `"${conflictingEvent.title}"`;
-        
-        console.log('❌ AddEventCard - Conflicto detectado:', {
-          newEvent: `${formData.startTime} a ${formData.endTime}`,
-          conflictingEvent: conflictingEvent.title,
-          conflictingTime: conflictingEvent.time
-        });
 
         alert(`No se puede crear el evento porque existe un conflicto de horario con el evento ${conflictMessage}.`);
         return;
-      } else {
-        console.log('✅ AddEventCard - Sin conflictos, procediendo a crear evento');
       }
     }
 

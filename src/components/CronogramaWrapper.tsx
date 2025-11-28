@@ -34,13 +34,6 @@ function ViewRenderer(): JSX.Element {
 
   const currentViewMode = isAdminSignal.value ? adminViewMode.value : userViewModeSignal.value;
   
-  console.log('🔄 ViewRenderer - Renderizando vista:', { 
-    currentViewMode, 
-    isAdmin: isAdminSignal.value,
-    adminMode: adminViewMode.value,
-    userMode: userViewModeSignal.value
-  });
-  
   return currentViewMode === 'monthly' 
     ? <MonthlyScheduleGrid isAdmin={isAdminSignal.value} />
     : <ScheduleGrid isAdmin={isAdminSignal.value} />;
@@ -69,7 +62,6 @@ export default function CronogramaWrapper(): JSX.Element {
 
     // Inicializar Firebase al montar el componente
     initializeFirebase().catch(err => {
-      console.error('Error al inicializar Firebase:', err);
       setError('Error al conectar con el servidor. Por favor, recarga la página.');
     });
 
@@ -79,8 +71,6 @@ export default function CronogramaWrapper(): JSX.Element {
     // Solo en modo desarrollo: exponer funciones de debugging de forma controlada
     // Este código se ejecuta solo en el cliente después del montaje
     if (typeof window !== 'undefined' && import.meta.env.DEV) {
-      console.log('%c=== MODO DESARROLLO - DEBUGGING DISPONIBLE ===', 'color: #ff6600; font-weight: bold; font-size: 14px;');
-      
       // Crear objeto de debugging encapsulado
       const debugTools = {
         // Herramientas de diagnóstico
@@ -103,53 +93,47 @@ export default function CronogramaWrapper(): JSX.Element {
         getCurrentWeekTitle: getCurrentWeekTitle,
         copyEvent: copyEventInSameCell,
         
-        // ⚠️ HERRAMIENTAS PELIGROSAS
+        //HERRAMIENTAS PELIGROSAS
         DANGER: {
           clearAllDrafts: () => {
-            console.warn('⚠️ ADVERTENCIA: Esta función eliminará TODOS los eventos en borrador');
-            console.log('Para continuar, ejecuta: debugTools.DANGER.confirmClearAllDrafts()');
+            // ADVERTENCIA: Esta función eliminará TODOS los eventos en borrador
+            // Para continuar, ejecuta: debugTools.DANGER.confirmClearAllDrafts()
           },
           confirmClearAllDrafts: () => {
             // Verificar que confirm está disponible (client-side)
             if (typeof window !== 'undefined' && window.confirm) {
-              if (window.confirm('⚠️ ÚLTIMA ADVERTENCIA: Esto eliminará TODOS los eventos en borrador. ¿Continuar?')) {
+              if (window.confirm('ÚLTIMA ADVERTENCIA: Esto eliminará TODOS los eventos en borrador. ¿Continuar?')) {
                 return clearAllDraftEvents();
               }
-            } else {
-              console.error('⚠️ Esta función solo está disponible en el navegador');
             }
           }
         },
         
         // Ayuda
         help: () => {
-          console.log('%c=== HERRAMIENTAS DE DEBUGGING DISPONIBLES ===', 'color: #00ff00; font-weight: bold;');
-          console.log('%c🔍 DIAGNÓSTICO:', 'color: #00bfff; font-weight: bold;');
-          console.log('debugTools.checkIntegrity()     - Verificar integridad de datos');
-          console.log('debugTools.checkPublishState()  - Estado de publicación');
-          console.log('debugTools.checkOperationQueue() - Cola de operaciones');
-          console.log('%c🧹 LIMPIEZA:', 'color: #00bfff; font-weight: bold;');
-          console.log('debugTools.removeDuplicates()   - Limpiar eventos duplicados');
-          console.log('debugTools.fixIncomplete()      - Corregir eventos incompletos');
-          console.log('debugTools.cleanupLegacy()      - Limpiar formato anterior');
-          console.log('%c🔄 MIGRACIÓN:', 'color: #00bfff; font-weight: bold;');
-          console.log('debugTools.migrateFormat()      - Migrar al nuevo formato');
-          console.log('debugTools.resetWeek()          - Resetear a semana actual');
-          console.log('%c📋 GESTIÓN:', 'color: #00bfff; font-weight: bold;');
-          console.log('debugTools.copyEvent(id, row, day) - Copiar evento');
-          console.log('debugTools.updateWeekTitle(...)    - Actualizar título');
-          console.log('%c⚠️ PELIGROSAS:', 'color: #ff6600; font-weight: bold;');
-          console.log('debugTools.DANGER.clearAllDrafts() - Ver advertencia');
-          console.log('%c', 'color: #ffffff;');
-          console.log('%cUsa debugTools.help() para ver esta ayuda nuevamente', 'color: #888888;');
+          // HERRAMIENTAS DE DEBUGGING DISPONIBLES
+          // DIAGNÓSTICO:
+          // debugTools.checkIntegrity()     - Verificar integridad de datos
+          // debugTools.checkPublishState()  - Estado de publicación
+          // debugTools.checkOperationQueue() - Cola de operaciones
+          // LIMPIEZA:
+          // debugTools.removeDuplicates()   - Limpiar eventos duplicados
+          // debugTools.fixIncomplete()      - Corregir eventos incompletos
+          // debugTools.cleanupLegacy()      - Limpiar formato anterior
+          // MIGRACIÓN:
+          // debugTools.migrateFormat()      - Migrar al nuevo formato
+          // debugTools.resetWeek()          - Resetear a semana actual
+          // GESTIÓN:
+          // debugTools.copyEvent(id, row, day) - Copiar evento
+          // debugTools.updateWeekTitle(...)    - Actualizar título
+          // PELIGROSAS:
+          // debugTools.DANGER.clearAllDrafts() - Ver advertencia
+          // Usa debugTools.help() para ver esta ayuda nuevamente
         }
       };
 
       // Exponer herramientas de debugging de forma controlada
       (window as any).debugTools = debugTools;
-      
-      console.log('%cUsa debugTools.help() para ver todas las herramientas disponibles', 'color: #00ff00;');
-      console.log('%cEjemplo: debugTools.checkIntegrity()', 'color: #ffff00;');
     }
 
     // Limpiar recursos al desmontar
@@ -164,7 +148,7 @@ export default function CronogramaWrapper(): JSX.Element {
         <div class="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md w-full">
           <div class="flex items-center space-x-3">
             <div class="flex-shrink-0">
-              <span class="text-red-600 text-2xl">❌</span>
+              <span class="text-red-600 text-2xl"></span>
             </div>
             <div>
               <h3 class="text-lg font-medium text-red-800">Error de Conexión</h3>

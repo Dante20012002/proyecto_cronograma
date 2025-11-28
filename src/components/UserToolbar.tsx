@@ -31,8 +31,6 @@ export default function UserToolbar(): JSX.Element {
   const Title = 'Cronograma Mensual Escuelas Terpel';
 
   const handleNavigate = (direction: 'prev' | 'next') => {
-    console.log('🔄 UserToolbar - Navegando:', { direction, viewMode, week });
-    
     if (viewMode === 'weekly') {
       navigateWeek(direction);
     } else {
