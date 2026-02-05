@@ -514,6 +514,43 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
     }
   }, [isScrolled]);
 
+  // Detectar cuando headers sticky se compactan (solo móvil)
+  useEffect(() => {
+    if (typeof window === 'undefined' || window.innerWidth >= 768) return; // Solo para móviles
+
+    const mobileContainer = document.querySelector('.mobile\\:hidden');
+    if (!mobileContainer) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const header = entry.target as HTMLElement;
+          if (entry.boundingClientRect.top <= 1 && entry.intersectionRatio < 1) {
+            header.classList.add('compacted');
+          } else {
+            header.classList.remove('compacted');
+          }
+        });
+      },
+      {
+        root: mobileContainer,
+        threshold: [0, 0.1, 0.9, 1],
+        rootMargin: '-1px 0px 0px 0px',
+      }
+    );
+
+    // Observar todos los headers sticky después de un pequeño delay
+    const timeoutId = setTimeout(() => {
+      const headers = document.querySelectorAll('.mobile\\:hidden .sticky');
+      headers.forEach((header) => observer.observe(header));
+    }, 200);
+
+    return () => {
+      clearTimeout(timeoutId);
+      observer.disconnect();
+    };
+  }, [currentWeek]); // Usar currentWeek en lugar de weekDays
+
   // Obtener el título específico de la semana actual
   const weekTitle = isAdminProp 
     ? getWeekTitle(currentWeek.startDate, currentWeek.endDate)
@@ -610,8 +647,8 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
         </div>
       </div>
 
-      {/* Contenedor con scroll para la tabla */}
-      <div class="overflow-x-auto overflow-y-auto max-h-[calc(100vh-120px)] custom-scrollbar">
+      {/* Vista Desktop y Tablet - Tabla */}
+      <div class="hidden mobile:block overflow-x-auto overflow-y-auto max-h-[calc(100vh-120px)] custom-scrollbar">
         <table class="w-full">
           <thead class="bg-slate-700 sticky top-0 z-20 shadow-lg">
             <tr>
@@ -736,6 +773,163 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
         </table>
       </div>
 
+      {/* Vista Móvil (Solo Celulares) - Lista por días */}
+      <div class="mobile:hidden overflow-y-auto max-h-[calc(100vh-200px)] custom-scrollbar px-4 py-2">
+        {weekDays.map(day => {
+          const isToday = day.fullDate === new Date().toISOString().split('T')[0];
+          const isWeekend = day.dayName === 'Sáb' || day.dayName === 'Dom';
+          
+          // Formatear fecha completa
+          const dateObj = new Date(day.fullDate + 'T00:00:00');
+          const fullDateText = dateObj.toLocaleDateString('es-ES', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          });
+          
+          // Contar eventos del día
+          const totalEvents = rows.reduce((count, row) => {
+            return count + getEventsForDate(row, day.dayNumber, day.fullDate).length;
+          }, 0);
+          
+          return (
+            <div
+              key={day.dayNumber}
+              class={`mb-4 rounded-lg overflow-visible shadow-lg border-2 ${
+                isToday 
+                  ? 'border-blue-500 bg-blue-900/30' 
+                  : 'border-slate-600 bg-slate-800'
+              } ${isWeekend ? 'opacity-75' : ''}`}
+            >
+              {/* Cabecera del día - STICKY Y RESPONSIVE */}
+              <div 
+                class={`sticky top-0 z-10 px-4 py-4 transition-all duration-300 rounded-t-lg shadow-md ${
+                  isToday 
+                    ? 'bg-gradient-to-r from-blue-600 to-blue-700' 
+                    : isWeekend 
+                      ? 'bg-gradient-to-r from-slate-700 to-slate-600' 
+                      : 'bg-gradient-to-r from-slate-600 to-slate-700'
+                }`}
+              >                
+                {/* Fecha completa */}
+                <div class="text-center text-sm text-slate-200 font-medium capitalize transition-all duration-300 full-date">
+                  {fullDateText}
+                </div>
+                {/* Badges */}
+                <div class="flex items-center justify-center space-x-2 mt-3 flex-wrap gap-2 transition-all duration-300 badges-container">
+                  {isWeekend && (
+                    <span class="text-xs bg-white/20 text-white px-3 py-1 rounded-full font-semibold">
+                      🏖️ Fin de semana
+                    </span>
+                  )}
+                  {isToday && (
+                    <span class="text-xs bg-white text-blue-600 px-3 py-1 rounded-full font-bold animate-pulse">
+                      📅 HOY
+                    </span>
+                  )}
+                  {totalEvents > 0 && (
+                    <span class="text-xs bg-green-500/20 text-green-300 px-3 py-1 rounded-full font-semibold">
+                      {totalEvents} evento{totalEvents !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Eventos del día agrupados por regional/instructor */}
+              <div class="p-3 space-y-3">
+                {rows.map(row => {
+                  const dayEvents = getEventsForDate(row, day.dayNumber, day.fullDate);
+                  
+                  if (dayEvents.length === 0) return null;
+                  
+                  return (
+                    <div key={row.id} class="bg-slate-900/50 rounded-lg p-3 border border-slate-600">
+                      {/* Header con regional e instructor */}
+                      <div class="mb-2 pb-2 border-b border-slate-600">
+                        <div class="text-xl font-bold text-white mb-1">{row.regional}</div>
+                        <div class="text-sm text-slate-300 bg-slate-700 rounded-full px-3 py-1 inline-flex items-center">
+                          <span class="mr-1">👨‍🏫</span>
+                          {row.instructor}
+                        </div>
+                      </div>
+
+                      {/* Eventos de este instructor en este día */}
+                      <div class="space-y-2">
+                        {dayEvents.map(event => (
+                          <div
+                            key={event.id}
+                            onClick={() => handleEventClick(event, row.id, day.dayNumber)}
+                            class="rounded-lg p-3 cursor-pointer hover:opacity-90 transition-all active:scale-[0.98]"
+                            style={{
+                              backgroundColor: event.color,
+                              color: getContrastTextColor(event.color)
+                            }}
+                          >
+                            {/* Estado del evento */}
+                            <div class="flex items-center justify-between mb-2">
+                              <div class="font-bold text-lg">{event.title}</div>
+                              {event.confirmed ? (
+                                <span class="text-xs bg-white/20 px-2 py-1 rounded font-semibold">
+                                  ✓ Confirmado
+                                </span>
+                              ) : (
+                                <span class="text-xs bg-white/20 px-2 py-1 rounded font-semibold">
+                                  ⏳ Pendiente
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Detalles */}
+                            <div class="text-sm opacity-90 mb-2">
+                              {Array.isArray(event.details) 
+                                ? event.details.join(', ') 
+                                : event.details}
+                            </div>
+
+                            {/* Información adicional */}
+                            <div class="text-xs opacity-80 space-y-1">
+                              {event.modalidad && (
+                                <div class="flex items-center">
+                                  <span class="mr-1">📍</span>
+                                  {event.modalidad}
+                                </div>
+                              )}
+                              {!(event.location && (
+                                event.location.toLowerCase().includes('nacional') || 
+                                event.location.toLowerCase().includes('colombia')
+                              )) && event.location && (
+                                <div class="flex items-center">
+                                  <span class="mr-1">📌</span>
+                                  {event.location}
+                                </div>
+                              )}
+                              {event.time && (
+                                <div class="flex items-center">
+                                  <span class="mr-1">🕐</span>
+                                  {event.time}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Si no hay eventos en este día */}
+                {rows.every(row => getEventsForDate(row, day.dayNumber, day.fullDate).length === 0) && (
+                  <div class="text-center py-6 text-slate-500 text-sm">
+                    Sin eventos programados para este día
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
       {/* Modales de edición y creación */}
       {editingEvent && (
         <div 
@@ -806,4 +1000,38 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
       )}
     </div>
   );
+}
+
+// Agregar estilos CSS para headers compactados en scroll (solo móvil)
+if (typeof document !== 'undefined' && !document.getElementById('schedule-mobile-sticky-style')) {
+  const style = document.createElement('style');
+  style.id = 'schedule-mobile-sticky-style';
+  style.textContent = `
+    @media (max-width: 767px) {
+      /* Estilos cuando el header es sticky y compacto */
+      .mobile\\:hidden .sticky.compacted {
+        padding-top: 0.5rem !important;
+        padding-bottom: 0.5rem !important;
+      }
+      .mobile\\:hidden .sticky.compacted .day-number {
+        font-size: 2rem !important;
+        line-height: 1 !important;
+        margin-bottom: 0.25rem !important;
+      }
+      .mobile\\:hidden .sticky.compacted .day-name {
+        font-size: 0.875rem !important;
+      }
+      .mobile\\:hidden .sticky.compacted .full-date {
+        display: none !important;
+      }
+      .mobile\\:hidden .sticky.compacted .badges-container {
+        margin-top: 0.5rem !important;
+      }
+      .mobile\\:hidden .sticky.compacted .badges-container span {
+        font-size: 0.65rem !important;
+        padding: 0.125rem 0.5rem !important;
+      }
+    }
+  `;
+  document.head.appendChild(style);
 }

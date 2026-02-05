@@ -4,6 +4,7 @@ export default {
 	theme: {
 		extend: {
 			screens: {
+				'mobile': '768px',     // Breakpoint para móviles (celulares)
 				'xl-custom': '1428px', // Breakpoint personalizado para cambios responsive
 			},
 		},
