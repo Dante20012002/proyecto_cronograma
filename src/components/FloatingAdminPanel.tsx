@@ -5,6 +5,7 @@ import InstructorManager from './InstructorManager';
 import AdminManager from './AdminManager';
 import AdminDebugPanel from './AdminDebugPanel';
 import DataExporter from './DataExporter';
+import ModulesAndProgramsManager from './ModulesAndProgramsManager';
 import type { JSX } from 'preact';
 
 interface TooltipProps {
@@ -137,6 +138,14 @@ export default function FloatingAdminPanel(): JSX.Element {
       title: '👨‍🏫 Gestión de Instructores'
     },
     {
+      id: 'modules',
+      icon: '🎯',
+      tooltip: 'Gestionar Módulos y Programas',
+      color: 'bg-blue-600 hover:bg-blue-700',
+      permission: 'canManageAdmins', // Solo Super Admins
+      title: '🎯 Gestión de Módulos y Programas'
+    },
+    {
       id: 'admins',
       icon: '👥',
       tooltip: 'Gestionar Administradores',
@@ -157,7 +166,7 @@ export default function FloatingAdminPanel(): JSX.Element {
       icon: '📤',
       tooltip: 'Exportar Toda la Data',
       color: 'bg-green-600 hover:bg-green-700',
-      permission: 'canManageAdmins', // Solo super admins
+      permission: 'canPublish', // Super Admins y Admins
       title: '📤 Exportar Sistema'
     }
   ];
@@ -205,6 +214,15 @@ export default function FloatingAdminPanel(): JSX.Element {
         maxWidth="max-w-4xl"
       >
         <InstructorManager />
+      </Modal>
+
+      <Modal
+        isOpen={activePanel === 'modules'}
+        onClose={closePanel}
+        title="🎯 Gestión de Módulos y Programas"
+        maxWidth="max-w-5xl"
+      >
+        <ModulesAndProgramsManager />
       </Modal>
 
       <Modal

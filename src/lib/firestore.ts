@@ -370,4 +370,244 @@ export const removeAdmin = async (email: string) => {
     console.error('Error al eliminar administrador:', error);
     return false;
   }
+};
+
+/**
+ * Obtiene todos los programas activos de la base de datos
+ */
+export const getActivePrograms = async (): Promise<string[]> => {
+  try {
+    const programsCollection = collection(db, 'programs');
+    const snapshot = await getDocs(programsCollection);
+    
+    const programs: string[] = [];
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      if (data.active) {
+        programs.push(data.name);
+      }
+    });
+    
+    return programs.sort();
+  } catch (error) {
+    console.error('Error al obtener programas:', error);
+    return [];
+  }
+};
+
+/**
+ * Obtiene todos los módulos activos de la base de datos
+ */
+export const getActiveModules = async (): Promise<string[]> => {
+  try {
+    const modulesCollection = collection(db, 'modules');
+    const snapshot = await getDocs(modulesCollection);
+    
+    const modules: string[] = [];
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      if (data.active) {
+        modules.push(data.name);
+      }
+    });
+    
+    return modules.sort();
+  } catch (error) {
+    console.error('Error al obtener módulos:', error);
+    return [];
+  }
+};
+
+/**
+ * Obtiene todas las modalidades activas de la base de datos
+ */
+export const getActiveModalities = async (): Promise<string[]> => {
+  try {
+    const modalitiesCollection = collection(db, 'modalities');
+    const snapshot = await getDocs(modalitiesCollection);
+    
+    const modalities: string[] = [];
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      if (data.active) {
+        modalities.push(data.name);
+      }
+    });
+    
+    return modalities.sort();
+  } catch (error) {
+    console.error('Error al obtener modalidades:', error);
+    return [];
+  }
+};
+
+/**
+ * Obtiene el color asociado a un módulo específico
+ */
+export const getModuleColor = async (moduleName: string): Promise<string> => {
+  try {
+    const modulesCollection = collection(db, 'modules');
+    const snapshot = await getDocs(modulesCollection);
+    
+    let moduleColor = 'bg-blue-600'; // Color por defecto
+    
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      if (data.name === moduleName && data.active) {
+        moduleColor = data.color || 'bg-blue-600';
+      }
+    });
+    
+    return moduleColor;
+  } catch (error) {
+    console.error('Error al obtener color del módulo:', error);
+    return 'bg-blue-600';
+  }
+};
+
+/**
+ * Inicializa los datos predefinidos en la base de datos (solo si no existen)
+ */
+export const initializePredefinedData = async () => {
+  try {
+    // Verificar si ya existen datos
+    const programsSnapshot = await getDocs(collection(db, 'programs'));
+    const modulesSnapshot = await getDocs(collection(db, 'modules'));
+    const modalitiesSnapshot = await getDocs(collection(db, 'modalities'));
+    
+    // Si ya existen datos, no hacer nada
+    if (!programsSnapshot.empty && !modulesSnapshot.empty && !modalitiesSnapshot.empty) {
+      console.log('✅ Datos predefinidos ya existen en Firestore');
+      return;
+    }
+    
+    console.log('📦 Inicializando datos predefinidos en Firestore...');
+    
+    // Programas predefinidos
+    const programs = [
+      'ESCUELA DE PROMOTORES',
+      'INDUSTRIA LIMPIA',
+      'ESCUELA DE ADMINISTRADORES',
+      'LEALTAD',
+      'RED VIRTUAL',
+      'EDS CONFIABLE',
+      'RUMBO',
+      'ESCUELA DE TIENDAS',
+      'PROYECTO',
+      '-'
+    ];
+    
+    // Módulos predefinidos con sus colores
+    const modules = [
+      { name: 'Acompañamiento', color: 'bg-blue-600' },
+      { name: 'Actualización de Contenidos', color: 'bg-blue-600' },
+      { name: 'App Terpel', color: 'bg-purple-600' },
+      { name: 'Campo de Entrenamiento de Industria Limpia', color: 'bg-green-600' },
+      { name: 'Canastilla', color: 'bg-orange-600' },
+      { name: 'Caravana Rumbo PITS', color: 'bg-purple-600' },
+      { name: 'Capacitación Bucaros', color: 'bg-orange-600' },
+      { name: 'Clientes Propios Administrativo', color: 'bg-indigo-600' },
+      { name: 'Construyendo Equipos Altamente Efectivos', color: 'bg-green-600' },
+      { name: 'EDS Confiable', color: 'bg-teal-600' },
+      { name: 'Entrenamiento Terpel POS Administrativo', color: 'bg-orange-600' },
+      { name: 'Entrenamiento Terpel POS Operativo', color: 'bg-orange-600' },
+      { name: 'Excelencia Administrativa', color: 'bg-green-600' },
+      { name: 'Facturación Electrónica Administrativa', color: 'bg-indigo-600' },
+      { name: 'Facturación Electrónica Operativa', color: 'bg-indigo-600' },
+      { name: 'Festivo', color: 'bg-red-600' },
+      { name: 'Formación Inicial Terpel POS Administrativo', color: 'bg-orange-600' },
+      { name: 'Formación Inicial Terpel POS Operativo', color: 'bg-orange-600' },
+      { name: 'Gestión Administrativa', color: 'bg-green-600' },
+      { name: 'Gestión Ambiental, Seguridad y Salud en el Trabajo', color: 'bg-green-600' },
+      { name: 'La Toma Vive Terpel & Vive PITS', color: 'bg-purple-600' },
+      { name: 'Masterlub Administrativo', color: 'bg-cyan-600' },
+      { name: 'Masterlub Operativo', color: 'bg-cyan-600' },
+      { name: 'Módulo Bebidas Calientes', color: 'bg-blue-600' },
+      { name: 'Módulo Escuela de Industria', color: 'bg-blue-600' },
+      { name: 'Módulo Formativo GNV', color: 'bg-blue-600' },
+      { name: 'Módulo Formativo Líquidos', color: 'bg-blue-600' },
+      { name: 'Módulo Formativo Lubricantes', color: 'bg-blue-600' },
+      { name: 'Módulo Historia y Masa', color: 'bg-blue-600' },
+      { name: 'Módulo Perros y Más Perros', color: 'bg-blue-600' },
+      { name: 'Módulo Protagonistas del Servicio', color: 'bg-blue-600' },
+      { name: 'Módulo Rollos', color: 'bg-blue-600' },
+      { name: 'Módulo Sánduches', color: 'bg-blue-600' },
+      { name: 'Módulo Sbarro', color: 'bg-blue-600' },
+      { name: 'Módulo Strombolis', color: 'bg-blue-600' },
+      { name: 'Protocolo de Servicio EDS', color: 'bg-green-600' },
+      { name: 'Taller EDS Confiable', color: 'bg-teal-600' },
+      { name: 'Traslado', color: 'bg-yellow-600' },
+      { name: 'Vacaciones', color: 'bg-pink-600' },
+      { name: 'Vive PITS', color: 'bg-purple-600' },
+      { name: 'UDVA P', color: 'bg-indigo-600' },
+      { name: 'Módulo Elementos ambientalmente sensibles', color: 'bg-green-600' },
+      { name: 'Módulo Control de derrames y atención de emergencias', color: 'bg-green-600' },
+      { name: 'Módulo Control de calidad', color: 'bg-green-600' },
+      { name: 'Módulo Medida exacta', color: 'bg-green-600' },
+      { name: 'Módulo Control de incendios', color: 'bg-red-600' },
+      { name: 'Módulo Comportamiento seguro', color: 'bg-yellow-600' },
+      { name: 'Módulo Primeros auxilios', color: 'bg-red-600' },
+      { name: 'Módulo Investigación de accidentes', color: 'bg-orange-600' },
+      { name: 'Bogotá', color: 'bg-indigo-600' },
+      { name: 'Barranquilla', color: 'bg-cyan-600' },
+      { name: 'Empleados Terpel', color: 'bg-purple-600' },
+      { name: 'Seguimiento Apertura', color: 'bg-teal-600' },
+      { name: 'Entrenamiento Tienda', color: 'bg-orange-600' },
+      { name: 'Preparación de Formación', color: 'bg-blue-600' }
+    ];
+    
+    // Modalidades predefinidas
+    const modalities = [
+      'Presencial',
+      'Virtual'
+    ];
+    
+    // Crear programas
+    const batch = writeBatch(db);
+    
+    for (const program of programs) {
+      const programId = `program-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const programRef = doc(db, 'programs', programId);
+      batch.set(programRef, {
+        name: program,
+        active: true,
+        createdAt: serverTimestamp(),
+        createdBy: 'system'
+      });
+      await new Promise(resolve => setTimeout(resolve, 10)); // Pequeño delay para IDs únicos
+    }
+    
+    // Crear módulos
+    for (const module of modules) {
+      const moduleId = `module-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const moduleRef = doc(db, 'modules', moduleId);
+      batch.set(moduleRef, {
+        name: module.name,
+        color: module.color,
+        active: true,
+        createdAt: serverTimestamp(),
+        createdBy: 'system'
+      });
+      await new Promise(resolve => setTimeout(resolve, 10)); // Pequeño delay para IDs únicos
+    }
+    
+    // Crear modalidades
+    for (const modality of modalities) {
+      const modalityId = `modality-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const modalityRef = doc(db, 'modalities', modalityId);
+      batch.set(modalityRef, {
+        name: modality,
+        active: true,
+        createdAt: serverTimestamp(),
+        createdBy: 'system'
+      });
+      await new Promise(resolve => setTimeout(resolve, 10)); // Pequeño delay para IDs únicos
+    }
+    
+    await batch.commit();
+    
+    console.log('✅ Datos predefinidos inicializados exitosamente en Firestore');
+  } catch (error) {
+    console.error('Error inicializando datos predefinidos:', error);
+  }
 }; 

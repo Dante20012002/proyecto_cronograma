@@ -7,7 +7,8 @@ import {
   subscribeToPublishedData as subscribeToFirestorePublished,
   getDraftData as getFirestoreDraftData,
   getPublishedData as getFirestorePublishedData,
-  logOperation
+  logOperation,
+  initializePredefinedData
 } from '../lib/firestore';
 import { isAdmin } from '../lib/auth';
 
@@ -407,6 +408,9 @@ export async function initializeFirebase() {
   try {
     // Inicializar datos si no existen
     await initializeDataIfNeeded();
+    
+    // Inicializar datos predefinidos (módulos, programas, modalidades)
+    await initializePredefinedData();
     
     // Suscribirse a cambios en tiempo real
     unsubscribeDraft = subscribeToFirestoreDraft((data) => {

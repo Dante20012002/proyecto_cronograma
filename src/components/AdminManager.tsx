@@ -57,7 +57,7 @@ const ROLE_PERMISSIONS = {
     canManageInstructors: true,
     canUploadExcel: true,
     canManageAdmins: false,
-    canAccessDebugPanel: true,
+    canAccessDebugPanel: false, // Los Admin NO tienen acceso a debugging
   },
   editor: {
     canPublish: false,

@@ -4,7 +4,14 @@ import { safeConfirm } from '../lib/utils';
 import { isAdmin } from '../lib/auth';
 import type { Event } from '../stores/schedule';
 import { EVENT_COLORS, getColorForDetail, getRandomEventColor, hexToStyle, getContrastTextColor } from '../lib/colors';
-import { PREDEFINED_DETAILS, PREDEFINED_TITLES, PREDEFINED_MODALITIES } from '../lib/predefined-data';
+import { 
+  PREDEFINED_DETAILS, 
+  PREDEFINED_TITLES, 
+  PREDEFINED_MODALITIES,
+  getPredefinedTitles,
+  getPredefinedDetails,
+  getPredefinedModalities
+} from '../lib/predefined-data';
 
 /**
  * Props para el componente EventCard
@@ -61,6 +68,12 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
   const [customTitle, setCustomTitle] = useState('');
   const [titleMode, setTitleMode] = useState<'predefined' | 'custom'>('predefined');
   const [hasTimeConflict, setHasTimeConflict] = useState(false);
+  
+  // Estados para datos dinámicos
+  const [availableTitles, setAvailableTitles] = useState(PREDEFINED_TITLES);
+  const [availableDetails, setAvailableDetails] = useState(PREDEFINED_DETAILS);
+  const [availableModalities, setAvailableModalities] = useState(PREDEFINED_MODALITIES);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   // Función para extraer horarios del string de tiempo
   const parseTimeString = (timeStr: string) => {
@@ -79,7 +92,32 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
   };
 
   // Inicializar campos al cargar el componente
+  // Cargar datos dinámicos primero
   useEffect(() => {
+    const loadDynamicData = async () => {
+      try {
+        const [titles, details, modalities] = await Promise.all([
+          getPredefinedTitles(),
+          getPredefinedDetails(),
+          getPredefinedModalities()
+        ]);
+        
+        setAvailableTitles(titles);
+        setAvailableDetails(details);
+        setAvailableModalities(modalities);
+        setDataLoaded(true);
+      } catch (error) {
+        console.error('Error cargando datos dinámicos:', error);
+        setDataLoaded(true); // Continuar con valores por defecto
+      }
+    };
+    
+    loadDynamicData();
+  }, []);
+
+  useEffect(() => {
+    if (!dataLoaded) return;
+    
     const { start, end } = parseTimeString(formData.time);
     setStartTime(start);
     setEndTime(end);
@@ -88,7 +126,7 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
     const detailsText = Array.isArray(event.details) ? event.details.join('\n') : event.details;
     const trimmedDetails = detailsText.trim();
     
-    if (PREDEFINED_DETAILS.includes(trimmedDetails)) {
+    if (availableDetails.includes(trimmedDetails)) {
       setSelectedDetails(trimmedDetails);
       setDetailsMode('predefined');
     } else {
@@ -97,14 +135,14 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
     }
 
     // Verificar si el título coincide con alguna opción predefinida
-    if (PREDEFINED_TITLES.includes(event.title.trim())) {
+    if (availableTitles.includes(event.title.trim())) {
       setSelectedTitle(event.title.trim());
       setTitleMode('predefined');
     } else {
       setCustomTitle(event.title.trim());
       setTitleMode('custom');
     }
-  }, [event, formData.time]);
+  }, [dataLoaded, event, formData.time, availableDetails, availableTitles]);
 
   useEffect(() => {
     // Verificar conflictos cuando cambian los horarios
@@ -234,7 +272,7 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
               >
                 <option value="">Selecciona un programa...</option>
-                {PREDEFINED_TITLES.map(title => (
+                {availableTitles.map(title => (
                   <option key={title} value={title}>{title}</option>
                 ))}
               </select>
@@ -293,7 +331,7 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
               >
                 <option value="">Selecciona una descripción...</option>
-                {PREDEFINED_DETAILS.map(desc => (
+                {availableDetails.map(desc => (
                   <option key={desc} value={desc}>{desc}</option>
                 ))}
               </select>
@@ -373,7 +411,7 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
             >
               <option value="">Seleccionar modalidad...</option>
-              {PREDEFINED_MODALITIES.map((modality) => (
+              {availableModalities.map((modality) => (
                 <option key={modality} value={modality}>
                   {modality}
                 </option>

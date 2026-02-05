@@ -1,9 +1,16 @@
-import { useState } from 'preact/hooks';
+import { useState, useEffect } from 'preact/hooks';
 import { addEvent, startTimes, endTimes, checkTimeConflict } from '../stores/schedule';
 import { isAdmin } from '../lib/auth';
 import type { Event } from '../stores/schedule';
 import { EVENT_COLORS, getColorForDetail, getRandomEventColor, hexToStyle, getContrastTextColor } from '../lib/colors';
-import { PREDEFINED_DETAILS, PREDEFINED_TITLES, PREDEFINED_MODALITIES } from '../lib/predefined-data';
+import { 
+  PREDEFINED_DETAILS, 
+  PREDEFINED_TITLES, 
+  PREDEFINED_MODALITIES,
+  getPredefinedTitles,
+  getPredefinedDetails,
+  getPredefinedModalities
+} from '../lib/predefined-data';
 
 
 
@@ -49,6 +56,33 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
   });
   const [useCustomTitle, setUseCustomTitle] = useState(false);
   const [useCustomDetails, setUseCustomDetails] = useState(false);
+  
+  // Estados para datos dinámicos
+  const [availableTitles, setAvailableTitles] = useState(PREDEFINED_TITLES);
+  const [availableDetails, setAvailableDetails] = useState(PREDEFINED_DETAILS);
+  const [availableModalities, setAvailableModalities] = useState(PREDEFINED_MODALITIES);
+  
+  // Cargar datos dinámicos al montar
+  useEffect(() => {
+    const loadDynamicData = async () => {
+      try {
+        const [titles, details, modalities] = await Promise.all([
+          getPredefinedTitles(),
+          getPredefinedDetails(),
+          getPredefinedModalities()
+        ]);
+        
+        setAvailableTitles(titles);
+        setAvailableDetails(details);
+        setAvailableModalities(modalities);
+      } catch (error) {
+        console.error('Error cargando datos dinámicos:', error);
+        // Mantener los valores por defecto si hay error
+      }
+    };
+    
+    loadDynamicData();
+  }, []);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -157,7 +191,7 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white mb-2"
                 >
                   <option value="">Selecciona un programa o escribe uno personalizado...</option>
-                  {PREDEFINED_TITLES.map((title) => (
+                  {availableTitles.map((title) => (
                     <option key={title} value={title} class="text-gray-900 bg-white">
                       {title}
                     </option>
@@ -206,7 +240,7 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white mb-2"
                 >
                   <option value="">Selecciona un módulo...</option>
-                  {PREDEFINED_DETAILS.map((description) => (
+                  {availableDetails.map((description) => (
                     <option key={description} value={description} class="text-gray-900 bg-white">
                       {description}
                     </option>
@@ -328,7 +362,7 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
               >
                 <option value="">Seleccionar modalidad...</option>
-                {PREDEFINED_MODALITIES.map((modality) => (
+                {availableModalities.map((modality) => (
                   <option key={modality} value={modality} class="text-gray-900 bg-white">
                     {modality}
                   </option>

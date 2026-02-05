@@ -10,7 +10,10 @@ import {
   VALID_DAYS, 
   TIME_EXAMPLES, 
   REQUIRED_FIELDS, 
-  OPTIONAL_FIELD_DEFAULTS 
+  OPTIONAL_FIELD_DEFAULTS,
+  getPredefinedTitles,
+  getPredefinedDetails,
+  getPredefinedModalities
 } from '../lib/predefined-data';
 
 
@@ -357,7 +360,14 @@ if (typeof window !== 'undefined') {
 /**
  * Función para descargar plantilla de Excel
  */
-function downloadTemplate() {
+async function downloadTemplate() {
+  // Cargar datos dinámicos
+  const [dynamicTitles, dynamicDetails, dynamicModalities] = await Promise.all([
+    getPredefinedTitles(),
+    getPredefinedDetails(),
+    getPredefinedModalities()
+  ]);
+  
   const wb = XLSX.utils.book_new();
   
   // Obtener instructores existentes del sistema
@@ -414,8 +424,8 @@ function downloadTemplate() {
   
   // Preparar datos para la pestaña de referencia
   const maxLength = Math.max(
-    PREDEFINED_TITLES.length,
-    PREDEFINED_DETAILS.length,
+    dynamicTitles.length,
+    dynamicDetails.length,
     existingInstructors.length, // Incluir instructores en el cálculo del tamaño
     20 // Para otros datos
   );
@@ -436,15 +446,15 @@ function downloadTemplate() {
     }
     
     // Títulos predefinidos
-    if (i < PREDEFINED_TITLES.length) {
-      row['Títulos Disponibles'] = PREDEFINED_TITLES[i];
+    if (i < dynamicTitles.length) {
+      row['Títulos Disponibles'] = dynamicTitles[i];
     } else {
       row['Títulos Disponibles'] = '';
     }
     
     // Detalles predefinidos
-    if (i < PREDEFINED_DETAILS.length) {
-      row['Detalles Disponibles'] = PREDEFINED_DETAILS[i];
+    if (i < dynamicDetails.length) {
+      row['Detalles Disponibles'] = dynamicDetails[i];
     } else {
       row['Detalles Disponibles'] = '';
     }
