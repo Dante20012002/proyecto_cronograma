@@ -145,24 +145,26 @@ export default function GlobalConfig(): JSX.Element {
           </div>
         </div>
 
-        <div class="flex justify-end space-x-3 pt-4">
+        <div class="flex flex-col xl-custom:flex-row justify-end space-y-3 xl-custom:space-y-0 xl-custom:space-x-3 pt-4">
           <button
             type="button"
             onClick={() => handleNavigate('prev')}
-            class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+            class="w-full xl-custom:w-auto px-4 py-3 xl-custom:py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors font-medium"
           >
-            ← {currentViewMode === 'monthly' ? 'Mes Anterior' : 'Semana Anterior'}
+            <span class="text-xl xl-custom:text-base">←</span> 
+            <span class="ml-2">{currentViewMode === 'monthly' ? 'Mes Anterior' : 'Semana Anterior'}</span>
           </button>
           <button
             type="button"
             onClick={() => handleNavigate('next')}
-            class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+            class="w-full xl-custom:w-auto px-4 py-3 xl-custom:py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors font-medium"
           >
-            {currentViewMode === 'monthly' ? 'Mes Siguiente' : 'Semana Siguiente'} →
+            <span class="mr-2">{currentViewMode === 'monthly' ? 'Mes Siguiente' : 'Semana Siguiente'}</span>
+            <span class="text-xl xl-custom:text-base">→</span>
           </button>
           <button
             type="submit"
-            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            class="w-full xl-custom:w-auto px-4 py-3 xl-custom:py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
           >
             Guardar Cambios
           </button>

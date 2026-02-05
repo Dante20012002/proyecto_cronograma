@@ -256,7 +256,7 @@ export default function AdminToolbar({ onClose }: AdminToolbarProps): JSX.Elemen
           <button
             onClick={handleSave}
             disabled={processing.value}
-            class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            class="flex-1 px-4 py-3 sm:py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
           >
             {saving.value ? '⏳ Guardando...' : '💾 Guardar Borrador'}
           </button>
@@ -264,18 +264,18 @@ export default function AdminToolbar({ onClose }: AdminToolbarProps): JSX.Elemen
           <button
             onClick={handlePublish}
             disabled={!allowPublish.value || processing.value}
-            class="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            class="flex-1 px-4 py-3 sm:py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
           >
             {publishing.value ? '⏳ Publicando...' : '📦 Publicar'}
           </button>
         </div>
 
-        {/* Segunda fila: Herramientas */}
-        <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+        {/* Segunda fila: Herramientas - Grid responsive */}
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <button
             onClick={() => setShowExcelUploader(true)}
             disabled={processing.value}
-            class="flex-1 px-3 py-2 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            class="px-3 py-3 sm:py-2 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
           >
             📊 Excel
           </button>
@@ -283,7 +283,7 @@ export default function AdminToolbar({ onClose }: AdminToolbarProps): JSX.Elemen
           <button
             onClick={handleDataIntegrity}
             disabled={processing.value}
-            class="flex-1 px-3 py-2 bg-yellow-600 text-white text-sm rounded-md hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            class="px-3 py-3 sm:py-2 bg-yellow-600 text-white text-sm rounded-md hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
           >
             🔍 Verificar
           </button>
@@ -291,7 +291,7 @@ export default function AdminToolbar({ onClose }: AdminToolbarProps): JSX.Elemen
           <button
             onClick={handleRemoveDuplicates}
             disabled={processing.value}
-            class="flex-1 px-3 py-2 bg-orange-600 text-white text-sm rounded-md hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            class="px-3 py-3 sm:py-2 bg-orange-600 text-white text-sm rounded-md hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
           >
             🔄 Duplicados
           </button>
@@ -299,7 +299,7 @@ export default function AdminToolbar({ onClose }: AdminToolbarProps): JSX.Elemen
           <button
             onClick={handleClearAll}
             disabled={processing.value}
-            class="flex-1 px-3 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            class="px-3 py-3 sm:py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
           >
             🗑️ Limpiar
           </button>

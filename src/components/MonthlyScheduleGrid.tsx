@@ -188,7 +188,8 @@ export default function MonthlyScheduleGrid({ isAdmin }: MonthlyScheduleGridProp
     <div id="schedule-grid" class="bg-slate-800 text-white rounded-lg shadow-2xl overflow-hidden">
       {/* Encabezado con el mismo estilo que ScheduleGrid */}
       <div class="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 shadow-lg">
-        <div class={`flex items-center justify-between transition-all duration-300 ${
+        {/* Desktop Layout */}
+        <div class={`hidden xl-custom:flex items-center justify-between transition-all duration-300 ${
           isScrolled ? 'py-3 px-4' : 'py-6 px-6'
         }`}>
           <div class="flex items-center space-x-6">
@@ -211,7 +212,6 @@ export default function MonthlyScheduleGrid({ isAdmin }: MonthlyScheduleGridProp
             </div>
           </div>
           
-          {/* Botones de navegación */}
           <div class="flex items-center space-x-2">
             <button
               onClick={() => navigateMonth('prev')}
@@ -224,6 +224,54 @@ export default function MonthlyScheduleGrid({ isAdmin }: MonthlyScheduleGridProp
               class="flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
             >
               Siguiente <span class="ml-1">→</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Layout */}
+        <div class={`xl-custom:hidden transition-all duration-300 ${
+          isScrolled ? 'py-3 px-4' : 'py-6 px-6'
+        }`}>
+          {/* Logo y título - Centrados */}
+          <div class="flex flex-col items-center justify-center mb-4">
+            <div class="flex items-center space-x-3 mb-2">
+              <img 
+                src="/Imagen1.png" 
+                alt="Logo Terpel" 
+                class={`transition-all duration-300 ${
+                  isScrolled ? 'h-12' : 'h-16'
+                }`}
+              />
+            </div>
+            <div class="text-center">
+              <h1 class={`font-bold tracking-tight transition-all duration-300 ${
+                isScrolled ? 'text-base' : 'text-lg'
+              }`}>Cronograma Mensual</h1>
+              <p class={`text-slate-300 transition-all duration-300 first-letter:uppercase font-semibold ${
+                isScrolled ? 'text-xs' : 'text-sm'
+              }`}>
+                {monthName} 
+              </p>
+            </div>
+          </div>
+          
+          {/* Botones de navegación centrados */}
+          <div class="flex items-center justify-center space-x-3">
+            <button
+              onClick={() => navigateMonth('prev')}
+              class="flex items-center justify-center px-5 py-2 bg-blue-600/90 text-white rounded-lg hover:bg-blue-700 transition-all active:scale-95 shadow-md"
+              aria-label="Mes anterior"
+            >
+              <span class="text-lg mr-2">←</span>
+              <span class="text-sm font-medium">Anterior</span>
+            </button>
+            <button
+              onClick={() => navigateMonth('next')}
+              class="flex items-center justify-center px-5 py-2 bg-blue-600/90 text-white rounded-lg hover:bg-blue-700 transition-all active:scale-95 shadow-md"
+              aria-label="Mes siguiente"
+            >
+              <span class="text-sm font-medium">Siguiente</span>
+              <span class="text-lg ml-2">→</span>
             </button>
           </div>
         </div>

@@ -104,14 +104,24 @@ function Modal({ isOpen, onClose, title, children, maxWidth = "max-w-4xl" }: Mod
  * Solo visible para administradores autenticados.
  * Se oculta automáticamente cuando hay otros modales abiertos.
  * 
+ * En móvil, usa un menú hamburguesa flotante.
+ * En desktop, muestra botones verticales en el lado derecho.
+ * 
  * @component
  * @returns {JSX.Element} Componente FloatingAdminPanel
  */
 export default function FloatingAdminPanel(): JSX.Element {
   const [activePanel, setActivePanel] = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const openPanel = (panel: string) => setActivePanel(panel);
+  const openPanel = (panel: string) => {
+    setActivePanel(panel);
+    setMobileMenuOpen(false); // Cerrar menú móvil al abrir panel
+  };
+  
   const closePanel = () => setActivePanel(null);
+  
+  const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
 
   // Detectar si hay otros modales abiertos en la página
   const hasOtherModalsOpen = () => {
@@ -180,9 +190,9 @@ export default function FloatingAdminPanel(): JSX.Element {
 
   return (
     <>
-      {/* Panel flotante de botones - solo visible cuando no hay otros modales */}
+      {/* DESKTOP: Panel flotante vertical - solo visible cuando no hay modales */}
       <div 
-        class={`fixed right-4 top-1/2 transform -translate-y-1/2 z-30 flex flex-col space-y-3 transition-opacity duration-300 ${
+        class={`hidden xl-custom:flex fixed right-4 top-1/2 transform -translate-y-1/2 z-30 flex-col space-y-3 transition-opacity duration-300 ${
           activePanel ? 'opacity-0 pointer-events-none' : 'opacity-100'
         }`}
       >
@@ -196,6 +206,54 @@ export default function FloatingAdminPanel(): JSX.Element {
           />
         ))}
       </div>
+
+      {/* MOBILE: Botón hamburguesa flotante */}
+      <div 
+        class={`xl-custom:hidden fixed bottom-4 right-4 z-30 transition-opacity duration-300 ${
+          activePanel ? 'opacity-0 pointer-events-none' : 'opacity-100'
+        }`}
+      >
+        <button
+          onClick={toggleMobileMenu}
+          class="w-14 h-14 bg-indigo-600 text-white rounded-full shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-200 flex items-center justify-center text-2xl font-semibold border-2 border-white"
+        >
+          {mobileMenuOpen ? '✕' : '☰'}
+        </button>
+      </div>
+
+      {/* MOBILE: Menú desplegable */}
+      {mobileMenuOpen && !activePanel && (
+        <div class="xl-custom:hidden fixed bottom-20 right-4 z-30 bg-white rounded-lg shadow-2xl border border-gray-200 overflow-hidden min-w-[240px]">
+          <div class="bg-indigo-600 text-white px-4 py-3 font-semibold text-sm">
+            Panel de Administración
+          </div>
+          <div class="py-2">
+            {visibleButtons.map((button, index) => (
+              <>
+                <button
+                  key={button.id}
+                  onClick={() => openPanel(button.id)}
+                  class="w-full px-4 py-3 text-left hover:bg-gray-100 transition-colors flex items-center space-x-3"
+                >
+                  <span class="text-2xl">{button.icon}</span>
+                  <span class="text-sm font-medium text-gray-700">{button.tooltip}</span>
+                </button>
+                {index < visibleButtons.length - 1 && (
+                  <div class="border-b border-gray-100"></div>
+                )}
+              </>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Overlay para cerrar menú móvil al hacer clic fuera */}
+      {mobileMenuOpen && !activePanel && (
+        <div 
+          class="xl-custom:hidden fixed inset-0 z-20"
+          onClick={() => setMobileMenuOpen(false)}
+        ></div>
+      )}
 
       {/* Modales para cada panel */}
       <Modal

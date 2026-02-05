@@ -525,7 +525,8 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
       <div class={`bg-slate-900 text-white sticky top-0 z-20 shadow-lg transition-all duration-300 ${
         isScrolled ? 'p-3' : 'p-6'
       }`}>
-        <div class="flex items-center justify-between">
+        {/* Desktop Layout */}
+        <div class="hidden xl-custom:flex items-center justify-between">
           <div class="flex items-center space-x-4">
             <img 
               src="/Imagen1.png" 
@@ -546,7 +547,6 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
             </div>
           </div>
           
-          {/* Botones de navegación */}
           <div class="flex items-center space-x-2">
             <button
               onClick={() => navigateWeek('prev')}
@@ -559,6 +559,52 @@ export default function ScheduleGrid({ isAdmin: isAdminProp }: ScheduleGridProps
               class="flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
             >
               Siguiente <span class="ml-1">→</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Layout */}
+        <div class="xl-custom:hidden">
+          {/* Logo y título - Centrados */}
+          <div class="flex flex-col items-center justify-center mb-4">
+            <div class="flex items-center space-x-3 mb-2">
+              <img 
+                src="/Imagen1.png" 
+                alt="Logo Terpel" 
+                class={`transition-all duration-300 ${
+                  isScrolled ? 'h-12' : 'h-16'
+                }`}
+              />
+            </div>
+            <div class="text-center">
+              <h1 class={`font-bold tracking-tight transition-all duration-300 ${
+                isScrolled ? 'text-lg' : 'text-xl'
+              }`}>{weekTitle}</h1>
+              <p class={`text-slate-300 transition-all font-semibold duration-300 ${
+                isScrolled ? 'text-xs' : 'text-sm'
+              }`}>
+                {formatDateDisplay(currentWeek.startDate)} - {formatDateDisplay(currentWeek.endDate)}
+              </p>
+            </div>
+          </div>
+          
+          {/* Botones de navegación centrados */}
+          <div class="flex items-center justify-center space-x-3">
+            <button
+              onClick={() => navigateWeek('prev')}
+              class="flex items-center justify-center px-5 py-2 bg-blue-600/90 text-white rounded-lg hover:bg-blue-700 transition-all active:scale-95 shadow-md"
+              aria-label="Semana anterior"
+            >
+              <span class="text-lg mr-2">←</span>
+              <span class="text-sm font-medium">Anterior</span>
+            </button>
+            <button
+              onClick={() => navigateWeek('next')}
+              class="flex items-center justify-center px-5 py-2 bg-blue-600/90 text-white rounded-lg hover:bg-blue-700 transition-all active:scale-95 shadow-md"
+              aria-label="Semana siguiente"
+            >
+              <span class="text-sm font-medium">Siguiente</span>
+              <span class="text-lg ml-2">→</span>
             </button>
           </div>
         </div>
