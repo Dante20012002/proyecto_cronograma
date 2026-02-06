@@ -267,16 +267,16 @@ export default function MonthlyScheduleGrid({ isAdmin }: MonthlyScheduleGridProp
 
         {/* Mobile Layout */}
         <div class={`xl-custom:hidden transition-all duration-300 ${
-          isScrolled ? 'py-3 px-4' : 'py-6 px-6'
+          isScrolled ? 'py-2 px-4' : 'py-4 px-4'
         }`}>
           {/* Logo y título - Centrados */}
-          <div class="flex flex-col items-center justify-center mb-4">
-            <div class="flex items-center space-x-3 mb-2">
+          <div class="flex flex-col items-center justify-center mb-2">
+            <div class="flex items-center space-x-3 mb-1">
               <img 
                 src="/Imagen1.png" 
                 alt="Logo Terpel" 
                 class={`transition-all duration-300 ${
-                  isScrolled ? 'h-12' : 'h-16'
+                  isScrolled ? 'h-10' : 'h-12'
                 }`}
               />
             </div>
@@ -285,7 +285,7 @@ export default function MonthlyScheduleGrid({ isAdmin }: MonthlyScheduleGridProp
                 isScrolled ? 'text-base' : 'text-lg'
               }`}>Cronograma Mensual</h1>
               <p class={`text-slate-300 transition-all duration-300 first-letter:uppercase font-semibold ${
-                isScrolled ? 'text-xs' : 'text-sm'
+                isScrolled ? 'text-xs' : 'text-xs'
               }`}>
                 {monthName} 
               </p>
@@ -293,22 +293,22 @@ export default function MonthlyScheduleGrid({ isAdmin }: MonthlyScheduleGridProp
           </div>
           
           {/* Botones de navegación centrados */}
-          <div class="flex items-center justify-center space-x-3">
+          <div class="flex items-center justify-center space-x-2">
             <button
               onClick={() => navigateMonth('prev')}
-              class="flex items-center justify-center px-5 py-2 bg-blue-600/90 text-white rounded-lg hover:bg-blue-700 transition-all active:scale-95 shadow-md"
+              class="flex items-center justify-center px-4 py-1.5 bg-blue-600/90 text-white rounded-lg hover:bg-blue-700 transition-all active:scale-95 shadow-md"
               aria-label="Mes anterior"
             >
-              <span class="text-lg mr-2">←</span>
-              <span class="text-sm font-medium">Anterior</span>
+              <span class="text-base mr-1.5">←</span>
+              <span class="text-xs font-medium">Anterior</span>
             </button>
             <button
               onClick={() => navigateMonth('next')}
-              class="flex items-center justify-center px-5 py-2 bg-blue-600/90 text-white rounded-lg hover:bg-blue-700 transition-all active:scale-95 shadow-md"
+              class="flex items-center justify-center px-4 py-1.5 bg-blue-600/90 text-white rounded-lg hover:bg-blue-700 transition-all active:scale-95 shadow-md"
               aria-label="Mes siguiente"
             >
-              <span class="text-sm font-medium">Siguiente</span>
-              <span class="text-lg ml-2">→</span>
+              <span class="text-xs font-medium">Siguiente</span>
+              <span class="text-base ml-1.5">→</span>
             </button>
           </div>
         </div>
@@ -449,7 +449,7 @@ export default function MonthlyScheduleGrid({ isAdmin }: MonthlyScheduleGridProp
       </div>
 
       {/* Vista Móvil (Solo Celulares) - Lista de días */}
-      <div class="mobile:hidden overflow-y-auto max-h-[calc(100vh-200px)] custom-scrollbar px-4 py-2">
+      <div class="mobile:hidden overflow-y-auto max-h-[calc(100vh-260px)] custom-scrollbar px-4 py-1">
         {monthDays
           .filter(day => day.isCurrentMonth)
           .map(day => {
