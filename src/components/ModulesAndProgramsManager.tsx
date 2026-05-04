@@ -292,7 +292,7 @@ export default function ModulesAndProgramsManager(): JSX.Element {
 
   // Generar opciones de color basadas en EVENT_COLORS con HEX reales
   const getColorOptions = () => {
-    return EVENT_COLORS.slice(0, 40).map((hexColor, index) => ({
+    return EVENT_COLORS.map((hexColor, index) => ({
       value: hexColor,
       label: `Color ${index + 1}`,
       preview: hexColor
