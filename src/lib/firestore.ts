@@ -235,7 +235,8 @@ const initialData: FirestoreSchedule = {
   globalConfig: {
     title: 'Cronograma Escuelas Colombia',
     weekTitles: {}, // Inicialmente vacío
-    currentWeek: getCurrentWeek()
+    currentWeek: getCurrentWeek(),
+    viewMode: 'weekly'
   },
   lastUpdated: serverTimestamp()
 };
@@ -356,6 +357,48 @@ export const checkAdminStatus = async (email: string) => {
     return false;
   }
 };
+
+/**
+ * Restaura los datos de draft desde published
+ * Útil para recuperar draft si se perdieron accidentalmente
+ * @returns Promise<boolean> - True si la restauración fue exitosa
+ */
+export async function restoreDraftFromPublished(): Promise<boolean> {
+  try {
+    const published = await getPublishedData();
+    
+    if (!published) {
+      console.error('❌ No hay datos publicados para restaurar');
+      await logOperation('restoreDraftFromPublished', 'error', {
+        message: 'No hay datos publicados disponibles'
+      });
+      return false;
+    }
+
+    // Copiar published a draft
+    await setDoc(doc(db, 'schedule', 'draft'), {
+      instructors: published.instructors,
+      scheduleRows: published.scheduleRows,
+      globalConfig: published.globalConfig,
+      lastUpdated: serverTimestamp()
+    });
+
+    await logOperation('restoreDraftFromPublished', 'success', {
+      message: 'Draft restaurado desde published',
+      instructorsCount: published.instructors.length,
+      rowsCount: published.scheduleRows.length
+    });
+
+    console.log('✅ Draft restaurado exitosamente desde published');
+    return true;
+  } catch (error) {
+    console.error('❌ Error al restaurar draft:', error);
+    await logOperation('restoreDraftFromPublished', 'error', {
+      message: 'Error restaurando draft desde published'
+    }, error);
+    return false;
+  }
+}
 
 /**
  * Elimina un administrador de la base de datos

@@ -98,14 +98,14 @@ export default function AddEventCard({ rowId, day, onClose }: AddEventCardProps)
     }
   };
 
-  const handleDetailsSelect = (details: string) => {
+  const handleDetailsSelect = async (details: string) => {
     if (details === 'custom') {
       setUseCustomDetails(true);
       setFormData(prev => ({ ...prev, details: '' }));
     } else {
       setUseCustomDetails(false);
       // Asignar color automáticamente basado en el detalle seleccionado
-      const autoColor = getColorForDetail(details);
+      const autoColor = await getColorForDetail(details);
       setFormData(prev => ({ 
         ...prev, 
         details,

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'preact/hooks';
 import { useSignal } from '@preact/signals';
 import { isConnected, initializeFirebase, cleanupFirebase, debugDataIntegrity, removeDuplicateEvents, clearAllDraftEvents, fixIncompleteEvents, debugPublishState, copyEventInSameCell, debugOperationQueue, migrateAllEventsToNewFormat, cleanupLegacyEvents, resetToCurrentWeek, updateWeekTitle, getWeekTitle, getCurrentWeekTitle, draftGlobalConfig, publishedGlobalConfig, userViewMode } from '../stores/schedule';
 import { isAdmin, currentUser, exposeDebugTools } from '../lib/auth';
+import { restoreDraftFromPublished } from '../lib/firestore';
 import type { JSX } from 'preact';
 import AdminToolbar from './AdminToolbar';
 import UserToolbar from './UserToolbar';
@@ -93,6 +94,17 @@ export default function CronogramaWrapper(): JSX.Element {
         getCurrentWeekTitle: getCurrentWeekTitle,
         copyEvent: copyEventInSameCell,
         
+        // Herramientas de recuperación
+        restoreDraft: async () => {
+          const result = await restoreDraftFromPublished();
+          if (result) {
+            console.log('✅ Draft restaurado exitosamente. Recarga la página para ver los cambios.');
+          } else {
+            console.error('❌ Error al restaurar draft.');
+          }
+          return result;
+        },
+        
         //HERRAMIENTAS PELIGROSAS
         DANGER: {
           clearAllDrafts: () => {
@@ -126,6 +138,8 @@ export default function CronogramaWrapper(): JSX.Element {
           // GESTIÓN:
           // debugTools.copyEvent(id, row, day) - Copiar evento
           // debugTools.updateWeekTitle(...)    - Actualizar título
+          // RECUPERACIÓN:
+          // debugTools.restoreDraft()       - Restaurar draft desde published
           // PELIGROSAS:
           // debugTools.DANGER.clearAllDrafts() - Ver advertencia
           // Usa debugTools.help() para ver esta ayuda nuevamente

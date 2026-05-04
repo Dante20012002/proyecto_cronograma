@@ -154,7 +154,7 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
     }
   }, [startTime, endTime, rowId, day, event.id]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     // Construir valores finales
     const finalDetails = detailsMode === 'predefined' ? selectedDetails : customDetails;
     const finalTitle = titleMode === 'predefined' ? selectedTitle : customTitle;
@@ -176,7 +176,7 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
     // Determinar color automático si se seleccionó un detalle predefinido
     let finalColor = formData.color;
     if (detailsMode === 'predefined' && selectedDetails) {
-      const autoColor = getColorForDetail(selectedDetails);
+      const autoColor = await getColorForDetail(selectedDetails);
       if (autoColor) {
         finalColor = autoColor;
       }
@@ -320,10 +320,11 @@ export default function EventCard({ event, rowId, day, onClose }: EventCardProps
             {detailsMode === 'predefined' ? (
               <select
                 value={selectedDetails}
-                onChange={(e) => {
-                  setSelectedDetails((e.target as HTMLSelectElement).value);
+                onChange={async (e) => {
+                  const newValue = (e.target as HTMLSelectElement).value;
+                  setSelectedDetails(newValue);
                   // Auto-asignar color si está disponible
-                  const autoColor = getColorForDetail((e.target as HTMLSelectElement).value);
+                  const autoColor = await getColorForDetail(newValue);
                   if (autoColor) {
                     setFormData(prev => ({ ...prev, color: autoColor }));
                   }

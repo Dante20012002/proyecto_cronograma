@@ -8,6 +8,7 @@ import app from './firebase';
 
 // Inicializar Auth
 const auth = getAuth(app as FirebaseApp);
+console.log(import.meta.env.PUBLIC_FIREBASE_API_KEY);
 
 // Señales para el estado de autenticación
 export const currentUser = signal<User | null>(null);

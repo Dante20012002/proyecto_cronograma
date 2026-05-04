@@ -54,19 +54,20 @@ interface ExcelUploaderProps {
 /**
  * Función para validar los datos del Excel
  */
-function validateExcelData(data: any[]): { isValid: boolean; errors: ValidationError[]; validData: ExcelEventData[] } {
+async function validateExcelData(data: any[]): Promise<{ isValid: boolean; errors: ValidationError[]; validData: ExcelEventData[] }> {
   const errors: ValidationError[] = [];
   const validData: ExcelEventData[] = [];
 
   // Usar campos requeridos desde configuración centralizada
   const requiredFields = REQUIRED_FIELDS;
-  
+
   // Usar días válidos desde configuración centralizada
   const validDays = VALID_DAYS;
-  
-  data.forEach((row, index) => {
+
+  for (let index = 0; index < data.length; index++) {
+    const row = data[index];
     const rowNumber = index + 2; // +2 porque empezamos en fila 2 (después del header)
-    
+
     // Convertir las claves a minúsculas para comparación
     const normalizedRow: any = {};
     Object.keys(row).forEach(key => {
@@ -128,7 +129,10 @@ function validateExcelData(data: any[]): { isValid: boolean; errors: ValidationE
       // Manejar campos opcionales con valores por defecto desde configuración centralizada
       const detalles = normalizedRow.detalles ? String(normalizedRow.detalles).trim() : '';
       const ubicacion = normalizedRow.ubicacion ? String(normalizedRow.ubicacion).trim() : '';
-      
+
+      // Obtener color de forma asíncrona
+      const color = detalles ? await getColorForDetail(detalles) : EVENT_COLORS[0];
+
       validData.push({
         instructor: String(normalizedRow.instructor).trim(),
         regional: String(normalizedRow.regional).trim(),
@@ -139,10 +143,10 @@ function validateExcelData(data: any[]): { isValid: boolean; errors: ValidationE
         horaInicio: normalizedRow.horainicio || normalizedRow['hora inicio'] || OPTIONAL_FIELD_DEFAULTS.horaInicio,
         horaFin: normalizedRow.horafin || normalizedRow['hora fin'] || OPTIONAL_FIELD_DEFAULTS.horaFin,
         modalidad: normalizedRow.modalidad || OPTIONAL_FIELD_DEFAULTS.modalidad,
-        color: detalles ? getColorForDetail(detalles) : EVENT_COLORS[0] // Color por defecto si no hay detalles
+        color: color
       });
     }
-  });
+  }
 
   return {
     isValid: errors.length === 0,
@@ -603,7 +607,7 @@ export default function ExcelUploader({ onClose }: ExcelUploaderProps) {
       const worksheet = workbook.Sheets[sheetName];
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
       
-      const validation = validateExcelData(jsonData);
+      const validation = await validateExcelData(jsonData);
       
       if (validation.isValid) {
         setPreviewData(validation.validData);

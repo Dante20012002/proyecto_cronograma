@@ -3,6 +3,7 @@ import { collection, doc, getDocs, setDoc, deleteDoc, serverTimestamp } from 'fi
 import { db } from '../lib/firebase';
 import { safeConfirm } from '../lib/utils';
 import { hasPermission, isSuperAdmin } from '../lib/auth';
+import { EVENT_COLORS, detailColorMap, getContrastTextColor, getSuggestedColorForModule, validateModuleColorSync } from '../lib/colors';
 import type { JSX } from 'preact';
 
 /**
@@ -58,7 +59,7 @@ export default function ModulesAndProgramsManager(): JSX.Element {
   const [showAddForm, setShowAddForm] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
-    color: 'bg-blue-600'
+    color: EVENT_COLORS[0] // Usar primer color HEX en lugar de clase Tailwind
   });
 
   // Estados para editar
@@ -246,7 +247,7 @@ export default function ModulesAndProgramsManager(): JSX.Element {
 
   const cancelEdit = () => {
     setEditingItem(null);
-    setFormData({ name: '', color: 'bg-blue-600' });
+    setFormData({ name: '', color: EVENT_COLORS[0] });
     setShowAddForm(false);
   };
 
@@ -288,6 +289,15 @@ export default function ModulesAndProgramsManager(): JSX.Element {
     { value: 'bg-teal-600', label: 'Verde Azulado', preview: 'bg-teal-600' },
     { value: 'bg-cyan-600', label: 'Cian', preview: 'bg-cyan-600' },
   ];
+
+  // Generar opciones de color basadas en EVENT_COLORS con HEX reales
+  const getColorOptions = () => {
+    return EVENT_COLORS.slice(0, 40).map((hexColor, index) => ({
+      value: hexColor,
+      label: `Color ${index + 1}`,
+      preview: hexColor
+    }));
+  };
 
   // Verificar permisos - Solo Super Admins pueden acceder
   if (!isSuperAdmin()) {
@@ -428,7 +438,11 @@ export default function ModulesAndProgramsManager(): JSX.Element {
                     <div class="flex-1 flex items-center space-x-3">
                       {/* Color preview para módulos */}
                       {activeTab === 'modules' && 'color' in item && (
-                        <div class={`w-6 h-6 rounded ${item.color}`}></div>
+                        <div
+                          class="w-6 h-6 rounded border border-gray-300"
+                          style={{ backgroundColor: item.color }}
+                          title={item.color}
+                        />
                       )}
                       
                       <div>
@@ -446,8 +460,8 @@ export default function ModulesAndProgramsManager(): JSX.Element {
                             {item.active ? 'Activo' : 'Inactivo'}
                           </span>
                           {activeTab === 'modules' && 'color' in item && (
-                            <span class="text-xs text-gray-500">
-                              Color: {colorOptions.find(c => c.value === item.color)?.label || 'Desconocido'}
+                            <span class="font-mono text-xs text-gray-600">
+                              {item.color}
                             </span>
                           )}
                         </div>
@@ -516,26 +530,63 @@ export default function ModulesAndProgramsManager(): JSX.Element {
                 {activeTab === 'modules' && (
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                      Color *
+                      Color * (Asegúrate de usar un color consistente con detailColorMap)
                     </label>
-                    <div class="grid grid-cols-5 gap-2">
-                      {colorOptions.map((colorOption) => (
+                    
+                    {/* Sugerencia automática de color */}
+                    {formData.name && (
+                      <div class="mb-3 p-2 bg-green-50 border border-green-200 rounded">
+                        <p class="text-xs text-green-800">
+                          {validateModuleColorSync(formData.name, formData.color).message}
+                        </p>
+                      </div>
+                    )}
+                    
+                    <div class="grid grid-cols-8 gap-2 mb-3">
+                      {getColorOptions().map((colorOption) => (
                         <button
                           key={colorOption.value}
                           type="button"
                           onClick={() => handleInputChange('color', colorOption.value)}
-                          class={`h-10 rounded ${colorOption.preview} border-2 transition-all ${
+                          class={`h-8 w-8 rounded border-2 transition-all ${
                             formData.color === colorOption.value
-                              ? 'border-gray-900 scale-110'
+                              ? 'border-gray-900 scale-125'
                               : 'border-gray-300 hover:border-gray-400'
                           }`}
+                          style={{ backgroundColor: colorOption.value }}
                           title={colorOption.label}
                         />
                       ))}
                     </div>
-                    <p class="text-xs text-gray-500 mt-2">
-                      Color seleccionado: {colorOptions.find(c => c.value === formData.color)?.label}
-                    </p>
+                    
+                    <div class="p-3 bg-gray-50 rounded border border-gray-200 flex items-center justify-between">
+                      <div>
+                        <p class="text-xs text-gray-600">
+                          <strong>Color seleccionado:</strong>
+                        </p>
+                        <div class="flex items-center space-x-2 mt-1">
+                          <div
+                            class="w-6 h-6 rounded border border-gray-300"
+                            style={{ backgroundColor: formData.color }}
+                          />
+                          <span class="font-mono text-sm text-gray-700">{formData.color}</span>
+                        </div>
+                      </div>
+                      
+                      {/* Botón para usar color sugerido */}
+                      {formData.name && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const suggestedColor = getSuggestedColorForModule(formData.name);
+                            handleInputChange('color', suggestedColor);
+                          }}
+                          class="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 whitespace-nowrap ml-2"
+                        >
+                          Usar sugerencia
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
