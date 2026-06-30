@@ -1,0 +1,2198 @@
+{
+  "createdAt": "2026-05-19T17:20:46.893Z",
+  "programs": [
+    {
+      "id": "program-1770326931164-lmbfo2hfx",
+      "createdBy": "system",
+      "name": "ESCUELA DE PROMOTORES",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true
+    },
+    {
+      "id": "program-1770326931177-9g3tz16bo",
+      "name": "INDUSTRIA LIMPIA",
+      "active": true,
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "createdBy": "system"
+    },
+    {
+      "id": "program-1770326931189-axd68p849",
+      "name": "ESCUELA DE ADMINISTRADORES",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "createdBy": "system"
+    },
+    {
+      "id": "program-1770326931199-r2f79yhia",
+      "name": "LEALTAD",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "createdBy": "system"
+    },
+    {
+      "id": "program-1770326931210-s3yh52isw",
+      "active": true,
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "name": "TERPEL POS",
+      "createdBy": "system"
+    },
+    {
+      "id": "program-1770326931221-2g9jmxc41",
+      "createdBy": "system",
+      "name": "EDS CONFIABLE",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true
+    },
+    {
+      "id": "program-1770326931232-f4d4jfk30",
+      "name": "RUMBO",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "createdBy": "system"
+    },
+    {
+      "id": "program-1770326931242-bvz0kt2il",
+      "createdBy": "system",
+      "name": "ESCUELA DE TIENDAS",
+      "active": true,
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      }
+    },
+    {
+      "id": "program-1770326931254-drmiytj4p",
+      "name": "PROYECTO",
+      "active": true,
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "createdBy": "system"
+    },
+    {
+      "id": "program-1770326931265-q6cak07hb",
+      "createdBy": "system",
+      "name": "-",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true
+    },
+    {
+      "id": "program-1778879090283-jva59nq51",
+      "name": "ESCUELA DE PROMOTORES",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "createdBy": "system"
+    },
+    {
+      "id": "program-1778879090296-3pc99xym8",
+      "createdBy": "system",
+      "name": "INDUSTRIA LIMPIA",
+      "active": true,
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      }
+    },
+    {
+      "id": "program-1778879090306-5t6wwj5de",
+      "name": "ESCUELA DE ADMINISTRADORES",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "createdBy": "system"
+    },
+    {
+      "id": "program-1778879090319-dxhvf05xu",
+      "name": "LEALTAD",
+      "active": true,
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "createdBy": "system"
+    },
+    {
+      "id": "program-1778879090330-ofp9y8uf2",
+      "createdBy": "system",
+      "name": "RED VIRTUAL",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true
+    },
+    {
+      "id": "program-1778879090340-t9lkcto6y",
+      "name": "EDS CONFIABLE",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "createdBy": "system"
+    },
+    {
+      "id": "program-1778879090352-0x52kbsoj",
+      "name": "RUMBO",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "createdBy": "system"
+    },
+    {
+      "id": "program-1778879090364-uadnpnr7f",
+      "name": "ESCUELA DE TIENDAS",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "createdBy": "system"
+    },
+    {
+      "id": "program-1778879090375-hdilne38u",
+      "name": "PROYECTO",
+      "active": true,
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "createdBy": "system"
+    },
+    {
+      "id": "program-1778879090387-ufq5mc7rs",
+      "createdBy": "system",
+      "name": "-",
+      "active": true,
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      }
+    },
+    {
+      "id": "program-1778946057758-7m3sth091",
+      "name": "ESCUELA DE PROMOTORES",
+      "active": true,
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "createdBy": "system"
+    },
+    {
+      "id": "program-1778946058117-9iqkt517d",
+      "createdBy": "system",
+      "name": "INDUSTRIA LIMPIA",
+      "active": true,
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      }
+    },
+    {
+      "id": "program-1778946059117-tc54fi2d1",
+      "createdBy": "system",
+      "name": "ESCUELA DE ADMINISTRADORES",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true
+    },
+    {
+      "id": "program-1778946060117-4tshztv3r",
+      "name": "LEALTAD",
+      "active": true,
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "createdBy": "system"
+    },
+    {
+      "id": "program-1778946061117-eptc9jpgs",
+      "createdBy": "system",
+      "name": "RED VIRTUAL",
+      "active": true,
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      }
+    },
+    {
+      "id": "program-1778946062117-9rzhi7wz9",
+      "name": "EDS CONFIABLE",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "createdBy": "system"
+    },
+    {
+      "id": "program-1778946117119-rddjxk8d4",
+      "name": "RUMBO",
+      "active": true,
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "createdBy": "system"
+    },
+    {
+      "id": "program-1778946177118-oe5y2as6c",
+      "createdBy": "system",
+      "name": "ESCUELA DE TIENDAS",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true
+    },
+    {
+      "id": "program-1778946237118-bigbi7xi7",
+      "createdBy": "system",
+      "name": "PROYECTO",
+      "active": true,
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      }
+    },
+    {
+      "id": "program-1778946297116-czntnfdl3",
+      "name": "-",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "createdBy": "system"
+    }
+  ],
+  "modules": [
+    {
+      "id": "module-1770326931276-hwawrv5rw",
+      "name": "Acompañamiento EDS",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "color": "#F3FFFF"
+    },
+    {
+      "id": "module-1770326931287-vztb29s98",
+      "name": "Actualización de Contenidos",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "color": "bg-blue-600"
+    },
+    {
+      "id": "module-1770326931298-tu5f04wyg",
+      "color": "bg-green-600",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "name": "App Terpel"
+    },
+    {
+      "id": "module-1770326931309-1tr3fm9ao",
+      "color": "bg-green-600",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "name": "Campo de Entrenamiento de Industria Limpia"
+    },
+    {
+      "id": "module-1770326931320-f0yml9r5a",
+      "color": "bg-orange-600",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "name": "Canastilla"
+    },
+    {
+      "id": "module-1770326931330-z2f46ooie",
+      "name": "Caravana Rumbo",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "color": "#1c449c"
+    },
+    {
+      "id": "module-1770326931341-rv8nf4vc4",
+      "name": "Capacitación Bucaros",
+      "active": true,
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "createdBy": "system",
+      "color": "bg-orange-600"
+    },
+    {
+      "id": "module-1770326931352-tslu8ocp7",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "color": "bg-indigo-600",
+      "name": "Clientes Propios Administrativo"
+    },
+    {
+      "id": "module-1770326931362-ly3ff200s",
+      "name": "Construyendo Equipos Altamente Efectivos",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "bg-green-600"
+    },
+    {
+      "id": "module-1770326931373-i6jvug2j7",
+      "color": "bg-teal-600",
+      "createdBy": "system",
+      "active": true,
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "name": "EDS Confiable"
+    },
+    {
+      "id": "module-1770326931383-1xlrpjijg",
+      "name": "Entrenamiento Terpel POS Administrativo",
+      "color": "bg-orange-600",
+      "active": true,
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "createdBy": "system"
+    },
+    {
+      "id": "module-1770326931394-puyv9mila",
+      "createdBy": "system",
+      "active": true,
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "color": "bg-orange-600",
+      "name": "Entrenamiento Terpel POS Operativo"
+    },
+    {
+      "id": "module-1770326931404-5q27pghdg",
+      "name": "Excelencia Administrativa",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "bg-green-600"
+    },
+    {
+      "id": "module-1770326931415-m34v7ldu9",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "bg-indigo-600",
+      "name": "Facturación Electrónica Administrativa"
+    },
+    {
+      "id": "module-1770326931426-bkgzfwwjw",
+      "name": "Facturación Electrónica Operativa",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "color": "bg-indigo-600"
+    },
+    {
+      "id": "module-1770326931437-6wbf9p9o5",
+      "color": "bg-red-600",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "name": "Festivo"
+    },
+    {
+      "id": "module-1770326931447-m3xoe3tw2",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "color": "bg-orange-600",
+      "name": "Formación Inicial Terpel POS Administrativo"
+    },
+    {
+      "id": "module-1770326931458-afqv0ib7a",
+      "name": "Formación Inicial Terpel POS Operativo",
+      "color": "bg-orange-600",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "createdBy": "system"
+    },
+    {
+      "id": "module-1770326931469-k018q297r",
+      "name": "Gestión de Formación Interna",
+      "color": "#46646B",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "createdBy": "system"
+    },
+    {
+      "id": "module-1770326931480-967pvumk6",
+      "name": "Gestión Ambiental, Seguridad y Salud en el Trabajo",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "color": "bg-green-600"
+    },
+    {
+      "id": "module-1770326931491-2zv6hzhpw",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "color": "bg-purple-600",
+      "name": "La Toma Vive Terpel & Vive PITS"
+    },
+    {
+      "id": "module-1770326931503-ewpifu0x2",
+      "active": true,
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "createdBy": "system",
+      "color": "bg-cyan-600",
+      "name": "Masterlub Administrativo"
+    },
+    {
+      "id": "module-1770326931513-vv5sdg3pn",
+      "name": "Masterlub Operativo",
+      "color": "bg-cyan-600",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "createdBy": "system"
+    },
+    {
+      "id": "module-1770326931525-3xsa6gyww",
+      "color": "bg-blue-600",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "name": "Módulo Bebidas Calientes"
+    },
+    {
+      "id": "module-1770326931536-gm8dvigyp",
+      "color": "bg-blue-600",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "name": "Módulo Escuela de Industria"
+    },
+    {
+      "id": "module-1770326931547-5dlmrhz1b",
+      "color": "bg-blue-600",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "name": "Módulo Formativo GNV"
+    },
+    {
+      "id": "module-1770326931558-s6gew20b4",
+      "color": "bg-blue-600",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "name": "Módulo Formativo Líquidos"
+    },
+    {
+      "id": "module-1770326931568-rmvmgroiq",
+      "name": "Módulo Formativo Lubricantes",
+      "color": "bg-blue-600",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "createdBy": "system"
+    },
+    {
+      "id": "module-1770326931578-4zeegqtbq",
+      "name": "Módulo Historia y Masa",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "color": "bg-purple-600"
+    },
+    {
+      "id": "module-1770326931590-fyqjvjq7w",
+      "color": "bg-purple-600",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "name": "Módulo Perros y Más Perros"
+    },
+    {
+      "id": "module-1770326931601-75xmmr6z5",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "bg-blue-600",
+      "name": "Módulo Protagonistas del Servicio"
+    },
+    {
+      "id": "module-1770326931612-eokhzal62",
+      "name": "Módulo Rollos",
+      "color": "bg-purple-600",
+      "createdBy": "system",
+      "active": true,
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      }
+    },
+    {
+      "id": "module-1770326931622-srjrylujs",
+      "name": "Módulo Sánduches",
+      "color": "bg-purple-600",
+      "active": true,
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "createdBy": "system"
+    },
+    {
+      "id": "module-1770326931634-rbk1rq3qj",
+      "name": "Módulo Sbarro",
+      "color": "bg-purple-600",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "createdBy": "system"
+    },
+    {
+      "id": "module-1770326931645-j0z3c58su",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "bg-purple-600",
+      "name": "Módulo Strombolis"
+    },
+    {
+      "id": "module-1770326931655-8p3gcswh9",
+      "name": "Protocolo de Servicio EDS",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "bg-green-600"
+    },
+    {
+      "id": "module-1770326931666-3az5mztyq",
+      "color": "bg-teal-600",
+      "createdBy": "system",
+      "active": true,
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "name": "Taller EDS Confiable"
+    },
+    {
+      "id": "module-1770326931677-hbvzha5tr",
+      "color": "bg-yellow-600",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "name": "Traslado"
+    },
+    {
+      "id": "module-1770326931688-id97jp73t",
+      "name": "Vacaciones",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "color": "bg-pink-600"
+    },
+    {
+      "id": "module-1770326931698-6mvsr0sr8",
+      "name": "Vive PITS",
+      "color": "bg-red-600",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true
+    },
+    {
+      "id": "module-1770326931709-xfhdtdh9b",
+      "name": "UDVA P",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "bg-indigo-600"
+    },
+    {
+      "id": "module-1770326931719-f4fnndtw3",
+      "name": "Módulo Elementos ambientalmente sensibles",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "color": "bg-green-600"
+    },
+    {
+      "id": "module-1770326931731-u6kz7ve7r",
+      "name": "Módulo Control de derrames y atención de emergencias",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "color": "bg-green-600"
+    },
+    {
+      "id": "module-1770326931742-dra56nt2p",
+      "color": "bg-green-600",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "name": "Módulo Control de calidad"
+    },
+    {
+      "id": "module-1770326931753-vpi3uhwwf",
+      "color": "bg-green-600",
+      "active": true,
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "createdBy": "system",
+      "name": "Módulo Medida exacta"
+    },
+    {
+      "id": "module-1770326931764-6pep6oy20",
+      "name": "Módulo Control de incendios",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "color": "bg-red-600"
+    },
+    {
+      "id": "module-1770326931775-2t66j37m1",
+      "name": "Módulo Comportamiento seguro",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "color": "bg-yellow-600"
+    },
+    {
+      "id": "module-1770326931786-e0wh4opzk",
+      "color": "bg-red-600",
+      "active": true,
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "createdBy": "system",
+      "name": "Módulo Primeros auxilios"
+    },
+    {
+      "id": "module-1770326931797-x6mgc5ecw",
+      "active": true,
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "createdBy": "system",
+      "color": "bg-orange-600",
+      "name": "Módulo Investigación de accidentes"
+    },
+    {
+      "id": "module-1770326931808-8yv60uq6d",
+      "name": "Bogotá",
+      "color": "bg-indigo-600",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true
+    },
+    {
+      "id": "module-1770326931819-syktvd7h1",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "bg-cyan-600",
+      "name": "Barranquilla"
+    },
+    {
+      "id": "module-1770326931830-ewtcllhwk",
+      "name": "Empleados Terpel",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "bg-purple-600"
+    },
+    {
+      "id": "module-1770326931841-ja2umnasc",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "bg-teal-600",
+      "name": "Seguimiento Apertura"
+    },
+    {
+      "id": "module-1770326931852-04iz5yd7i",
+      "name": "Entrenamiento Tiendas",
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "#f8945c"
+    },
+    {
+      "id": "module-1770326931863-435ef91w9",
+      "color": "bg-blue-600",
+      "active": true,
+      "createdAt": {
+        "seconds": 1770326931,
+        "nanoseconds": 631000000
+      },
+      "createdBy": "system",
+      "name": "Preparación de Formación"
+    },
+    {
+      "id": "module-1778879090398-ftnjnhfhz",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "color": "bg-blue-600",
+      "name": "Acompañamiento"
+    },
+    {
+      "id": "module-1778879090409-sl1qmgsfs",
+      "name": "Actualización de Contenidos",
+      "color": "bg-blue-600",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true
+    },
+    {
+      "id": "module-1778879090420-gxrdpqr26",
+      "name": "App Terpel",
+      "color": "bg-purple-600",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true
+    },
+    {
+      "id": "module-1778879090431-c25ykah73",
+      "name": "Campo de Entrenamiento de Industria Limpia",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "bg-green-600"
+    },
+    {
+      "id": "module-1778879090442-zymr9idgg",
+      "createdBy": "system",
+      "active": true,
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "color": "bg-orange-600",
+      "name": "Canastilla"
+    },
+    {
+      "id": "module-1778879090452-xod2ow00v",
+      "name": "Caravana Rumbo PITS",
+      "color": "bg-purple-600",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true
+    },
+    {
+      "id": "module-1778879090463-4jxuf94na",
+      "name": "Capacitación Bucaros",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "bg-orange-600"
+    },
+    {
+      "id": "module-1778879090474-czc2olndl",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "color": "bg-indigo-600",
+      "name": "Clientes Propios Administrativo"
+    },
+    {
+      "id": "module-1778879090484-s1bvpowz6",
+      "name": "Construyendo Equipos Altamente Efectivos",
+      "color": "bg-green-600",
+      "createdBy": "system",
+      "active": true,
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      }
+    },
+    {
+      "id": "module-1778879090496-bko5n3nd6",
+      "color": "bg-teal-600",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "name": "EDS Confiable"
+    },
+    {
+      "id": "module-1778879090507-qp853qlyo",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "color": "bg-orange-600",
+      "name": "Entrenamiento Terpel POS Administrativo"
+    },
+    {
+      "id": "module-1778879090519-2jj1cui0b",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "color": "bg-orange-600",
+      "name": "Entrenamiento Terpel POS Operativo"
+    },
+    {
+      "id": "module-1778879090530-22w01becc",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "color": "bg-green-600",
+      "name": "Excelencia Administrativa"
+    },
+    {
+      "id": "module-1778879090540-f98rbyort",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "color": "bg-indigo-600",
+      "name": "Facturación Electrónica Administrativa"
+    },
+    {
+      "id": "module-1778879090551-p6pyuhyfp",
+      "color": "bg-indigo-600",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "name": "Facturación Electrónica Operativa"
+    },
+    {
+      "id": "module-1778879090562-5khkmuxul",
+      "name": "Festivo",
+      "color": "bg-red-600",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "createdBy": "system"
+    },
+    {
+      "id": "module-1778879090573-fq3d9s3os",
+      "name": "Formación Inicial Terpel POS Administrativo",
+      "createdBy": "system",
+      "active": true,
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "color": "bg-orange-600"
+    },
+    {
+      "id": "module-1778879090584-ca1q60sq5",
+      "name": "Formación Inicial Terpel POS Operativo",
+      "color": "bg-orange-600",
+      "createdBy": "system",
+      "active": true,
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      }
+    },
+    {
+      "id": "module-1778879090595-b81yjryap",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "color": "bg-green-600",
+      "name": "Gestión Administrativa"
+    },
+    {
+      "id": "module-1778879090605-pu701i9lw",
+      "name": "Gestión Ambiental, Seguridad y Salud en el Trabajo",
+      "color": "bg-green-600",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true
+    },
+    {
+      "id": "module-1778879090616-ma8jmff9z",
+      "name": "La Toma Vive Terpel & Vive PITS",
+      "color": "bg-purple-600",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true
+    },
+    {
+      "id": "module-1778879090628-3pxq3f991",
+      "name": "Masterlub Administrativo",
+      "color": "bg-cyan-600",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true
+    },
+    {
+      "id": "module-1778879090639-nvq5tuz16",
+      "name": "Masterlub Operativo",
+      "color": "bg-cyan-600",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true
+    },
+    {
+      "id": "module-1778879090651-pnyeeo594",
+      "name": "Módulo Bebidas Calientes",
+      "color": "bg-blue-600",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "createdBy": "system"
+    },
+    {
+      "id": "module-1778879090663-5w14csdpw",
+      "color": "bg-blue-600",
+      "active": true,
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "createdBy": "system",
+      "name": "Módulo Escuela de Industria"
+    },
+    {
+      "id": "module-1778879090674-id8rp2ubr",
+      "name": "Módulo Formativo GNV",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "bg-blue-600"
+    },
+    {
+      "id": "module-1778879090685-uttvrnlqg",
+      "name": "Módulo Formativo Líquidos",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "color": "bg-blue-600"
+    },
+    {
+      "id": "module-1778879090696-f7oi5fkpn",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "bg-blue-600",
+      "name": "Módulo Formativo Lubricantes"
+    },
+    {
+      "id": "module-1778879090707-ecw84qp9j",
+      "name": "Módulo Historia y Masa",
+      "color": "bg-blue-600",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true
+    },
+    {
+      "id": "module-1778879090717-r14dvzeu7",
+      "name": "Módulo Perros y Más Perros",
+      "color": "bg-blue-600",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "createdBy": "system"
+    },
+    {
+      "id": "module-1778879090729-hor2tw73k",
+      "name": "Módulo Protagonistas del Servicio",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "bg-blue-600"
+    },
+    {
+      "id": "module-1778879090740-4zodd9tqb",
+      "color": "bg-blue-600",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "name": "Módulo Rollos"
+    },
+    {
+      "id": "module-1778879090751-yvw096pxx",
+      "color": "bg-blue-600",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "name": "Módulo Sánduches"
+    },
+    {
+      "id": "module-1778879090762-x7mqhddvi",
+      "name": "Módulo Sbarro",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "color": "bg-blue-600"
+    },
+    {
+      "id": "module-1778879090772-gsw3ovcgy",
+      "name": "Módulo Strombolis",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "color": "bg-blue-600"
+    },
+    {
+      "id": "module-1778879090783-l2qoffbrp",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "color": "bg-green-600",
+      "name": "Protocolo de Servicio EDS"
+    },
+    {
+      "id": "module-1778879090795-mccammi5b",
+      "color": "bg-teal-600",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "name": "Taller EDS Confiable"
+    },
+    {
+      "id": "module-1778879090805-9osrf5poj",
+      "name": "Traslado",
+      "color": "bg-yellow-600",
+      "createdBy": "system",
+      "active": true,
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      }
+    },
+    {
+      "id": "module-1778879090817-mvf00q6ob",
+      "name": "Vacaciones",
+      "createdBy": "system",
+      "active": true,
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "color": "bg-pink-600"
+    },
+    {
+      "id": "module-1778879090828-uqozleql7",
+      "name": "Vive PITS",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "bg-purple-600"
+    },
+    {
+      "id": "module-1778879090839-8zpse3lms",
+      "name": "UDVA P",
+      "color": "bg-indigo-600",
+      "createdBy": "system",
+      "active": true,
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      }
+    },
+    {
+      "id": "module-1778879090850-6usiomw11",
+      "name": "Módulo Elementos ambientalmente sensibles",
+      "color": "bg-green-600",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "createdBy": "system"
+    },
+    {
+      "id": "module-1778879090861-ps29xybvd",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "bg-green-600",
+      "name": "Módulo Control de derrames y atención de emergencias"
+    },
+    {
+      "id": "module-1778879090873-5eq4ie0di",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "bg-green-600",
+      "name": "Módulo Control de calidad"
+    },
+    {
+      "id": "module-1778879090884-oano5j47z",
+      "name": "Módulo Medida exacta",
+      "createdBy": "system",
+      "active": true,
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "color": "bg-green-600"
+    },
+    {
+      "id": "module-1778879090895-ehtojlhki",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "bg-red-600",
+      "name": "Módulo Control de incendios"
+    },
+    {
+      "id": "module-1778879090905-yq1v3avtu",
+      "name": "Módulo Comportamiento seguro",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "color": "bg-yellow-600"
+    },
+    {
+      "id": "module-1778879090916-s9sav3u3m",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "color": "bg-red-600",
+      "name": "Módulo Primeros auxilios"
+    },
+    {
+      "id": "module-1778879090928-fnv5qfx6j",
+      "name": "Módulo Investigación de accidentes",
+      "createdBy": "system",
+      "active": true,
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "color": "bg-orange-600"
+    },
+    {
+      "id": "module-1778879090940-5tp0630pn",
+      "name": "Bogotá",
+      "color": "bg-indigo-600",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true
+    },
+    {
+      "id": "module-1778879090951-gofptdw3n",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "color": "bg-cyan-600",
+      "name": "Barranquilla"
+    },
+    {
+      "id": "module-1778879090962-0z81j5ngh",
+      "color": "bg-purple-600",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "name": "Empleados Terpel"
+    },
+    {
+      "id": "module-1778879090973-h7ju092xz",
+      "name": "Seguimiento Apertura",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "color": "bg-teal-600"
+    },
+    {
+      "id": "module-1778879090984-bbszxcipr",
+      "name": "Entrenamiento Tienda",
+      "color": "bg-orange-600",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "createdBy": "system"
+    },
+    {
+      "id": "module-1778879090995-5xngv76ow",
+      "name": "Preparación de Formación",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "bg-blue-600"
+    },
+    {
+      "id": "module-1778946357113-7huj68wue",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "color": "bg-blue-600",
+      "name": "Acompañamiento"
+    },
+    {
+      "id": "module-1778946417116-o485o811w",
+      "name": "Actualización de Contenidos",
+      "color": "bg-blue-600",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true
+    },
+    {
+      "id": "module-1778946477119-wtd4aiy0t",
+      "name": "App Terpel",
+      "color": "bg-purple-600",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "createdBy": "system"
+    },
+    {
+      "id": "module-1778946537118-mhas8yr6u",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "color": "bg-green-600",
+      "name": "Campo de Entrenamiento de Industria Limpia"
+    },
+    {
+      "id": "module-1778946597123-56tmzyjz0",
+      "name": "Canastilla",
+      "color": "bg-orange-600",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "createdBy": "system"
+    },
+    {
+      "id": "module-1778946657116-l82uouuhv",
+      "name": "Caravana Rumbo PITS",
+      "createdBy": "system",
+      "active": true,
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "color": "bg-purple-600"
+    },
+    {
+      "id": "module-1778946717117-ozmuyzxy4",
+      "color": "bg-orange-600",
+      "active": true,
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "createdBy": "system",
+      "name": "Capacitación Bucaros"
+    },
+    {
+      "id": "module-1778946777117-bxelfjmbb",
+      "name": "Clientes Propios Administrativo",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "bg-indigo-600"
+    },
+    {
+      "id": "module-1778946837118-gh7b2g9f6",
+      "name": "Construyendo Equipos Altamente Efectivos",
+      "color": "bg-green-600",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true
+    },
+    {
+      "id": "module-1778946897117-vbp8ueldd",
+      "color": "bg-teal-600",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "name": "EDS Confiable"
+    },
+    {
+      "id": "module-1778946957117-js4l2ay92",
+      "name": "Entrenamiento Terpel POS Administrativo",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "bg-orange-600"
+    },
+    {
+      "id": "module-1778947017126-ca2ep99z3",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "color": "bg-orange-600",
+      "name": "Entrenamiento Terpel POS Operativo"
+    },
+    {
+      "id": "module-1778947077117-eoe8ztmxr",
+      "name": "Excelencia Administrativa",
+      "color": "bg-green-600",
+      "createdBy": "system",
+      "active": true,
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      }
+    },
+    {
+      "id": "module-1778947137117-4t9gee1dj",
+      "color": "bg-indigo-600",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "name": "Facturación Electrónica Administrativa"
+    },
+    {
+      "id": "module-1778947197117-06em05z8v",
+      "name": "Facturación Electrónica Operativa",
+      "color": "bg-indigo-600",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "createdBy": "system"
+    },
+    {
+      "id": "module-1778947257117-52uz8j1bh",
+      "name": "Festivo",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "bg-red-600"
+    },
+    {
+      "id": "module-1778947317117-1i5byer2a",
+      "name": "Formación Inicial Terpel POS Administrativo",
+      "createdBy": "system",
+      "active": true,
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "color": "bg-orange-600"
+    },
+    {
+      "id": "module-1778947377117-dwtgygjfi",
+      "name": "Formación Inicial Terpel POS Operativo",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "bg-orange-600"
+    },
+    {
+      "id": "module-1778947437117-mrloqwezq",
+      "color": "bg-green-600",
+      "active": true,
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "createdBy": "system",
+      "name": "Gestión Administrativa"
+    },
+    {
+      "id": "module-1778947497119-nsvcsqq6k",
+      "name": "Gestión Ambiental, Seguridad y Salud en el Trabajo",
+      "color": "bg-green-600",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "createdBy": "system"
+    },
+    {
+      "id": "module-1778947557117-c93safjs9",
+      "name": "La Toma Vive Terpel & Vive PITS",
+      "color": "bg-purple-600",
+      "createdBy": "system",
+      "active": true,
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      }
+    },
+    {
+      "id": "module-1778947617120-h738eokog",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "bg-cyan-600",
+      "name": "Masterlub Administrativo"
+    },
+    {
+      "id": "module-1778947677117-ba1vvht4b",
+      "name": "Masterlub Operativo",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "bg-cyan-600"
+    },
+    {
+      "id": "module-1778947737117-o4euqoy38",
+      "name": "Módulo Bebidas Calientes",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "color": "bg-blue-600"
+    },
+    {
+      "id": "module-1778947797126-k2os7pwi5",
+      "name": "Módulo Escuela de Industria",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "bg-blue-600"
+    },
+    {
+      "id": "module-1778947857117-1n4821osh",
+      "name": "Módulo Formativo GNV",
+      "color": "bg-blue-600",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "createdBy": "system"
+    },
+    {
+      "id": "module-1778947917128-o9ib9qhse",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "bg-blue-600",
+      "name": "Módulo Formativo Líquidos"
+    },
+    {
+      "id": "module-1778947977118-rg22qkp13",
+      "name": "Módulo Formativo Lubricantes",
+      "color": "bg-blue-600",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "createdBy": "system"
+    },
+    {
+      "id": "module-1778948037115-5zk9cybtt",
+      "name": "Módulo Historia y Masa",
+      "color": "bg-blue-600",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "createdBy": "system"
+    },
+    {
+      "id": "module-1778948097126-p4hgyxgoy",
+      "name": "Módulo Perros y Más Perros",
+      "color": "bg-blue-600",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true
+    },
+    {
+      "id": "module-1778948157115-iz4zrfz2r",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "bg-blue-600",
+      "name": "Módulo Protagonistas del Servicio"
+    },
+    {
+      "id": "module-1778948217128-me9erwi4o",
+      "createdBy": "system",
+      "active": true,
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "color": "bg-blue-600",
+      "name": "Módulo Rollos"
+    },
+    {
+      "id": "module-1778948277126-52elsd7kl",
+      "color": "bg-blue-600",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "name": "Módulo Sánduches"
+    },
+    {
+      "id": "module-1778948337122-4hv8bu5iw",
+      "name": "Módulo Sbarro",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "bg-blue-600"
+    },
+    {
+      "id": "module-1778948397122-1shd8qjzh",
+      "color": "bg-blue-600",
+      "createdBy": "system",
+      "active": true,
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "name": "Módulo Strombolis"
+    },
+    {
+      "id": "module-1778948457118-s4tdgxuj3",
+      "color": "bg-green-600",
+      "createdBy": "system",
+      "active": true,
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "name": "Protocolo de Servicio EDS"
+    },
+    {
+      "id": "module-1778948517121-nvg3w4kgq",
+      "name": "Taller EDS Confiable",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "color": "bg-teal-600"
+    },
+    {
+      "id": "module-1778948577121-y12e3oc9i",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "bg-yellow-600",
+      "name": "Traslado"
+    },
+    {
+      "id": "module-1778948637137-9utp9ge92",
+      "color": "bg-pink-600",
+      "createdBy": "system",
+      "active": true,
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "name": "Vacaciones"
+    },
+    {
+      "id": "module-1778948697125-slxr16p1p",
+      "color": "bg-purple-600",
+      "createdBy": "system",
+      "active": true,
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "name": "Vive PITS"
+    },
+    {
+      "id": "module-1778948757126-9m5yqt65e",
+      "name": "UDVA P",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "bg-indigo-600"
+    },
+    {
+      "id": "module-1778948817123-iur5xqatr",
+      "name": "Módulo Elementos ambientalmente sensibles",
+      "active": true,
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "createdBy": "system",
+      "color": "bg-green-600"
+    },
+    {
+      "id": "module-1778948877113-awjwznvz0",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "color": "bg-green-600",
+      "name": "Módulo Control de derrames y atención de emergencias"
+    },
+    {
+      "id": "module-1778948937123-74o5syhhx",
+      "color": "bg-green-600",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "name": "Módulo Control de calidad"
+    },
+    {
+      "id": "module-1778948997126-lc02ne51e",
+      "name": "Módulo Medida exacta",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "bg-green-600"
+    },
+    {
+      "id": "module-1778949057117-2fnt7zd65",
+      "name": "Módulo Control de incendios",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "bg-red-600"
+    },
+    {
+      "id": "module-1778949117117-x2gk2emic",
+      "name": "Módulo Comportamiento seguro",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "color": "bg-yellow-600"
+    },
+    {
+      "id": "module-1778949177125-co8yete6o",
+      "name": "Módulo Primeros auxilios",
+      "color": "bg-red-600",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true
+    },
+    {
+      "id": "module-1778949237124-vkh89wfa2",
+      "createdBy": "system",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "color": "bg-orange-600",
+      "name": "Módulo Investigación de accidentes"
+    },
+    {
+      "id": "module-1778949297125-ddz5vzwbk",
+      "color": "bg-indigo-600",
+      "createdBy": "system",
+      "active": true,
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "name": "Bogotá"
+    },
+    {
+      "id": "module-1778949357117-glvwcr0hi",
+      "createdBy": "system",
+      "active": true,
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "color": "bg-cyan-600",
+      "name": "Barranquilla"
+    },
+    {
+      "id": "module-1778949417126-cp18suhq5",
+      "name": "Empleados Terpel",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "color": "bg-purple-600"
+    },
+    {
+      "id": "module-1778949477114-kbgxu71fi",
+      "color": "bg-teal-600",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "createdBy": "system",
+      "name": "Seguimiento Apertura"
+    },
+    {
+      "id": "module-1778949537213-hlnra54mw",
+      "name": "Entrenamiento Tienda",
+      "active": true,
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "createdBy": "system",
+      "color": "bg-orange-600"
+    },
+    {
+      "id": "module-1778949597117-qfao6fng0",
+      "name": "Preparación de Formación",
+      "color": "bg-blue-600",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "createdBy": "system"
+    },
+    {
+      "id": "modules-1771342220453-py8hnqvwb",
+      "createdAt": {
+        "seconds": 1771342223,
+        "nanoseconds": 351000000
+      },
+      "active": true,
+      "createdBy": "admin",
+      "color": "#f8945c",
+      "name": "Acompañamiento Tiendas"
+    },
+    {
+      "id": "modules-1771342485861-625gspq67",
+      "name": "Seguimiento Tiendas",
+      "color": "bg-purple-600",
+      "createdAt": {
+        "seconds": 1771342488,
+        "nanoseconds": 757000000
+      },
+      "active": true,
+      "createdBy": "admin"
+    },
+    {
+      "id": "modules-1771342525921-5l0q2mfye",
+      "name": "Comité de Formación",
+      "createdBy": "admin",
+      "createdAt": {
+        "seconds": 1771342528,
+        "nanoseconds": 820000000
+      },
+      "active": true,
+      "color": "#46646B"
+    },
+    {
+      "id": "modules-1778843396261-dpohey7qv",
+      "name": "Vive Terpel",
+      "createdAt": {
+        "seconds": 1778843401,
+        "nanoseconds": 179000000
+      },
+      "active": true,
+      "createdBy": "admin",
+      "color": "#46646B"
+    }
+  ],
+  "modalities": [
+    {
+      "id": "modality-1778879091017-59bfxd798",
+      "name": "Virtual",
+      "createdAt": {
+        "seconds": 1778879113,
+        "nanoseconds": 850000000
+      },
+      "active": true,
+      "createdBy": "system"
+    },
+    {
+      "id": "modality-1778949657120-m1smftmlw",
+      "name": "Presencial",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "createdBy": "system"
+    },
+    {
+      "id": "modality-1778949717113-jlj1lnpe2",
+      "name": "Virtual",
+      "createdAt": {
+        "seconds": 1778949840,
+        "nanoseconds": 761000000
+      },
+      "active": true,
+      "createdBy": "system"
+    }
+  ]
+}

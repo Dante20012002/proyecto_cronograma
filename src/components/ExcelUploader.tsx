@@ -3,6 +3,7 @@ import * as XLSX from 'xlsx';
 import { addEvent, draftScheduleRows, draftInstructors, addInstructor, draftGlobalConfig } from '../stores/schedule';
 import type { Event, Instructor } from '../stores/schedule';
 import { EVENT_COLORS, getColorForDetail, getRandomEventColor, hexToStyle, getContrastTextColor } from '../lib/colors';
+import { addOrUpdateItem } from '../lib/firestore';
 import { 
   PREDEFINED_TITLES, 
   PREDEFINED_DETAILS, 
@@ -205,6 +206,34 @@ function dayToNumber(day: string): string {
  * Función para procesar y cargar los datos al sistema
  */
 async function processAndLoadData(data: ExcelEventData[]) {
+  // PASO 0: Registrar programas, módulos y modalidades únicos del Excel
+  try {
+    const uniquePrograms = new Set(data.map(e => e.titulo).filter(Boolean));
+    const uniqueModules = new Set(data.map(e => e.detalles).filter(Boolean));
+    const uniqueModalities = new Set(data.map(e => e.modalidad).filter(Boolean));
+    
+    // Registrar cada programa
+    for (const program of uniquePrograms) {
+      await addOrUpdateItem('programs', program);
+    }
+    
+    // Registrar cada módulo con su color
+    for (const module of uniqueModules) {
+      const color = await getColorForDetail(module);
+      await addOrUpdateItem('modules', module, color);
+    }
+    
+    // Registrar cada modalidad
+    for (const modality of uniqueModalities) {
+      await addOrUpdateItem('modalities', modality);
+    }
+    
+    console.log(`✅ Registrados ${uniquePrograms.size} programas, ${uniqueModules.size} módulos, ${uniqueModalities.size} modalidades`);
+  } catch (error) {
+    console.warn('⚠️ Error registrando metadatos del Excel:', error);
+    // No fallar el proceso por esto, continuar
+  }
+  
   // PASO 1: NO limpiar instructores existentes - mantener datos históricos
   // Agrupar eventos por instructor para procesamiento eficiente
   const eventsByInstructor = new Map<string, ExcelEventData[]>();

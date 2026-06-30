@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'preact/hooks';
 import { collection, doc, getDocs, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { addOrUpdateItem } from '../lib/firestore';
 import { safeConfirm } from '../lib/utils';
 import { hasPermission, isSuperAdmin } from '../lib/auth';
-import { EVENT_COLORS, detailColorMap, getContrastTextColor, getSuggestedColorForModule, validateModuleColorSync } from '../lib/colors';
+import { EVENT_COLORS, detailColorMap, getContrastTextColor, getSuggestedColorForModule, validateModuleColorSync, normalizeColorToHex } from '../lib/colors';
 import type { JSX } from 'preact';
 
 /**
@@ -136,31 +137,26 @@ export default function ModulesAndProgramsManager(): JSX.Element {
 
     try {
       const collectionName = activeTab === 'programs' ? 'programs' : activeTab === 'modules' ? 'modules' : 'modalities';
-      const timestamp = Date.now();
-      const randomId = Math.random().toString(36).substr(2, 9);
-      const itemId = `${collectionName}-${timestamp}-${randomId}`;
-
-      const newItem: any = {
-        name: formData.name.trim(),
-        active: true,
-        createdAt: serverTimestamp(),
-        createdBy: 'admin'
-      };
-
-      if (activeTab === 'modules') {
-        newItem.color = formData.color;
+      
+      // Usar la función helper que previene duplicados
+      const success = await addOrUpdateItem(
+        collectionName as 'programs' | 'modules' | 'modalities',
+        formData.name.trim(),
+        activeTab === 'modules' ? formData.color : undefined
+      );
+      
+      if (success) {
+        setFormData({ name: '', color: EVENT_COLORS[0] });
+        setShowAddForm(false);
+        setError(null);
+        
+        await loadAllData();
+        
+        const itemType = activeTab === 'programs' ? 'programa' : activeTab === 'modules' ? 'módulo' : 'modalidad';
+        alert(`✅ ${itemType.charAt(0).toUpperCase() + itemType.slice(1)} agregado exitosamente`);
+      } else {
+        setError('Error al agregar el elemento');
       }
-
-      await setDoc(doc(db, collectionName, itemId), newItem);
-      
-      setFormData({ name: '', color: 'bg-blue-600' });
-      setShowAddForm(false);
-      setError(null);
-      
-      await loadAllData();
-      
-      const itemType = activeTab === 'programs' ? 'programa' : activeTab === 'modules' ? 'módulo' : 'modalidad';
-      alert(`✅ ${itemType.charAt(0).toUpperCase() + itemType.slice(1)} agregado exitosamente`);
     } catch (err) {
       console.error('Error agregando item:', err);
       setError('Error al agregar el elemento');
@@ -178,24 +174,28 @@ export default function ModulesAndProgramsManager(): JSX.Element {
     try {
       const collectionName = activeTab === 'programs' ? 'programs' : activeTab === 'modules' ? 'modules' : 'modalities';
       
-      const updateData: any = {
-        name: formData.name.trim()
-      };
-
-      if (activeTab === 'modules') {
-        updateData.color = formData.color;
+      // Usar la función helper que maneja cambios de nombre y actualización
+      const success = await addOrUpdateItem(
+        collectionName as 'programs' | 'modules' | 'modalities',
+        formData.name.trim(),
+        activeTab === 'modules' ? formData.color : undefined
+      );
+      
+      if (success) {
+        // Si el nombre cambió, podría necesitar eliminar el documento antiguo
+        // Pero addOrUpdateItem ya lo maneja con migración
+        
+        setEditingItem(null);
+        setFormData({ name: '', color: EVENT_COLORS[0] });
+        setError(null);
+        
+        await loadAllData();
+        
+        const itemType = activeTab === 'programs' ? 'programa' : activeTab === 'modules' ? 'módulo' : 'modalidad';
+        alert(`✅ ${itemType.charAt(0).toUpperCase() + itemType.slice(1)} actualizado exitosamente`);
+      } else {
+        setError('Error al editar el elemento');
       }
-
-      await setDoc(doc(db, collectionName, editingItem.id), updateData, { merge: true });
-      
-      setEditingItem(null);
-      setFormData({ name: '', color: 'bg-blue-600' });
-      setError(null);
-      
-      await loadAllData();
-      
-      const itemType = activeTab === 'programs' ? 'programa' : activeTab === 'modules' ? 'módulo' : 'modalidad';
-      alert(`✅ ${itemType.charAt(0).toUpperCase() + itemType.slice(1)} actualizado exitosamente`);
     } catch (err) {
       console.error('Error editando item:', err);
       setError('Error al editar el elemento');
@@ -241,7 +241,7 @@ export default function ModulesAndProgramsManager(): JSX.Element {
     setEditingItem(item);
     setFormData({
       name: item.name,
-      color: 'color' in item ? item.color : 'bg-blue-600'
+      color: 'color' in item ? item.color : EVENT_COLORS[0]
     });
   };
 
@@ -277,18 +277,7 @@ export default function ModulesAndProgramsManager(): JSX.Element {
     }
   };
 
-  const colorOptions = [
-    { value: 'bg-blue-600', label: 'Azul', preview: 'bg-blue-600' },
-    { value: 'bg-green-600', label: 'Verde', preview: 'bg-green-600' },
-    { value: 'bg-red-600', label: 'Rojo', preview: 'bg-red-600' },
-    { value: 'bg-yellow-600', label: 'Amarillo', preview: 'bg-yellow-600' },
-    { value: 'bg-purple-600', label: 'Púrpura', preview: 'bg-purple-600' },
-    { value: 'bg-pink-600', label: 'Rosa', preview: 'bg-pink-600' },
-    { value: 'bg-indigo-600', label: 'Índigo', preview: 'bg-indigo-600' },
-    { value: 'bg-orange-600', label: 'Naranja', preview: 'bg-orange-600' },
-    { value: 'bg-teal-600', label: 'Verde Azulado', preview: 'bg-teal-600' },
-    { value: 'bg-cyan-600', label: 'Cian', preview: 'bg-cyan-600' },
-  ];
+  const colorOptions = []; // Usa getColorOptions() abajo
 
   // Generar opciones de color basadas en EVENT_COLORS con HEX reales
   const getColorOptions = () => {
@@ -440,8 +429,8 @@ export default function ModulesAndProgramsManager(): JSX.Element {
                       {activeTab === 'modules' && 'color' in item && (
                         <div
                           class="w-6 h-6 rounded border border-gray-300"
-                          style={{ backgroundColor: item.color }}
-                          title={item.color}
+                          style={{ backgroundColor: String((item as any).color || EVENT_COLORS[0]) }}
+                          title={String((item as any).color || EVENT_COLORS[0])}
                         />
                       )}
                       
@@ -461,7 +450,7 @@ export default function ModulesAndProgramsManager(): JSX.Element {
                           </span>
                           {activeTab === 'modules' && 'color' in item && (
                             <span class="font-mono text-xs text-gray-600">
-                              {item.color}
+                              {String((item as any).color || EVENT_COLORS[0])}
                             </span>
                           )}
                         </div>

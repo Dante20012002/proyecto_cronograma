@@ -66,4 +66,22 @@ export const clientOnly = <T>(fn: () => T, fallback?: () => T): T | undefined =>
     return fallback();
   }
   return undefined;
+};
+
+/**
+ * Convierte un string a slug (para usar como ID)
+ * Ejemplo: "Acompañamiento EDS" → "acompañamiento-eds"
+ * 
+ * @param text - Texto a convertir
+ * @returns string - Slug normalizado
+ */
+export const slugify = (text: string): string => {
+  return text
+    .toLowerCase()
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remover acentos
+    .replace(/[^\w\s-]/g, '') // Remover caracteres especiales
+    .replace(/[\s_]+/g, '-') // Espacios y guiones bajos a guiones
+    .replace(/^-+|-+$/g, ''); // Remover guiones al inicio/final
 }; 

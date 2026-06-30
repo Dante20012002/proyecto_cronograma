@@ -133,6 +133,45 @@ export const detailColorMap: { [key: string]: string } = {
 };
 
 /**
+ * Mapeo de colores Tailwind a HEX para normalización
+ * Usado para convertir colores antiguos a formato HEX
+ */
+const tailwindColorMap: { [key: string]: string } = {
+  'bg-blue-600': '#2563eb',
+  'bg-green-600': '#16a34a',
+  'bg-red-600': '#dc2626',
+  'bg-yellow-600': '#ca8a04',
+  'bg-purple-600': '#9333ea',
+  'bg-pink-600': '#db2777',
+  'bg-indigo-600': '#4f46e5',
+  'bg-orange-600': '#ea580c',
+  'bg-teal-600': '#0d9488',
+  'bg-cyan-600': '#0891b2',
+};
+
+/**
+ * Normaliza un color de cualquier formato (Tailwind o HEX) a HEX
+ * 
+ * @param color - Color en formato Tailwind (ej: 'bg-blue-600') o HEX (ej: '#2563eb')
+ * @returns string - Color en formato HEX
+ */
+export const normalizeColorToHex = (color: string): string => {
+  // Si ya es HEX, devolverlo
+  if (color.startsWith('#')) {
+    return color;
+  }
+  
+  // Si es Tailwind, convertir
+  const hexColor = tailwindColorMap[color];
+  if (hexColor) {
+    return hexColor;
+  }
+  
+  // Si no se encuentra, retornar el primer color de la paleta como fallback
+  return EVENT_COLORS[0];
+};
+
+/**
  * Función para obtener el color sugerido para un módulo basándose en su nombre.
  * Si el módulo existe en detailColorMap, devuelve ese color.
  * Si no, devuelve un color aleatorio de la paleta.

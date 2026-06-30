@@ -14,6 +14,8 @@ import {
   deleteDoc
 } from 'firebase/firestore';
 import { db } from './firebase';
+import { slugify } from './utils';
+import { normalizeColorToHex } from './colors';
 import type { Instructor, ScheduleRow, GlobalConfig } from '../stores/schedule';
 
 // Tipos para Firestore
@@ -509,16 +511,156 @@ export const getModuleColor = async (moduleName: string): Promise<string> => {
 };
 
 /**
+ * Función helper para eliminar duplicados de una colección
+ * Mantiene el documento más antiguo y elimina los más nuevos con el mismo nombre
+ */
+async function deduplicateCollection(collectionName: string): Promise<void> {
+  try {
+    const snapshot = await getDocs(collection(db, collectionName));
+    const itemsByName = new Map<string, any[]>();
+    
+    // Agrupar documentos por nombre
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      const name = data.name;
+      
+      if (!itemsByName.has(name)) {
+        itemsByName.set(name, []);
+      }
+      itemsByName.get(name)!.push({
+        id: doc.id,
+        ...data
+      });
+    });
+    
+    // Eliminar duplicados (mantener el más antiguo)
+    let deletedCount = 0;
+    for (const [name, items] of itemsByName.entries()) {
+      if (items.length > 1) {
+        // Ordenar por createdAt, mantener el primero (más antiguo)
+        const sorted = items.sort((a, b) => {
+          const timeA = a.createdAt?.toDate?.() || new Date(0);
+          const timeB = b.createdAt?.toDate?.() || new Date(0);
+          return timeA.getTime() - timeB.getTime();
+        });
+        
+        // Eliminar los duplicados (todos excepto el primero)
+        for (let i = 1; i < sorted.length; i++) {
+          await deleteDoc(doc(db, collectionName, sorted[i].id));
+          deletedCount++;
+          console.log(`🗑️ Eliminado duplicado: ${collectionName}/${sorted[i].id} (${name})`);
+        }
+      }
+    }
+    
+    if (deletedCount > 0) {
+      console.log(`✅ Eliminados ${deletedCount} duplicados de ${collectionName}`);
+    }
+  } catch (error) {
+    console.error(`Error deduplicando ${collectionName}:`, error);
+  }
+}
+
+/**
+ * Función helper para agregar o actualizar un programa/módulo/modalidad
+ * Previene duplicados usando ID basado en nombre (slugify)
+ */
+export async function addOrUpdateItem(
+  collectionName: 'programs' | 'modules' | 'modalities',
+  name: string,
+  color?: string
+): Promise<boolean> {
+  try {
+    // Generar ID determinístico basado en el nombre
+    const itemId = slugify(name);
+    
+    // Normalizar color si se proporciona
+    const normalizedColor = color ? normalizeColorToHex(color) : undefined;
+    
+    // Verificar si ya existe con ese nombre (pero con otro ID antiguo)
+    const existingDocs = await getDocs(
+      query(
+        collection(db, collectionName),
+        where('name', '==', name)
+      )
+    );
+    
+    // Si existe con otro ID, actualizar solo si es necesario
+    if (!existingDocs.empty) {
+      const existingDoc = existingDocs.docs[0];
+      const existingData = existingDoc.data();
+      
+      // Si el documento tiene otro ID (antiguo), copiar datos al nuevo y eliminar el viejo
+      if (existingDoc.id !== itemId) {
+        // Crear nuevo con ID correcto
+        const newData: any = {
+          name,
+          active: true,
+          createdAt: existingData.createdAt || serverTimestamp(),
+          createdBy: existingData.createdBy || 'system',
+          migratedAt: serverTimestamp()
+        };
+        
+        if (collectionName === 'modules') {
+          newData.color = normalizedColor || existingData.color || '#2563eb';
+        }
+        
+        await setDoc(doc(db, collectionName, itemId), newData);
+        
+        // Eliminar el documento antiguo
+        await deleteDoc(doc(db, collectionName, existingDoc.id));
+        console.log(`🔄 Migrado ${collectionName}/${existingDoc.id} → ${itemId}`);
+      } else {
+        // El documento ya tiene el ID correcto, actualizar si es necesario
+        const updateData: any = { name };
+        if (collectionName === 'modules' && normalizedColor) {
+          updateData.color = normalizedColor;
+        }
+        await setDoc(doc(db, collectionName, itemId), updateData, { merge: true });
+      }
+    } else {
+      // No existe, crear nuevo
+      const newData: any = {
+        name,
+        active: true,
+        createdAt: serverTimestamp(),
+        createdBy: 'system'
+      };
+      
+      if (collectionName === 'modules') {
+        newData.color = normalizedColor || '#2563eb';
+      }
+      
+      await setDoc(doc(db, collectionName, itemId), newData);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error(`Error agregando/actualizando ${collectionName}:`, error);
+    return false;
+  }
+}
+
+/**
  * Inicializa los datos predefinidos en la base de datos (solo si no existen)
+ * Ahora usa IDs determinísticos basados en nombres para prevenir duplicados
  */
 export const initializePredefinedData = async () => {
   try {
+    // Primero, deduplicar colecciones existentes
+    console.log('🔍 Verificando y eliminando duplicados...');
+    await Promise.all([
+      deduplicateCollection('programs'),
+      deduplicateCollection('modules'),
+      deduplicateCollection('modalities')
+    ]);
+    
     // Verificar si ya existen datos
     const programsSnapshot = await getDocs(collection(db, 'programs'));
     const modulesSnapshot = await getDocs(collection(db, 'modules'));
     const modalitiesSnapshot = await getDocs(collection(db, 'modalities'));
     
-    // Si ya existen datos, no hacer nada
+    // Si ya existen datos, no hacer nada más
     if (!programsSnapshot.empty && !modulesSnapshot.empty && !modalitiesSnapshot.empty) {
       console.log('✅ Datos predefinidos ya existen en Firestore');
       return;
@@ -540,63 +682,63 @@ export const initializePredefinedData = async () => {
       '-'
     ];
     
-    // Módulos predefinidos con sus colores
+    // Módulos predefinidos con sus colores (normalizados a HEX)
     const modules = [
-      { name: 'Acompañamiento', color: 'bg-blue-600' },
-      { name: 'Actualización de Contenidos', color: 'bg-blue-600' },
-      { name: 'App Terpel', color: 'bg-purple-600' },
-      { name: 'Campo de Entrenamiento de Industria Limpia', color: 'bg-green-600' },
-      { name: 'Canastilla', color: 'bg-orange-600' },
-      { name: 'Caravana Rumbo PITS', color: 'bg-purple-600' },
-      { name: 'Capacitación Bucaros', color: 'bg-orange-600' },
-      { name: 'Clientes Propios Administrativo', color: 'bg-indigo-600' },
-      { name: 'Construyendo Equipos Altamente Efectivos', color: 'bg-green-600' },
-      { name: 'EDS Confiable', color: 'bg-teal-600' },
-      { name: 'Entrenamiento Terpel POS Administrativo', color: 'bg-orange-600' },
-      { name: 'Entrenamiento Terpel POS Operativo', color: 'bg-orange-600' },
-      { name: 'Excelencia Administrativa', color: 'bg-green-600' },
-      { name: 'Facturación Electrónica Administrativa', color: 'bg-indigo-600' },
-      { name: 'Facturación Electrónica Operativa', color: 'bg-indigo-600' },
-      { name: 'Festivo', color: 'bg-red-600' },
-      { name: 'Formación Inicial Terpel POS Administrativo', color: 'bg-orange-600' },
-      { name: 'Formación Inicial Terpel POS Operativo', color: 'bg-orange-600' },
-      { name: 'Gestión Administrativa', color: 'bg-green-600' },
-      { name: 'Gestión Ambiental, Seguridad y Salud en el Trabajo', color: 'bg-green-600' },
-      { name: 'La Toma Vive Terpel & Vive PITS', color: 'bg-purple-600' },
-      { name: 'Masterlub Administrativo', color: 'bg-cyan-600' },
-      { name: 'Masterlub Operativo', color: 'bg-cyan-600' },
-      { name: 'Módulo Bebidas Calientes', color: 'bg-blue-600' },
-      { name: 'Módulo Escuela de Industria', color: 'bg-blue-600' },
-      { name: 'Módulo Formativo GNV', color: 'bg-blue-600' },
-      { name: 'Módulo Formativo Líquidos', color: 'bg-blue-600' },
-      { name: 'Módulo Formativo Lubricantes', color: 'bg-blue-600' },
-      { name: 'Módulo Historia y Masa', color: 'bg-blue-600' },
-      { name: 'Módulo Perros y Más Perros', color: 'bg-blue-600' },
-      { name: 'Módulo Protagonistas del Servicio', color: 'bg-blue-600' },
-      { name: 'Módulo Rollos', color: 'bg-blue-600' },
-      { name: 'Módulo Sánduches', color: 'bg-blue-600' },
-      { name: 'Módulo Sbarro', color: 'bg-blue-600' },
-      { name: 'Módulo Strombolis', color: 'bg-blue-600' },
-      { name: 'Protocolo de Servicio EDS', color: 'bg-green-600' },
-      { name: 'Taller EDS Confiable', color: 'bg-teal-600' },
-      { name: 'Traslado', color: 'bg-yellow-600' },
-      { name: 'Vacaciones', color: 'bg-pink-600' },
-      { name: 'Vive PITS', color: 'bg-purple-600' },
-      { name: 'UDVA P', color: 'bg-indigo-600' },
-      { name: 'Módulo Elementos ambientalmente sensibles', color: 'bg-green-600' },
-      { name: 'Módulo Control de derrames y atención de emergencias', color: 'bg-green-600' },
-      { name: 'Módulo Control de calidad', color: 'bg-green-600' },
-      { name: 'Módulo Medida exacta', color: 'bg-green-600' },
-      { name: 'Módulo Control de incendios', color: 'bg-red-600' },
-      { name: 'Módulo Comportamiento seguro', color: 'bg-yellow-600' },
-      { name: 'Módulo Primeros auxilios', color: 'bg-red-600' },
-      { name: 'Módulo Investigación de accidentes', color: 'bg-orange-600' },
-      { name: 'Bogotá', color: 'bg-indigo-600' },
-      { name: 'Barranquilla', color: 'bg-cyan-600' },
-      { name: 'Empleados Terpel', color: 'bg-purple-600' },
-      { name: 'Seguimiento Apertura', color: 'bg-teal-600' },
-      { name: 'Entrenamiento Tienda', color: 'bg-orange-600' },
-      { name: 'Preparación de Formación', color: 'bg-blue-600' }
+      { name: 'Acompañamiento', color: '#EDF9F9' },
+      { name: 'Actualización de Contenidos', color: '#46646B' },
+      { name: 'App Terpel', color: '#68b645' },
+      { name: 'Campo de Entrenamiento de Industria Limpia', color: '#74C48C' },
+      { name: 'Canastilla', color: '#68b645' },
+      { name: 'Caravana Rumbo PITS', color: '#bda42f' },
+      { name: 'Capacitación Bucaros', color: '#ea580c' },
+      { name: 'Clientes Propios Administrativo', color: '#68b645' },
+      { name: 'Construyendo Equipos Altamente Efectivos', color: '#638287' },
+      { name: 'EDS Confiable', color: '#12b19f' },
+      { name: 'Entrenamiento Terpel POS Administrativo', color: '#68b645' },
+      { name: 'Entrenamiento Terpel POS Operativo', color: '#68b645' },
+      { name: 'Excelencia Administrativa', color: '#638287' },
+      { name: 'Facturación Electrónica Administrativa', color: '#68b645' },
+      { name: 'Facturación Electrónica Operativa', color: '#68b645' },
+      { name: 'Festivo', color: '#46646B' },
+      { name: 'Formación Inicial Terpel POS Administrativo', color: '#68b645' },
+      { name: 'Formación Inicial Terpel POS Operativo', color: '#68b645' },
+      { name: 'Gestión Administrativa', color: '#46646B' },
+      { name: 'Gestión Ambiental, Seguridad y Salud en el Trabajo', color: '#e96f24' },
+      { name: 'La Toma Vive Terpel & Vive PITS', color: '#1f4299' },
+      { name: 'Masterlub Administrativo', color: '#68b645' },
+      { name: 'Masterlub Operativo', color: '#68b645' },
+      { name: 'Módulo Bebidas Calientes', color: '#f8945c' },
+      { name: 'Módulo Escuela de Industria', color: '#9bcb48' },
+      { name: 'Módulo Formativo GNV', color: '#9bcb48' },
+      { name: 'Módulo Formativo Líquidos', color: '#f7f06d' },
+      { name: 'Módulo Formativo Lubricantes', color: '#1ac0f2' },
+      { name: 'Módulo Historia y Masa', color: '#f8945c' },
+      { name: 'Módulo Perros y Más Perros', color: '#f8945c' },
+      { name: 'Módulo Protagonistas del Servicio', color: '#b01a4e' },
+      { name: 'Módulo Rollos', color: '#f8945c' },
+      { name: 'Módulo Sánduches', color: '#f8945c' },
+      { name: 'Módulo Sbarro', color: '#f8945c' },
+      { name: 'Módulo Strombolis', color: '#f8945c' },
+      { name: 'Protocolo de Servicio EDS', color: '#FF0818' },
+      { name: 'Taller EDS Confiable', color: '#12b19f' },
+      { name: 'Traslado', color: '#ca8a04' },
+      { name: 'Vacaciones', color: '#db2777' },
+      { name: 'Vive PITS', color: '#9333ea' },
+      { name: 'UDVA P', color: '#dcd4b4' },
+      { name: 'Módulo Elementos ambientalmente sensibles', color: '#EC447C' },
+      { name: 'Módulo Control de derrames y atención de emergencias', color: '#EC447C' },
+      { name: 'Módulo Control de calidad', color: '#EC447C' },
+      { name: 'Módulo Medida exacta', color: '#EC447C' },
+      { name: 'Módulo Control de incendios', color: '#EC447C' },
+      { name: 'Módulo Comportamiento seguro', color: '#EC447C' },
+      { name: 'Módulo Primeros auxilios', color: '#EC447C' },
+      { name: 'Módulo Investigación de accidentes', color: '#EC447C' },
+      { name: 'Bogotá', color: '#12b19f' },
+      { name: 'Barranquilla', color: '#12b19f' },
+      { name: 'Empleados Terpel', color: '#C48E35' },
+      { name: 'Seguimiento Apertura', color: '#0d9488' },
+      { name: 'Entrenamiento Tienda', color: '#f8945c' },
+      { name: 'Preparación de Formación', color: '#2563eb' }
     ];
     
     // Modalidades predefinidas
@@ -605,51 +747,22 @@ export const initializePredefinedData = async () => {
       'Virtual'
     ];
     
-    // Crear programas
-    const batch = writeBatch(db);
-    
+    // Agregar programas
     for (const program of programs) {
-      const programId = `program-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      const programRef = doc(db, 'programs', programId);
-      batch.set(programRef, {
-        name: program,
-        active: true,
-        createdAt: serverTimestamp(),
-        createdBy: 'system'
-      });
-      await new Promise(resolve => setTimeout(resolve, 10)); // Pequeño delay para IDs únicos
+      await addOrUpdateItem('programs', program);
     }
     
-    // Crear módulos
+    // Agregar módulos
     for (const module of modules) {
-      const moduleId = `module-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      const moduleRef = doc(db, 'modules', moduleId);
-      batch.set(moduleRef, {
-        name: module.name,
-        color: module.color,
-        active: true,
-        createdAt: serverTimestamp(),
-        createdBy: 'system'
-      });
-      await new Promise(resolve => setTimeout(resolve, 10)); // Pequeño delay para IDs únicos
+      await addOrUpdateItem('modules', module.name, module.color);
     }
     
-    // Crear modalidades
+    // Agregar modalidades
     for (const modality of modalities) {
-      const modalityId = `modality-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      const modalityRef = doc(db, 'modalities', modalityId);
-      batch.set(modalityRef, {
-        name: modality,
-        active: true,
-        createdAt: serverTimestamp(),
-        createdBy: 'system'
-      });
-      await new Promise(resolve => setTimeout(resolve, 10)); // Pequeño delay para IDs únicos
+      await addOrUpdateItem('modalities', modality);
     }
     
-    await batch.commit();
-    
-    console.log('✅ Datos predefinidos inicializados exitosamente en Firestore');
+    console.log('✅ Datos predefinidos inicializados/actualizados exitosamente en Firestore');
   } catch (error) {
     console.error('Error inicializando datos predefinidos:', error);
   }
