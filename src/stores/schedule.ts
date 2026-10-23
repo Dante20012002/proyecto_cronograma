@@ -1,4 +1,4 @@
-import { signal } from '@preact/signals';
+import { signal, effect } from '@preact/signals';
 import { 
   initializeDataIfNeeded, 
   saveDraftData, 
@@ -403,22 +403,62 @@ export const activeFilters = signal<FilterState>({
 let unsubscribeDraft: (() => void) | null = null;
 let unsubscribePublished: (() => void) | null = null;
 let hasInitializedWeek = false; // Flag para controlar el reset automático
+let hasLoadedDraft = false; // El draft real ya llegó desde Firestore
+
+let disposeAdminEffect: (() => void) | null = null;
+let isStartingAdminSession = false;
 
 export async function initializeFirebase() {
   try {
-    // Inicializar datos si no existen
+    // Los datos publicados son lo único que necesita el público
+    unsubscribePublished = subscribeToFirestorePublished((data) => {
+      publishedInstructors.value = data.instructors;
+      publishedScheduleRows.value = data.scheduleRows;
+      publishedGlobalConfig.value = data.globalConfig;
+      isConnected.value = true;
+    });
+
+    // El borrador, la inicialización y las migraciones solo corren para administradores
+    disposeAdminEffect = effect(() => {
+      if (isAdmin.value) {
+        startAdminSession();
+      } else {
+        stopAdminSession();
+      }
+    });
+  } catch (error) {
+    console.error('Error inicializando Firebase:', error);
+    isConnected.value = false;
+  }
+}
+
+async function startAdminSession() {
+  if (unsubscribeDraft || isStartingAdminSession) return;
+  isStartingAdminSession = true;
+
+  try {
+    // Recuperar el draft desde published si no existe
     await initializeDataIfNeeded();
-    
+
     // Inicializar datos predefinidos (módulos, programas, modalidades)
     await initializePredefinedData();
-    
+
+    // La sesión pudo cerrarse mientras se inicializaba
+    if (!isAdmin.value) return;
+
     // Suscribirse a cambios en tiempo real
     unsubscribeDraft = subscribeToFirestoreDraft((data) => {
       draftInstructors.value = data.instructors;
       draftScheduleRows.value = data.scheduleRows;
       draftGlobalConfig.value = data.globalConfig;
       isConnected.value = true;
-      
+
+      // La migración solo puede correr sobre el draft real, nunca sobre los valores en memoria
+      if (!hasLoadedDraft) {
+        hasLoadedDraft = true;
+        runDraftMaintenance();
+      }
+
       // Resetear a la semana actual SOLO en la primera carga para admins
       if (!hasInitializedWeek) {
         setTimeout(() => {
@@ -429,49 +469,56 @@ export async function initializeFirebase() {
         }, 1000);
       }
     });
-
-    unsubscribePublished = subscribeToFirestorePublished((data) => {
-      publishedInstructors.value = data.instructors;
-      publishedScheduleRows.value = data.scheduleRows;
-      publishedGlobalConfig.value = data.globalConfig;
-      isConnected.value = true;
-    });
-    
-    // Ejecutar migración automática después de la inicialización
-    setTimeout(() => {
-      const migrated = migrateAllEventsToNewFormat();
-      
-      if (migrated > 0) {
-        // Guardar automáticamente después de migrar
-        saveDraftChanges().then(() => {
-          // Datos migrados guardados en Firebase
-        }).catch(error => {
-          // Error al guardar datos migrados
-        });
-      }
-      
-      // Verificar y limpiar duplicados automáticamente después de la migración
-      const result = debugDataIntegrity();
-      
-      if (!result.isValid && result.problematicEvents.length > 0) {
-        const duplicateEvents = result.problematicEvents.filter(p => p.issue === 'duplicate_id');
-        if (duplicateEvents.length > 0) {
-          const removed = removeDuplicateEvents();
-        }
-      }
-    }, 3000); // Esperar 3 segundos para que todo se cargue
   } catch (error) {
-    console.error('Error inicializando Firebase:', error);
-    isConnected.value = false;
+    console.error('Error iniciando sesión de administrador:', error);
+  } finally {
+    isStartingAdminSession = false;
+  }
+}
+
+function stopAdminSession() {
+  if (unsubscribeDraft) {
+    unsubscribeDraft();
+    unsubscribeDraft = null;
+  }
+  hasLoadedDraft = false;
+}
+
+// Migración automática y limpieza de duplicados sobre el draft recién cargado
+function runDraftMaintenance() {
+  try {
+    const migrated = migrateAllEventsToNewFormat();
+    
+    if (migrated > 0) {
+      // Guardar automáticamente después de migrar
+      saveDraftChanges().then(() => {
+        // Datos migrados guardados en Firebase
+      }).catch(error => {
+        // Error al guardar datos migrados
+      });
+    }
+    
+    // Verificar y limpiar duplicados automáticamente después de la migración
+    const result = debugDataIntegrity();
+    
+    if (!result.isValid && result.problematicEvents.length > 0) {
+      const duplicateEvents = result.problematicEvents.filter(p => p.issue === 'duplicate_id');
+      if (duplicateEvents.length > 0) {
+        const removed = removeDuplicateEvents();
+      }
+    }
+  } catch (error) {
+    console.error('Error en mantenimiento del draft:', error);
   }
 }
 
 // Función para limpiar suscripciones
 export function cleanupFirebase() {
-  if (unsubscribeDraft) {
-    unsubscribeDraft();
-    unsubscribeDraft = null;
+  if (disposeAdminEffect) {
+    disposeAdminEffect();
+    disposeAdminEffect = null;
   }
+  stopAdminSession();
   if (unsubscribePublished) {
     unsubscribePublished();
     unsubscribePublished = null;
@@ -481,10 +528,44 @@ export function cleanupFirebase() {
 }
 
 // --- LÓGICA DE PUBLICACIÓN ---
-export async function publishChanges() {
+// Si el borrador tiene menos de esta fracción de los eventos publicados, la publicación se bloquea
+const MIN_DRAFT_TO_PUBLISHED_RATIO = 0.5;
+
+function countEvents(rows: ScheduleRow[]): number {
+  return rows.reduce((total, row) =>
+    total + Object.values(row.events).reduce((rowTotal, dayEvents) => rowTotal + dayEvents.length, 0), 0);
+}
+
+/**
+ * Compara el borrador con lo publicado para detectar una pérdida masiva de eventos
+ * (por ejemplo, un borrador sobrescrito con datos de ejemplo).
+ */
+export function getPublishShrinkCheck(): { draftEvents: number; publishedEvents: number; isSuspicious: boolean } {
+  const draftEvents = countEvents(draftScheduleRows.value);
+  const publishedEvents = countEvents(publishedScheduleRows.value);
+  return {
+    draftEvents,
+    publishedEvents,
+    isSuspicious: publishedEvents > 0 && draftEvents < publishedEvents * MIN_DRAFT_TO_PUBLISHED_RATIO
+  };
+}
+
+export async function publishChanges(allowShrink: boolean = false) {
   // Verificar que se puede publicar
   if (!canPublish.value) {
     console.warn('⚠️ No se puede publicar aún. Guarda primero y espera 2 segundos.');
+    return false;
+  }
+
+  if (!hasLoadedDraft) {
+    console.warn('⚠️ El borrador aún no se ha cargado desde Firebase, no se publica.');
+    return false;
+  }
+
+  const shrinkCheck = getPublishShrinkCheck();
+  if (shrinkCheck.isSuspicious && !allowShrink) {
+    console.error(`❌ Publicación bloqueada: el borrador tiene ${shrinkCheck.draftEvents} eventos y lo publicado ${shrinkCheck.publishedEvents}.`);
+    await logOperation('publishChanges', 'error', { message: 'Publicación bloqueada por pérdida de eventos', ...shrinkCheck });
     return false;
   }
 
@@ -578,6 +659,12 @@ export async function publishChanges() {
 
 // --- OPERACIONES DE DRAFT ---
 export async function saveDraftChanges() {
+  // Nunca guardar los valores en memoria por defecto encima del draft real
+  if (!hasLoadedDraft) {
+    console.warn('⚠️ El borrador aún no se ha cargado desde Firebase, no se guarda.');
+    return false;
+  }
+
   // Prevenir guardados concurrentes
   if (isSaving.value) {
     console.warn('⚠️ Ya hay un guardado en curso, ignorando duplicado');

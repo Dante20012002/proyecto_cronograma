@@ -12,7 +12,8 @@ import {
   isPublishing,
   isProcessing,
   canPublish,
-  navigateWeek
+  navigateWeek,
+  getPublishShrinkCheck
 } from '../stores/schedule';
 import { isAdmin, currentUser, logout } from '../lib/auth';
 import { safeConfirm } from '../lib/utils';
@@ -82,12 +83,27 @@ export default function AdminToolbar({ onClose }: AdminToolbarProps): JSX.Elemen
       return;
     }
 
+    // Bloquear si el borrador perdió la mayoría de los eventos publicados
+    const shrinkCheck = getPublishShrinkCheck();
+    if (shrinkCheck.isSuspicious && !safeConfirm(
+      `🚨 PUBLICACIÓN BLOQUEADA\n\n` +
+      `El borrador tiene ${shrinkCheck.draftEvents} eventos, pero lo publicado tiene ${shrinkCheck.publishedEvents}.\n` +
+      `Publicar reemplazaría el cronograma público y se perderían esos eventos.\n\n` +
+      `Si el borrador parece incorrecto, cancela y restaura el borrador desde lo publicado.\n\n` +
+      `¿Publicar de todas formas?`
+    )) {
+      setNotificationMessage(`🚨 Publicación bloqueada: el borrador tiene ${shrinkCheck.draftEvents} de ${shrinkCheck.publishedEvents} eventos publicados.`);
+      setNotificationType('error');
+      setTimeout(() => setNotificationMessage(null), 6000);
+      return;
+    }
+
     if (safeConfirm('¿Estás seguro de que quieres publicar todos los cambios? Esta acción no se puede deshacer.')) {
       try {
         setNotificationMessage('📦 Publicando cambios...');
         setNotificationType('info');
-        
-        const success = await publishChanges();
+
+        const success = await publishChanges(shrinkCheck.isSuspicious);
         
         if (success) {
           setNotificationMessage('✅ ¡Cronograma publicado exitosamente!');

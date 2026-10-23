@@ -180,85 +180,30 @@ async function saveWithRetry(
   }
 }
 
-// Función para obtener la semana actual
-function getCurrentWeek(): { startDate: string; endDate: string } {
-  const today = new Date();
-  const currentDay = today.getDay(); // 0 = domingo, 1 = lunes, etc.
-  
-  // Calcular el lunes de la semana actual
-  const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay;
-  const monday = new Date(today);
-  monday.setDate(today.getDate() + mondayOffset);
-  
-  // Calcular el viernes de la semana actual
-  const friday = new Date(monday);
-  friday.setDate(monday.getDate() + 4);
-  
-  const formatDate = (date: Date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  return {
-    startDate: formatDate(monday),
-    endDate: formatDate(friday)
-  };
-}
-
-// Datos iniciales
-const initialData: FirestoreSchedule = {
-  instructors: [
-    { id: 'instructor-1', name: 'JUAN PABLO HERNANDEZ', regional: 'BUCARAMANGA' },
-    { id: 'instructor-2', name: 'ZULAY VERA', regional: 'NORTE' },
-  ],
-  scheduleRows: [
-    {
-      id: 'instructor-1',
-      instructor: 'JUAN PABLO HERNANDEZ',
-      regional: 'BUCARAMANGA',
-      events: {
-        '25': [{ id: 'evt-1', title: 'ESCUELA DE PROMOTORES', details: 'Módulo Formativo Líquidos', time: 'Presencial - 8:00 a.m. a 5:00 p.m.', location: 'Bucaramanga', color: 'bg-red-600' }],
-        '26': [{ id: 'evt-2', title: 'ESCUELA DE PROMOTORES', details: 'Módulo de Lubricantes', time: 'Presencial - 8:00 a.m. a 5:00 p.m.', location: 'Bucaramanga', color: 'bg-red-600' }],
-        '27': [{ id: 'evt-3', title: 'ESCUELA DE PROMOTORES', details: 'Módulo A Tu Servicio', time: 'Presencial - 8:00 a.m. a 5:00 p.m.', location: 'Bucaramanga', color: 'bg-red-600' }],
-      }
-    },
-    {
-      id: 'instructor-2',
-      instructor: 'ZULAY VERA',
-      regional: 'NORTE',
-      events: {
-        '26': [{ id: 'evt-4', title: 'NUEVO PROTOCOLO DE SERVICIO TERPEL', details: ['Sesión Virtual 1 - 8:00 a.m. a 9:30 a.m.', 'Sesión Virtual 2 - 10:30 a.m. a 12:00 p.m.', 'Sesión Virtual 3 - 2:30 p.m. a 4:00 p.m.'], location: 'Todas las Regionales', color: 'bg-rose-500' }],
-        '27': [{ id: 'evt-5', title: 'VIVE TERPEL - VIVEPITS', details: ['Sesión Virtual 1 - 8:00 a.m. a 9:30 a.m.', 'Sesión Virtual 2 - 10:30 a.m. a 12:00 p.m.', 'Sesión Virtual 3 - 2:30 p.m. a 4:00 p.m.'], location: 'Todas las Regionales', color: 'bg-rose-500' }],
-      }
-    }
-  ],
-  globalConfig: {
-    title: 'Cronograma Escuelas Colombia',
-    weekTitles: {}, // Inicialmente vacío
-    currentWeek: getCurrentWeek(),
-    viewMode: 'weekly'
-  },
-  lastUpdated: serverTimestamp()
-};
-
 // Referencias a documentos
 const DRAFT_DOC = 'draft';
 const PUBLISHED_DOC = 'published';
 
-// Función para inicializar datos si no existen
+// Función para recuperar el draft si no existe.
+// Nunca crea datos de ejemplo: si falta el draft se restaura desde published,
+// y si falta published no se escribe nada (se debe restaurar desde un respaldo).
 export async function initializeDataIfNeeded() {
   try {
     const draftDoc = await getDoc(doc(db, 'schedule', DRAFT_DOC));
     const publishedDoc = await getDoc(doc(db, 'schedule', PUBLISHED_DOC));
 
-    if (!draftDoc.exists()) {
-      await setDoc(doc(db, 'schedule', DRAFT_DOC), initialData);
+    if (!publishedDoc.exists()) {
+      console.error('❌ No existe schedule/published. Restaura desde un respaldo.');
+      await logOperation('initializeDataIfNeeded', 'error', {
+        message: 'schedule/published no existe',
+        draftExists: draftDoc.exists()
+      });
+      return;
     }
 
-    if (!publishedDoc.exists()) {
-      await setDoc(doc(db, 'schedule', PUBLISHED_DOC), initialData);
+    if (!draftDoc.exists()) {
+      console.warn('⚠️ No existe schedule/draft. Restaurando desde published...');
+      await restoreDraftFromPublished();
     }
   } catch (error) {
     console.error('Error inicializando datos:', error);
